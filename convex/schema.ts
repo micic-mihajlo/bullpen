@@ -15,9 +15,13 @@ export default defineSchema({
     lastSeen: v.number(), // timestamp
     currentTaskId: v.optional(v.id("tasks")),
     metadata: v.optional(v.any()), // flexible extra data
+    // OpenClaw integration
+    sessionKey: v.optional(v.string()), // linked OpenClaw session
+    channel: v.optional(v.string()), // e.g., "discord", "telegram"
   })
     .index("by_status", ["status"])
-    .index("by_name", ["name"]),
+    .index("by_name", ["name"])
+    .index("by_session", ["sessionKey"]),
 
   // Tasks - work items for agents
   tasks: defineTable({

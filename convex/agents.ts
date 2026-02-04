@@ -129,3 +129,65 @@ export const remove = mutation({
     });
   },
 });
+
+// Link agent to OpenClaw session
+export const linkSession = mutation({
+  args: {
+    id: v.id("agents"),
+    sessionKey: v.string(),
+    channel: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db.get(args.id);
+    if (!agent) throw new Error("Agent not found");
+
+    await ctx.db.patch(args.id, {
+      sessionKey: args.sessionKey,
+      channel: args.channel,
+      status: "online",
+      lastSeen: Date.now(),
+    });
+
+    await ctx.db.insert("events", {
+      agentId: args.id,
+      type: "session_linked",
+      message: `${agent.name} connected to OpenClaw session`,
+      data: { sessionKey: args.sessionKey, channel: args.channel },
+      timestamp: Date.now(),
+    });
+  },
+});
+
+// Unlink agent from OpenClaw session
+export const unlinkSession = mutation({
+  args: { id: v.id("agents") },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db.get(args.id);
+    if (!agent) throw new Error("Agent not found");
+
+    await ctx.db.patch(args.id, {
+      sessionKey: undefined,
+      channel: undefined,
+      status: "offline",
+    });
+
+    await ctx.db.insert("events", {
+      agentId: args.id,
+      type: "session_unlinked",
+      message: `${agent.name} disconnected from OpenClaw session`,
+      timestamp: Date.now(),
+    });
+  },
+});
+
+// Get agent by session key
+export const bySession = query({
+  args: { sessionKey: v.string() },
+  handler: async (ctx, args) => {
+    const agents = await ctx.db
+      .query("agents")
+      .withIndex("by_session", (q) => q.eq("sessionKey", args.sessionKey))
+      .collect();
+    return agents[0] || null;
+  },
+});
