@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { formatTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { ChevronRight, Plus, X } from "lucide-react";
+import { ChevronRight, Plus, X, Send } from "lucide-react";
 import { TaskDetail } from "./task-detail";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -50,6 +50,23 @@ export function TaskBoard() {
   const [newTaskDesc, setNewTaskDesc] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [dispatchingTaskId, setDispatchingTaskId] = useState<string | null>(null);
+
+  const handleDispatch = async (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDispatchingTaskId(taskId);
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/dispatch`, { method: "POST" });
+      const data = await res.json();
+      if (!data.success) {
+        console.error("Dispatch failed:", data.error);
+      }
+    } catch (err) {
+      console.error("Dispatch error:", err);
+    } finally {
+      setDispatchingTaskId(null);
+    }
+  };
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,16 +204,32 @@ export function TaskBoard() {
                       )}
 
                       {task.status === "assigned" && (
-                        <div className="mt-2 pt-2 border-t border-mc-border opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 pt-2 border-t border-mc-border opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                           <button
-                            onClick={() => startTask({ id: task._id })}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startTask({ id: task._id });
+                            }}
                             className={cn(
-                              "w-full px-2 py-1.5 rounded text-xs font-medium",
+                              "flex-1 px-2 py-1.5 rounded text-xs font-medium",
                               "bg-mc-accent-yellow/20 text-mc-accent-yellow",
                               "hover:bg-mc-accent-yellow/30 transition-colors"
                             )}
                           >
-                            ▶ Start Task
+                            ▶ Start
+                          </button>
+                          <button
+                            onClick={(e) => handleDispatch(task._id, e)}
+                            disabled={dispatchingTaskId === task._id}
+                            className={cn(
+                              "flex-1 px-2 py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1",
+                              "bg-mc-accent/20 text-mc-accent",
+                              "hover:bg-mc-accent/30 transition-colors",
+                              "disabled:opacity-50"
+                            )}
+                          >
+                            <Send className="w-3 h-3" />
+                            {dispatchingTaskId === task._id ? "..." : "Dispatch"}
                           </button>
                         </div>
                       )}
