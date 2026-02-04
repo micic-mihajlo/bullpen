@@ -259,6 +259,18 @@ export class OpenClawClient extends EventEmitter {
     return this.call("status");
   }
 
+  // Spawn a background sub-agent session
+  async spawnSession(params: {
+    task: string;
+    label?: string;
+    model?: string;
+    agentId?: string;
+    timeoutSeconds?: number;
+    runTimeoutSeconds?: number;
+  }): Promise<{ sessionKey: string; runId?: string }> {
+    return this.call("sessions.spawn", params);
+  }
+
   disconnect(): void {
     if (this.ws) {
       this.ws.onclose = null;

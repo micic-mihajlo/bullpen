@@ -85,19 +85,23 @@ curl -X POST ${webhookUrl} \\
 
 Use exec to run the curl command. Replace YOUR_RESULT_HERE with your actual deliverable (escaped for JSON).`;
 
-    // Use cron.add with immediate execution for isolated agent run
-    // This spawns a fresh session that will announce results back
-    const cronResult = await client.call<{ id: string }>("cron.add", {
-      name: `task-${taskId.slice(-8)}`,
-      schedule: { kind: "at", atMs: Date.now() + 1000 }, // Run in 1 second
-      sessionTarget: "isolated",
-      payload: {
-        kind: "agentTurn",
-        message: taskPrompt,
-        model: agent.model || "cerebras/zai-glm-4.7", // Use agent's preferred model
-        deliver: false, // Don't deliver to channel, just run
-      },
-    });
+    // Send task to coordinator session (main agent)
+    // The coordinator will spawn a sub-agent to handle it
+    const coordinatorSession = agent.sessionKey || "agent:main:discord:channel:1468351909097373863";
+    
+    const dispatchMessage = `📋 **Bullpen Task Dispatch**
+
+**Task:** ${task.title}
+**ID:** ${taskId}
+**Priority:** ${task.priority || 3}/5
+${task.description ? `\n${task.description}\n` : ""}
+**Instructions:** Spawn a sub-agent to handle this task. When complete, the agent should call the webhook:
+
+\`\`\`bash
+curl -X POST ${webhookUrl} -H "Content-Type: application/json" -d '{"taskId": "${taskId}", "status": "completed", "result": "RESULT_HERE"}'
+\`\`\``;
+
+    await client.sendMessage(coordinatorSession, dispatchMessage);
 
     // Update task status to running
     await convex.mutation(api.tasks.start, { id: taskId });
@@ -106,15 +110,14 @@ Use exec to run the curl command. Replace YOUR_RESULT_HERE with your actual deli
     await convex.mutation(api.events.create, {
       agentId: task.assignedAgentId,
       type: "task_dispatched",
-      message: `Dispatched "${task.title}" to ${agent.name}`,
-      data: { taskId, cronJobId: cronResult.id, model: agent.model },
+      message: `Dispatched "${task.title}" to coordinator`,
+      data: { taskId, coordinatorSession, model: agent.model },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Task dispatched via isolated agent run",
-      cronJobId: cronResult.id,
-      model: agent.model || "cerebras/zai-glm-4.7",
+      message: "Task sent to coordinator for dispatch",
+      coordinatorSession,
     });
   } catch (error) {
     console.error("[API] Failed to dispatch task:", error);
