@@ -130,10 +130,10 @@ export class OpenClawClient extends EventEmitter {
                   minProtocol: 3,
                   maxProtocol: 3,
                   client: {
-                    id: "bullpen-client",
+                    id: "gateway-client",
                     version: "1.0.0",
-                    platform: "web",
-                    mode: "ui",
+                    platform: "node",
+                    mode: "backend",
                   },
                   auth: { token: this.token },
                 },
