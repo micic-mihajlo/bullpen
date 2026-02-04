@@ -1,0 +1,215 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { Send, Clock, Zap, MessageCircle, X } from "lucide-react";
+
+interface OpenClawSession {
+  key: string;
+  kind: string;
+  displayName?: string;
+  channel?: string;
+  groupChannel?: string;
+  chatType?: string;
+  updatedAt: number;
+  model?: string;
+  modelProvider?: string;
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  contextTokens?: number;
+}
+
+interface Message {
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp?: number;
+}
+
+interface SessionDetailProps {
+  session: OpenClawSession | null;
+  onClose?: () => void;
+}
+
+export function SessionDetail({ session, onClose }: SessionDetailProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (!session) {
+      setMessages([]);
+      return;
+    }
+
+    const fetchHistory = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/openclaw/sessions/${encodeURIComponent(session.key)}/history`);
+        const data = await res.json();
+        setMessages(data.messages || []);
+      } catch (err) {
+        console.error("Failed to fetch history:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [session?.key]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || !session || sending) return;
+
+    setSending(true);
+    try {
+      await fetch(`/api/openclaw/sessions/${encodeURIComponent(session.key)}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }),
+      });
+      setInput("");
+      // Optimistically add to messages
+      setMessages((prev) => [...prev, { role: "user", content: input }]);
+    } catch (err) {
+      console.error("Failed to send:", err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const formatTime = (ts?: number) => {
+    if (!ts) return "unknown";
+    const d = new Date(ts);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    
+    if (diff < 60000) return "just now";
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return d.toLocaleDateString();
+  };
+
+  const formatTokens = (tokens?: number) => {
+    if (!tokens) return "0";
+    if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+    if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}K`;
+    return tokens.toString();
+  };
+
+  if (!session) {
+    return (
+      <div className="h-full bg-mc-bg-secondary border border-mc-border rounded-xl flex flex-col items-center justify-center text-mc-text-secondary">
+        <MessageCircle className="w-12 h-12 mb-3 opacity-30" />
+        <p className="text-sm">Select a session to view details</p>
+      </div>
+    );
+  }
+
+  const sessionName = session.groupChannel || session.displayName || session.key.split(":").pop();
+
+  return (
+    <div className="h-full bg-mc-bg-secondary border border-mc-border rounded-xl flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-mc-border">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold text-lg">{sessionName}</h2>
+          {onClose && (
+            <button onClick={onClose} className="p-1 hover:bg-mc-bg-tertiary rounded">
+              <X className="w-4 h-4 text-mc-text-secondary" />
+            </button>
+          )}
+        </div>
+        
+        {/* Stats row */}
+        <div className="flex items-center gap-4 text-xs text-mc-text-secondary">
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {formatTime(session.updatedAt)}
+          </span>
+          <span className="flex items-center gap-1">
+            <Zap className="w-3 h-3" />
+            {formatTokens(session.totalTokens)} tokens
+          </span>
+          {session.model && (
+            <span className="px-2 py-0.5 bg-mc-bg-tertiary rounded">
+              {session.model}
+            </span>
+          )}
+          {session.channel && (
+            <span className="px-2 py-0.5 bg-mc-accent/20 text-mc-accent rounded">
+              {session.channel}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-16 bg-mc-bg-tertiary/50 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="text-center py-8 text-mc-text-secondary text-sm">
+            No messages yet
+          </div>
+        ) : (
+          messages.slice(-20).map((msg, i) => (
+            <div
+              key={i}
+              className={cn(
+                "p-3 rounded-lg text-sm",
+                msg.role === "user"
+                  ? "bg-mc-accent/10 border border-mc-accent/20 ml-8"
+                  : msg.role === "assistant"
+                  ? "bg-mc-bg-tertiary mr-8"
+                  : "bg-mc-bg text-mc-text-secondary text-xs italic"
+              )}
+            >
+              <div className="text-xs text-mc-text-secondary mb-1 uppercase">
+                {msg.role}
+              </div>
+              <div className="whitespace-pre-wrap break-words">
+                {msg.content.length > 500 ? msg.content.slice(0, 500) + "..." : msg.content}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Input */}
+      <form onSubmit={handleSend} className="p-4 border-t border-mc-border">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Send a message..."
+            disabled={sending}
+            className={cn(
+              "flex-1 bg-mc-bg border border-mc-border rounded-lg px-4 py-2 text-sm",
+              "focus:outline-none focus:border-mc-accent",
+              "placeholder:text-mc-text-secondary/50",
+              "disabled:opacity-50"
+            )}
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || sending}
+            className={cn(
+              "px-4 py-2 bg-mc-accent text-mc-bg rounded-lg",
+              "hover:bg-mc-accent/90 disabled:opacity-50 transition-colors"
+            )}
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

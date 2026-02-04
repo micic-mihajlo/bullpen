@@ -22,7 +22,12 @@ interface OpenClawSession {
 
 type FilterTab = "all" | "online" | "offline";
 
-export function AgentList() {
+interface AgentListProps {
+  selectedKey?: string | null;
+  onSelect?: (session: OpenClawSession) => void;
+}
+
+export function AgentList({ selectedKey, onSelect }: AgentListProps) {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [sessions, setSessions] = useState<OpenClawSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
@@ -162,9 +167,11 @@ export function AgentList() {
               return (
                 <div
                   key={session.key}
+                  onClick={() => onSelect?.(session)}
                   className={cn(
                     "w-full rounded-lg hover:bg-mc-bg-tertiary transition-colors cursor-pointer",
-                    "animate-slide-in"
+                    "animate-slide-in",
+                    selectedKey === session.key && "bg-mc-bg-tertiary ring-1 ring-mc-accent"
                   )}
                 >
                   <div className="flex items-center gap-3 p-2">
