@@ -95,6 +95,10 @@ body {
   border-top: 2px solid var(--mc-accent-green);
 }
 
+.column-failed {
+  border-top: 2px solid var(--mc-accent-red);
+}
+
 /* Animations - subtle only */
 @keyframes slide-in {
   from { opacity: 0; transform: translateY(-4px); }

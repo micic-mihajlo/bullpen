@@ -29,6 +29,7 @@ const columns: { status: TaskStatus; label: string; cls: string }[] = [
   { status: "pending", label: "Inbox", cls: "column-pending" },
   { status: "running", label: "In Progress", cls: "column-running" },
   { status: "completed", label: "Done", cls: "column-completed" },
+  { status: "failed", label: "Failed", cls: "column-failed" },
 ];
 
 function timeAgo(ts: number): string {
@@ -119,7 +120,7 @@ export function TaskBoard() {
 
         {/* Columns */}
         <div className="flex-1 overflow-hidden p-2.5">
-          <div className="grid grid-cols-3 gap-2.5 h-full">
+          <div className="grid grid-cols-4 gap-2.5 h-full">
             {columns.map((col) => (
               <div key={col.status} className={cn("flex flex-col rounded-lg bg-mc-bg/50 overflow-hidden", col.cls)}>
                 <div className="px-2.5 py-1.5 flex items-center justify-between">

@@ -51,7 +51,10 @@ export async function POST(
     // Extract role from soul
     const role = agent.soul?.match(/Role:\s*(.+)/)?.[1] || "Assistant";
     
-    // Build the task prompt
+    // Webhook URL for reporting results
+    const webhookUrl = process.env.BULLPEN_WEBHOOK_URL || "http://localhost:3001/api/webhooks/task-result";
+    
+    // Build the task prompt with webhook callback instructions
     const taskPrompt = `You are ${agent.name}, a ${role}.
 
 ## Task: ${task.title}
@@ -59,7 +62,28 @@ ${task.description ? `\n${task.description}\n` : ""}
 Priority: ${task.priority || 3}/5
 Task ID: ${taskId}
 
-Complete this task thoroughly. When done, provide your deliverable/output clearly.`;
+## Instructions
+1. Complete this task thoroughly
+2. When done, report your result via the webhook below
+3. Your result should be a clear, useful deliverable
+
+## Reporting Results
+When finished, call the webhook to report completion:
+
+\`\`\`bash
+curl -X POST ${webhookUrl} \\
+  -H "Content-Type: application/json" \\
+  -d '{"taskId": "${taskId}", "status": "completed", "result": "YOUR_RESULT_HERE", "agentName": "${agent.name}"}'
+\`\`\`
+
+If the task fails, report the error:
+\`\`\`bash
+curl -X POST ${webhookUrl} \\
+  -H "Content-Type: application/json" \\
+  -d '{"taskId": "${taskId}", "status": "failed", "error": "ERROR_DESCRIPTION", "agentName": "${agent.name}"}'
+\`\`\`
+
+Use exec to run the curl command. Replace YOUR_RESULT_HERE with your actual deliverable (escaped for JSON).`;
 
     // Use cron.add with immediate execution for isolated agent run
     // This spawns a fresh session that will announce results back
