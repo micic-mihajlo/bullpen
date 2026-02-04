@@ -49,8 +49,10 @@ export function SessionDetail({ session, onClose }: SessionDetailProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
+  const sessionKey = session?.key;
+  
   useEffect(() => {
-    if (!session) {
+    if (!sessionKey) {
       setMessages([]);
       return;
     }
@@ -58,7 +60,7 @@ export function SessionDetail({ session, onClose }: SessionDetailProps) {
     const fetchHistory = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/openclaw/sessions/${encodeURIComponent(session.key)}/history`);
+        const res = await fetch(`/api/openclaw/sessions/${encodeURIComponent(sessionKey)}/history`);
         const data = await res.json();
         setMessages(data.messages || []);
       } catch (err) {
@@ -69,7 +71,7 @@ export function SessionDetail({ session, onClose }: SessionDetailProps) {
     };
 
     fetchHistory();
-  }, [session?.key]);
+  }, [sessionKey]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

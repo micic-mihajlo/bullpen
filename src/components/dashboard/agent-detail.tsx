@@ -48,6 +48,7 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
 
   useEffect(() => {
     fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agent.sessionKey]);
 
   const handleSend = async (e: React.FormEvent) => {
