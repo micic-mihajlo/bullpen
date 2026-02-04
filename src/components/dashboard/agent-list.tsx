@@ -1,48 +1,95 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { useState, useEffect, useCallback } from "react";
 import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
-import { formatTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Plus, X } from "lucide-react";
+import { ChevronRight, RefreshCw, Zap } from "lucide-react";
+
+interface OpenClawSession {
+  key: string;
+  kind: string;
+  displayName?: string;
+  channel?: string;
+  groupChannel?: string;
+  chatType?: string;
+  updatedAt: number;
+  model?: string;
+  modelProvider?: string;
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+}
 
 type FilterTab = "all" | "online" | "offline";
 
-const AVATAR_OPTIONS = ["🤖", "🦾", "🧠", "👾", "🎯", "⚡", "🔮", "🦊", "🐙", "🌟"];
-
 export function AgentList() {
-  const agents = useQuery(api.agents.list);
-  const createAgent = useMutation(api.agents.create);
   const [filter, setFilter] = useState<FilterTab>("all");
-  const [showModal, setShowModal] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newAvatar, setNewAvatar] = useState("🤖");
-  const [isCreating, setIsCreating] = useState(false);
+  const [sessions, setSessions] = useState<OpenClawSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
-  const filteredAgents = agents?.filter((agent) => {
+  const fetchSessions = useCallback(async () => {
+    try {
+      setSessionsLoading(true);
+      const res = await fetch("/bullpen/api/openclaw/sessions");
+      const data = await res.json();
+      setSessions(data.sessions || []);
+      setLastRefresh(new Date());
+    } catch (err) {
+      console.error("Failed to fetch sessions:", err);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  // Fetch sessions on mount and every 30 seconds
+  useEffect(() => {
+    fetchSessions();
+    const interval = setInterval(fetchSessions, 30000);
+    return () => clearInterval(interval);
+  }, [fetchSessions]);
+
+  // Filter sessions based on filter state
+  const filteredSessions = sessions.filter((session) => {
     if (filter === "all") return true;
-    if (filter === "online") return agent.status === "online" || agent.status === "busy";
-    return agent.status === "offline";
+    // Consider sessions active if updated in last 5 minutes
+    const isActive = Date.now() - session.updatedAt < 5 * 60 * 1000;
+    if (filter === "online") return isActive;
+    return !isActive;
   });
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim()) return;
+  // Get session display info
+  const getSessionInfo = (session: OpenClawSession) => {
+    const keyParts = session.key.split(":");
+    const isDiscord = session.channel === "discord";
+    const isCron = keyParts.includes("cron");
+    const isHeartbeat = session.key.includes("main:main");
 
-    setIsCreating(true);
-    try {
-      await createAgent({ name: newName.trim(), avatar: newAvatar });
-      setNewName("");
-      setNewAvatar("🤖");
-      setShowModal(false);
-    } finally {
-      setIsCreating(false);
+    let icon = "🤖";
+    let name = session.displayName || session.key;
+    
+    if (isDiscord && session.groupChannel) {
+      icon = "💬";
+      name = session.groupChannel;
+    } else if (isCron) {
+      icon = "⏰";
+      name = "Cron Job";
+    } else if (isHeartbeat) {
+      icon = "💓";
+      name = "Heartbeat";
     }
+
+    return { icon, name };
   };
 
-  const onlineCount = agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0;
+  const formatTokens = (tokens?: number) => {
+    if (!tokens) return null;
+    if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+    if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(0)}K`;
+    return tokens.toString();
+  };
+
+  const activeSessionCount = sessions.filter((s) => Date.now() - s.updatedAt < 5 * 60 * 1000).length;
 
   return (
     <>
@@ -52,17 +99,27 @@ export function AgentList() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <ChevronRight className="w-4 h-4 text-mc-text-secondary" />
-              <span className="text-sm font-medium uppercase tracking-wider">Agents</span>
+              <span className="text-sm font-medium uppercase tracking-wider">Sessions</span>
               <span className="bg-mc-bg-tertiary text-mc-text-secondary text-xs px-2 py-0.5 rounded">
-                {agents?.length ?? 0}
+                {sessions.length}
               </span>
             </div>
-            {onlineCount > 0 && (
-              <span className="flex items-center gap-1.5 text-xs text-mc-accent-green">
-                <StatusDot status="online" />
-                {onlineCount} online
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {activeSessionCount > 0 && (
+                <span className="flex items-center gap-1.5 text-xs text-mc-accent-green">
+                  <StatusDot status="online" />
+                  {activeSessionCount} active
+                </span>
+              )}
+              <button
+                onClick={fetchSessions}
+                disabled={sessionsLoading}
+                className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
+                title="Refresh sessions"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5 text-mc-text-secondary", sessionsLoading && "animate-spin")} />
+              </button>
+            </div>
           </div>
 
           {/* Filter Tabs */}
@@ -84,157 +141,86 @@ export function AgentList() {
           </div>
         </div>
 
-        {/* Agent List */}
+        {/* Session List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {!agents ? (
+          {sessionsLoading && sessions.length === 0 ? (
             <div className="space-y-2 p-2">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-16 bg-mc-bg-tertiary/50 rounded-lg animate-pulse" />
               ))}
             </div>
-          ) : filteredAgents?.length === 0 ? (
+          ) : filteredSessions.length === 0 ? (
             <div className="text-center py-8 text-mc-text-secondary text-sm">
-              No agents found
+              No sessions found
             </div>
           ) : (
-            filteredAgents?.map((agent) => (
-              <div
-                key={agent._id}
-                className={cn(
-                  "w-full rounded-lg hover:bg-mc-bg-tertiary transition-colors cursor-pointer",
-                  "animate-slide-in"
-                )}
-              >
-                <div className="flex items-center gap-3 p-2">
-                  {/* Avatar */}
-                  <div className="text-2xl relative flex-shrink-0">
-                    {agent.avatar || "🤖"}
-                    {agent.status === "online" && (
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-mc-accent-green rounded-full border-2 border-mc-bg-secondary" />
-                    )}
-                  </div>
+            filteredSessions.map((session) => {
+              const { icon, name } = getSessionInfo(session);
+              const isActive = Date.now() - session.updatedAt < 5 * 60 * 1000;
+              const tokens = formatTokens(session.totalTokens);
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{agent.name}</span>
+              return (
+                <div
+                  key={session.key}
+                  className={cn(
+                    "w-full rounded-lg hover:bg-mc-bg-tertiary transition-colors cursor-pointer",
+                    "animate-slide-in"
+                  )}
+                >
+                  <div className="flex items-center gap-3 p-2">
+                    {/* Icon */}
+                    <div className="text-2xl relative flex-shrink-0">
+                      {icon}
+                      {isActive && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-mc-accent-green rounded-full border-2 border-mc-bg-secondary" />
+                      )}
                     </div>
-                    <div className="text-xs text-mc-text-secondary truncate">
-                      {formatTime(agent.lastSeen)}
-                    </div>
-                  </div>
 
-                  {/* Status */}
-                  <StatusBadge status={agent.status} />
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{name}</span>
+                        {session.channel && (
+                          <span className="text-xs px-1.5 py-0.5 bg-mc-bg-tertiary rounded text-mc-text-secondary">
+                            {session.channel}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-mc-text-secondary">
+                        <span className="truncate">{session.model || "unknown"}</span>
+                        {tokens && (
+                          <>
+                            <span>·</span>
+                            <span className="flex items-center gap-0.5">
+                              <Zap className="w-3 h-3" />
+                              {tokens}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <StatusBadge status={isActive ? "online" : "offline"} />
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
-        {/* Add Agent Button */}
+        {/* Footer with last refresh time */}
         <div className="p-3 border-t border-mc-border">
-          <button
-            onClick={() => setShowModal(true)}
-            className={cn(
-              "w-full flex items-center justify-center gap-2 px-3 py-2",
-              "bg-mc-bg-tertiary hover:bg-mc-border rounded-lg",
-              "text-sm text-mc-text-secondary hover:text-mc-text transition-colors"
+          <div className="text-xs text-mc-text-secondary text-center">
+            {lastRefresh ? (
+              <>Last updated: {lastRefresh.toLocaleTimeString()}</>
+            ) : (
+              <>Loading sessions...</>
             )}
-          >
-            <Plus className="w-4 h-4" />
-            Add Agent
-          </button>
+          </div>
         </div>
       </aside>
 
-      {/* Create Agent Modal */}
-      {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="bg-mc-bg-secondary border border-mc-border rounded-xl w-full max-w-md animate-fade-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-mc-border flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Create New Agent</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
-              >
-                <X className="w-5 h-5 text-mc-text-secondary" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreate} className="p-4 space-y-4">
-              {/* Avatar selector */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
-                  Avatar
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {AVATAR_OPTIONS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setNewAvatar(emoji)}
-                      className={cn(
-                        "w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all",
-                        newAvatar === emoji
-                          ? "bg-mc-accent/20 border-2 border-mc-accent scale-110"
-                          : "bg-mc-bg border border-mc-border hover:border-mc-accent/50"
-                      )}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Name input */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g., Claude, GPT-4, Codex"
-                  className={cn(
-                    "w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2",
-                    "focus:outline-none focus:border-mc-accent",
-                    "placeholder:text-mc-text-secondary/50"
-                  )}
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-mc-text-secondary hover:text-mc-text transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!newName.trim() || isCreating}
-                  className={cn(
-                    "px-6 py-2 bg-mc-accent text-mc-bg rounded-lg font-medium",
-                    "hover:bg-mc-accent/90 disabled:opacity-50 transition-colors"
-                  )}
-                >
-                  {isCreating ? "Creating..." : "Create Agent"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 }
