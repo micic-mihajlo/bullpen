@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Plus, X, Send } from "lucide-react";
 import { TaskDetail } from "./task-detail";
 import { Id } from "../../../convex/_generated/dataModel";
+import { useToast } from "@/components/toast";
 
 type Task = {
   _id: Id<"tasks">;
@@ -54,6 +55,7 @@ export function TaskBoard() {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,9 +63,12 @@ export function TaskBoard() {
     setIsCreating(true);
     try {
       await createTask({ title: newTitle.trim(), description: newDesc.trim() || undefined });
+      addToast("Task created", "success");
       setNewTitle("");
       setNewDesc("");
       setShowModal(false);
+    } catch (error) {
+      addToast("Failed to create task", "error");
     } finally {
       setIsCreating(false);
     }
@@ -73,7 +78,15 @@ export function TaskBoard() {
     e.stopPropagation();
     setDispatchingId(taskId);
     try {
-      await fetch(`/api/tasks/${taskId}/dispatch`, { method: "POST" });
+      const res = await fetch(`/api/tasks/${taskId}/dispatch`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        addToast(`Task dispatched (${data.model?.split("/")[1] || "agent"})`, "success");
+      } else {
+        addToast(data.error || "Failed to dispatch task", "error");
+      }
+    } catch (error) {
+      addToast("Network error dispatching task", "error");
     } finally {
       setDispatchingId(null);
     }
