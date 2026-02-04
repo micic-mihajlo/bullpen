@@ -21,9 +21,21 @@ interface OpenClawSession {
 }
 
 interface Message {
-  role: "user" | "assistant" | "system";
-  content: string;
+  role: "user" | "assistant" | "system" | "toolResult" | "toolCall";
+  content: string | Array<{ type: string; text?: string; thinking?: string }>;
   timestamp?: number;
+}
+
+// Extract text content from message
+function getMessageText(msg: Message): string {
+  if (typeof msg.content === "string") return msg.content;
+  if (Array.isArray(msg.content)) {
+    return msg.content
+      .filter((c) => c.type === "text" && c.text)
+      .map((c) => c.text)
+      .join("\n") || "(no text content)";
+  }
+  return "(unknown format)";
 }
 
 interface SessionDetailProps {
@@ -159,26 +171,32 @@ export function SessionDetail({ session, onClose }: SessionDetailProps) {
             No messages yet
           </div>
         ) : (
-          messages.slice(-20).map((msg, i) => (
-            <div
-              key={i}
-              className={cn(
-                "p-3 rounded-lg text-sm",
-                msg.role === "user"
-                  ? "bg-mc-accent/10 border border-mc-accent/20 ml-8"
-                  : msg.role === "assistant"
-                  ? "bg-mc-bg-tertiary mr-8"
-                  : "bg-mc-bg text-mc-text-secondary text-xs italic"
-              )}
-            >
-              <div className="text-xs text-mc-text-secondary mb-1 uppercase">
-                {msg.role}
-              </div>
-              <div className="whitespace-pre-wrap break-words">
-                {msg.content.length > 500 ? msg.content.slice(0, 500) + "..." : msg.content}
-              </div>
-            </div>
-          ))
+          messages
+            .filter((msg) => msg.role === "user" || msg.role === "assistant")
+            .slice(-20)
+            .map((msg, i) => {
+              const text = getMessageText(msg);
+              if (!text || text === "(no text content)") return null;
+              
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "p-3 rounded-lg text-sm",
+                    msg.role === "user"
+                      ? "bg-mc-accent/10 border border-mc-accent/20 ml-8"
+                      : "bg-mc-bg-tertiary mr-8"
+                  )}
+                >
+                  <div className="text-xs text-mc-text-secondary mb-1 uppercase">
+                    {msg.role}
+                  </div>
+                  <div className="whitespace-pre-wrap break-words">
+                    {text.length > 500 ? text.slice(0, 500) + "..." : text}
+                  </div>
+                </div>
+              );
+            })
         )}
       </div>
 
