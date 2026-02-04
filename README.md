@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🐂 Bullpen
 
-## Getting Started
+Multi-agent orchestration dashboard for OpenClaw.
 
-First, run the development server:
+## Features
 
+- **Agent Management**: Create, configure, and monitor AI agents
+- **Task Board**: Kanban-style task management with assignment and dispatch
+- **Live Event Feed**: Real-time activity stream from all agents
+- **OpenClaw Integration**: Direct connection to OpenClaw gateway for session management
+- **Model Selection**: Choose between Cerebras (fast/cheap) and Opus (powerful)
+- **Webhook API**: Programmatic task completion for automation
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, React, Tailwind CSS
+- **Backend**: Convex (real-time database)
+- **Integration**: OpenClaw Gateway (WebSocket RPC)
+
+## Setup
+
+1. Clone and install:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/micic-mihajlo/bullpen.git
+cd bullpen
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Configure environment:
+```bash
+cp .env.example .env.local
+# Edit .env.local with your credentials
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Required env vars:
+- `NEXT_PUBLIC_CONVEX_URL` - Convex deployment URL
+- `OPENCLAW_GATEWAY_URL` - OpenClaw gateway WebSocket URL
+- `OPENCLAW_GATEWAY_TOKEN` - Gateway auth token
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Run Convex:
+```bash
+npx convex dev
+```
 
-## Learn More
+4. Start the dashboard:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## API Endpoints
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Tasks
+- `POST /api/tasks/[id]/dispatch` - Dispatch task to assigned agent
+- `POST /api/tasks/[id]/complete` - Mark task as complete with result
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Webhooks
+- `POST /api/webhooks/task-result` - Agent reports task completion
+  ```json
+  {
+    "taskId": "...",
+    "status": "completed" | "failed",
+    "result": "output text",
+    "error": "error message"
+  }
+  ```
 
-## Deploy on Vercel
+### OpenClaw
+- `GET /api/openclaw/sessions` - List active sessions
+- `GET /api/openclaw/sessions/[key]/history` - Get session message history
+- `POST /api/openclaw/sessions/[key]/send` - Send message to session
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Status
+- `GET /api/status` - Health check and service status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Keyboard Shortcuts
+
+- `n` - New task
+- `a` - New agent
+- `r` - Refresh
+- `Esc` - Close modals
+
+## License
+
+MIT
