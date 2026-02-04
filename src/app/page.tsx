@@ -3,61 +3,57 @@
 import { AgentList } from "@/components/dashboard/agent-list";
 import { EventFeed } from "@/components/dashboard/event-feed";
 import { TaskBoard } from "@/components/dashboard/task-board";
+import { Settings } from "lucide-react";
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-mc-bg">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
+      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary">
+        <div className="max-w-[1920px] mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
-                <span className="text-zinc-950 font-bold text-sm">B</span>
-              </div>
+              <span className="text-2xl">🐂</span>
               <div>
-                <h1 className="text-lg font-semibold tracking-tight text-zinc-100">
-                  Bullpen
-                </h1>
-                <p className="text-xs text-zinc-500 -mt-0.5">
+                <h1 className="text-lg font-bold tracking-tight">Bullpen</h1>
+                <p className="text-xs text-mc-text-secondary -mt-0.5">
                   Agent Orchestration
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/50 border border-zinc-700/50">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-mc-bg-tertiary border border-mc-border">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mc-accent-green opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-mc-accent-green" />
                 </span>
-                <span className="text-xs text-zinc-400 font-medium">
+                <span className="text-xs text-mc-text-secondary font-medium">
                   Connected
                 </span>
               </div>
+              <button className="p-2 hover:bg-mc-bg-tertiary rounded-lg transition-colors">
+                <Settings className="w-5 h-5 text-mc-text-secondary" />
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 p-6">
-        <div className="max-w-[1800px] mx-auto h-[calc(100vh-8rem)]">
-          <div className="grid grid-cols-12 gap-6 h-full">
-            {/* Left sidebar - Agents */}
-            <div className="col-span-3 h-full">
-              <AgentList />
-            </div>
+      {/* Main content - full height layout */}
+      <main className="flex-1 flex overflow-hidden">
+        {/* Left sidebar - Agents */}
+        <div className="w-72 flex-shrink-0 p-4 overflow-hidden">
+          <AgentList />
+        </div>
 
-            {/* Center - Task Board */}
-            <div className="col-span-6 h-full">
-              <TaskBoard />
-            </div>
+        {/* Center - Task Board */}
+        <div className="flex-1 p-4 pl-0 overflow-hidden">
+          <TaskBoard />
+        </div>
 
-            {/* Right sidebar - Event Feed */}
-            <div className="col-span-3 h-full">
-              <EventFeed />
-            </div>
-          </div>
+        {/* Right sidebar - Event Feed */}
+        <div className="w-80 flex-shrink-0 p-4 pl-0 overflow-hidden">
+          <EventFeed />
         </div>
       </main>
     </div>
