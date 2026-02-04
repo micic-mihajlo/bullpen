@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -52,9 +53,30 @@ function formatDuration(start: number, end: number) {
 }
 
 export function TaskDetail({ task, onClose }: TaskDetailProps) {
+  const [editingResult, setEditingResult] = useState(false);
+  const [resultText, setResultText] = useState(task?.result || "");
+  const [saving, setSaving] = useState(false);
+
   if (!task) return null;
 
   const status = statusLabel[task.status];
+
+  const handleSaveResult = async () => {
+    setSaving(true);
+    try {
+      await fetch(`/api/tasks/${task._id}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ result: resultText }),
+      });
+      setEditingResult(false);
+      // Trigger refresh by closing and reopening would be ideal
+      // For now just close
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -124,14 +146,54 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
             </div>
           </div>
 
-          {task.result && (
-            <div>
-              <div className="text-xs text-mc-text-secondary uppercase mb-1">Output</div>
+          {/* Output section - editable for running tasks */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs text-mc-text-secondary uppercase">Output</div>
+              {(task.status === "running" || task.status === "assigned") && !editingResult && (
+                <button
+                  onClick={() => { setResultText(task.result || ""); setEditingResult(true); }}
+                  className="text-xs text-mc-accent hover:underline"
+                >
+                  Add result
+                </button>
+              )}
+            </div>
+            {editingResult ? (
+              <div className="space-y-2">
+                <textarea
+                  value={resultText}
+                  onChange={(e) => setResultText(e.target.value)}
+                  placeholder="Paste the task output here..."
+                  rows={8}
+                  className="w-full p-3 bg-mc-bg border border-mc-border rounded text-sm font-mono focus:outline-none focus:border-mc-accent resize-none"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setEditingResult(false)}
+                    className="px-3 py-1 text-xs text-mc-text-secondary hover:text-mc-text"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveResult}
+                    disabled={saving}
+                    className="px-3 py-1 text-xs bg-mc-accent-green text-white rounded hover:bg-mc-accent-green/90 disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Save & Complete"}
+                  </button>
+                </div>
+              </div>
+            ) : task.result ? (
               <pre className="p-3 bg-mc-bg rounded text-xs whitespace-pre-wrap break-words overflow-x-auto max-h-64 overflow-y-auto">
                 {task.result}
               </pre>
-            </div>
-          )}
+            ) : (
+              <div className="p-3 bg-mc-bg rounded text-xs text-mc-text-secondary italic">
+                No output yet
+              </div>
+            )}
+          </div>
 
           {task.error && (
             <div>

@@ -14,13 +14,14 @@ const icons: Record<string, string> = {
   task_created: "＋",
   task_assigned: "→",
   task_started: "▶",
+  task_dispatched: "🚀",
   task_completed: "✓",
   task_failed: "✗",
   session_linked: "⚡",
   message_sent: "💬",
 };
 
-const taskTypes = ["task_created", "task_assigned", "task_started", "task_completed", "task_failed"];
+const taskTypes = ["task_created", "task_assigned", "task_started", "task_dispatched", "task_completed", "task_failed"];
 const agentTypes = ["agent_created", "agent_removed", "status_change", "session_linked"];
 
 function timeAgo(ts: number): string {

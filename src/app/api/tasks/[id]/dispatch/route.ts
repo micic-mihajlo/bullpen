@@ -34,16 +34,8 @@ export async function POST(
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
-    if (!agent.sessionKey) {
-      return NextResponse.json(
-        { error: "Agent not connected to OpenClaw session" },
-        { status: 400 }
-      );
-    }
-
-    // Connect to OpenClaw and send the task
+    // Connect to OpenClaw
     const client = getOpenClawClient();
-
     if (!client.isConnected()) {
       try {
         await client.connect();
@@ -56,24 +48,49 @@ export async function POST(
       }
     }
 
-    // Format the task as a message to the agent
-    const taskMessage = `📋 **New Task Assigned**
+    // Extract role from soul
+    const role = agent.soul?.match(/Role:\s*(.+)/)?.[1] || "Assistant";
+    
+    // Build the task prompt
+    const taskPrompt = `You are ${agent.name}, a ${role}.
 
-**Title:** ${task.title}
-${task.description ? `**Description:** ${task.description}` : ""}
-**Priority:** ${task.priority || 3}/5
+## Task: ${task.title}
+${task.description ? `\n${task.description}\n` : ""}
+Priority: ${task.priority || 3}/5
+Task ID: ${taskId}
 
-Please work on this task and report back when complete.`;
+Complete this task thoroughly. When done, provide your deliverable/output clearly.`;
 
-    await client.sendMessage(agent.sessionKey, taskMessage);
+    // Use cron.add with immediate execution for isolated agent run
+    // This spawns a fresh session that will announce results back
+    const cronResult = await client.call<{ id: string }>("cron.add", {
+      name: `task-${taskId.slice(-8)}`,
+      schedule: { kind: "at", atMs: Date.now() + 1000 }, // Run in 1 second
+      sessionTarget: "isolated",
+      payload: {
+        kind: "agentTurn",
+        message: taskPrompt,
+        model: agent.model || "cerebras/zai-glm-4.7", // Use agent's preferred model
+        deliver: false, // Don't deliver to channel, just run
+      },
+    });
 
     // Update task status to running
     await convex.mutation(api.tasks.start, { id: taskId });
 
+    // Log the dispatch event
+    await convex.mutation(api.events.create, {
+      agentId: task.assignedAgentId,
+      type: "task_dispatched",
+      message: `Dispatched "${task.title}" to ${agent.name}`,
+      data: { taskId, cronJobId: cronResult.id, model: agent.model },
+    });
+
     return NextResponse.json({
       success: true,
-      message: "Task dispatched to agent",
-      sessionKey: agent.sessionKey,
+      message: "Task dispatched via isolated agent run",
+      cronJobId: cronResult.id,
+      model: agent.model || "cerebras/zai-glm-4.7",
     });
   } catch (error) {
     console.error("[API] Failed to dispatch task:", error);
