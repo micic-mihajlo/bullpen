@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { X, Send, RefreshCw } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
+import { useToast } from "@/components/toast";
 
 interface Agent {
   _id: Id<"agents">;
@@ -31,6 +32,7 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const { addToast } = useToast();
 
   const fetchHistory = async () => {
     if (!agent.sessionKey) return;
@@ -56,14 +58,21 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
     if (!newMessage.trim() || !agent.sessionKey) return;
     setSending(true);
     try {
-      await fetch(`/api/openclaw/sessions/${encodeURIComponent(agent.sessionKey)}/send`, {
+      const res = await fetch(`/api/openclaw/sessions/${encodeURIComponent(agent.sessionKey)}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: newMessage.trim() }),
       });
-      setNewMessage("");
-      // Refresh history after sending
-      await fetchHistory();
+      if (res.ok) {
+        addToast("Message sent", "success");
+        setNewMessage("");
+        await fetchHistory();
+      } else {
+        const data = await res.json();
+        addToast(data.error || "Failed to send", "error");
+      }
+    } catch (error) {
+      addToast("Network error", "error");
     } finally {
       setSending(false);
     }

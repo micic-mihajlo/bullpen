@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Plus, X, Link2 } from "lucide-react";
 import { AgentDetail } from "./agent-detail";
 import { Id } from "../../../convex/_generated/dataModel";
+import { useToast } from "@/components/toast";
 
 type Agent = {
   _id: Id<"agents">;
@@ -45,6 +46,7 @@ export function AgentList() {
   const [newModel, setNewModel] = useState("cerebras/zai-glm-4.7");
   const [isCreating, setIsCreating] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const { addToast } = useToast();
 
   const filtered = agents?.filter((a) => {
     if (filter === "all") return true;
@@ -63,11 +65,14 @@ export function AgentList() {
         soul: newRole ? `Role: ${newRole}` : undefined,
         model: newModel,
       });
+      addToast(`Agent ${newName.trim()} created`, "success");
       setNewName("");
       setNewRole("");
       setNewAvatar("🤖");
       setNewModel("cerebras/zai-glm-4.7");
       setShowModal(false);
+    } catch (error) {
+      addToast("Failed to create agent", "error");
     } finally {
       setIsCreating(false);
     }
