@@ -120,8 +120,8 @@ export function TaskBoard() {
                       onClick={() => setSelectedTask(task as Task)}
                       className="p-2.5 rounded bg-mc-bg-secondary border border-mc-border hover:border-mc-border/80 cursor-pointer group"
                     >
-                      <p className="text-xs font-medium mb-1 line-clamp-2">{task.title}</p>
-                      <div className="flex items-center justify-between text-xs text-mc-text-secondary">
+                      <p className="text-sm font-medium mb-1 line-clamp-2">{task.title}</p>
+                      <div className="flex items-center justify-between text-sm text-mc-text-secondary">
                         <span>{timeAgo(task.createdAt)}</span>
                         {task.result && <span className="text-mc-accent-green">✓</span>}
                       </div>

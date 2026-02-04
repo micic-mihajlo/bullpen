@@ -89,7 +89,7 @@ export function EventFeed() {
                 <div key={event._id} className="px-3 py-2 hover:bg-mc-bg-tertiary/50 transition-colors">
                   <div className="flex items-start gap-2">
                     <span className={cn(
-                      "w-5 text-center flex-shrink-0 text-xs",
+                      "w-5 text-center flex-shrink-0 text-sm",
                       isComplete ? "text-mc-accent-green" :
                       isFail ? "text-mc-accent-red" :
                       isTask ? "text-mc-accent-yellow" : "text-mc-text-secondary"
@@ -97,10 +97,10 @@ export function EventFeed() {
                       {icon}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-mc-text leading-relaxed break-words">
+                      <p className="text-sm text-mc-text leading-relaxed break-words">
                         {event.message}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-mc-text-secondary">
+                      <div className="flex items-center gap-2 mt-1 text-xs text-mc-text-secondary">
                         <span>{timeAgo(event.timestamp)}</span>
                         {event.agent && (
                           <>

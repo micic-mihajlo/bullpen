@@ -11,11 +11,11 @@ export default function Dashboard() {
       <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/50">
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🐂</span>
-            <span className="font-semibold text-sm tracking-tight">bullpen</span>
-            <span className="text-mc-text-secondary text-xs">/ orchestration</span>
+            <span className="text-xl">🐂</span>
+            <span className="font-semibold tracking-tight">bullpen</span>
+            <span className="text-mc-text-secondary text-sm">/ orchestration</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-mc-text-secondary">
+          <div className="flex items-center gap-1.5 text-sm text-mc-text-secondary">
             <span className="w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
             <span>connected</span>
           </div>
@@ -25,17 +25,17 @@ export default function Dashboard() {
       {/* Main content */}
       <main className="flex-1 flex min-h-0">
         {/* Left - Agents */}
-        <div className="w-64 flex-shrink-0 p-3 min-h-0">
+        <div className="w-72 flex-shrink-0 p-4 min-h-0">
           <AgentList />
         </div>
 
         {/* Center - Tasks */}
-        <div className="flex-1 p-3 pl-0 min-h-0">
+        <div className="flex-1 p-4 pl-0 min-h-0">
           <TaskBoard />
         </div>
 
         {/* Right - Feed */}
-        <div className="w-72 flex-shrink-0 p-3 pl-0 min-h-0">
+        <div className="w-80 flex-shrink-0 p-4 pl-0 min-h-0">
           <EventFeed />
         </div>
       </main>

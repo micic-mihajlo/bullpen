@@ -108,10 +108,10 @@ export function AgentList() {
                   key={agent._id}
                   className="flex items-center gap-2 p-2 rounded hover:bg-mc-bg-tertiary transition-colors cursor-pointer"
                 >
-                  <span className="text-base">{agent.avatar || "🤖"}</span>
+                  <span className="text-xl">{agent.avatar || "🤖"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium truncate">{agent.name}</span>
+                      <span className="font-medium truncate">{agent.name}</span>
                       {agent.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
                     </div>
                     <div className="text-xs text-mc-text-secondary truncate">
