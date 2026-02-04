@@ -7,6 +7,27 @@ import { formatTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ChevronRight, Plus, X } from "lucide-react";
+import { TaskDetail } from "./task-detail";
+import { Id } from "../../../convex/_generated/dataModel";
+
+type Task = {
+  _id: Id<"tasks">;
+  title: string;
+  description?: string;
+  status: "pending" | "assigned" | "running" | "completed" | "failed";
+  priority?: number;
+  createdAt: number;
+  startedAt?: number;
+  completedAt?: number;
+  result?: string;
+  error?: string;
+  agent?: {
+    _id: Id<"agents">;
+    name: string;
+    avatar?: string;
+    status: string;
+  };
+};
 
 type TaskStatus = "pending" | "assigned" | "running" | "completed" | "failed";
 
@@ -28,6 +49,7 @@ export function TaskBoard() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDesc, setNewTaskDesc] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +128,7 @@ export function TaskBoard() {
                   {getTasksByStatus(column.status).map((task) => (
                     <div
                       key={task._id}
+                      onClick={() => setSelectedTask(task as Task)}
                       className={cn(
                         "p-3 rounded-lg",
                         "bg-mc-bg-secondary border border-mc-border",
@@ -126,9 +149,14 @@ export function TaskBoard() {
                         </p>
                       )}
 
-                      <p className="text-xs text-mc-text-secondary/70">
-                        {formatTime(task.createdAt)}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-mc-text-secondary/70">
+                          {formatTime(task.createdAt)}
+                        </p>
+                        {task.result && (
+                          <span className="text-xs text-mc-accent-green">✓ has output</span>
+                        )}
+                      </div>
 
                       {/* Quick actions on hover */}
                       {(task.status === "pending" || task.status === "assigned") && onlineAgents.length > 0 && (
@@ -203,6 +231,11 @@ export function TaskBoard() {
           </div>
         </div>
       </div>
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetail task={selectedTask} onClose={() => setSelectedTask(null)} />
+      )}
 
       {/* Create Task Modal */}
       {showModal && (
