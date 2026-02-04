@@ -251,7 +251,8 @@ export class OpenClawClient extends EventEmitter {
   }
 
   async sendMessage(sessionKey: string, message: string): Promise<void> {
-    await this.call("chat.send", { sessionKey, message });
+    const idempotencyKey = crypto.randomUUID();
+    await this.call("chat.send", { sessionKey, message, idempotencyKey });
   }
 
   async getStatus(): Promise<unknown> {
