@@ -1,10 +1,22 @@
 "use client";
 
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { AgentList } from "@/components/dashboard/agent-list";
 import { EventFeed } from "@/components/dashboard/event-feed";
 import { TaskBoard } from "@/components/dashboard/task-board";
 
 export default function Dashboard() {
+  const agents = useQuery(api.agents.list);
+  const tasks = useQuery(api.tasks.list);
+
+  const stats = {
+    agents: agents?.length ?? 0,
+    online: agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0,
+    tasks: tasks?.length ?? 0,
+    running: tasks?.filter((t) => t.status === "running").length ?? 0,
+    completed: tasks?.filter((t) => t.status === "completed").length ?? 0,
+  };
   return (
     <div className="h-screen flex flex-col bg-mc-bg overflow-hidden">
       {/* Header - minimal */}
@@ -14,6 +26,11 @@ export default function Dashboard() {
             <span className="text-xl">🐂</span>
             <span className="font-semibold tracking-tight">bullpen</span>
             <span className="text-mc-text-secondary text-sm">/ orchestration</span>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-mc-text-secondary">
+            <span title="Active agents">{stats.online}/{stats.agents} agents</span>
+            <span title="Running tasks">⚡ {stats.running} running</span>
+            <span title="Completed tasks">✓ {stats.completed} done</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm text-mc-text-secondary">
             <span className="w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
