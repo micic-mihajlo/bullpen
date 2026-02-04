@@ -5,6 +5,18 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { Plus, X, Link2 } from "lucide-react";
+import { AgentDetail } from "./agent-detail";
+import { Id } from "../../../convex/_generated/dataModel";
+
+type Agent = {
+  _id: Id<"agents">;
+  name: string;
+  avatar?: string;
+  status: string;
+  soul?: string;
+  model?: string;
+  sessionKey?: string;
+};
 
 type FilterTab = "all" | "online" | "offline";
 
@@ -32,6 +44,7 @@ export function AgentList() {
   const [newAvatar, setNewAvatar] = useState("🤖");
   const [newModel, setNewModel] = useState("cerebras/zai-glm-4.7");
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   const filtered = agents?.filter((a) => {
     if (filter === "all") return true;
@@ -106,6 +119,7 @@ export function AgentList() {
               return (
                 <div
                   key={agent._id}
+                  onClick={() => setSelectedAgent(agent as Agent)}
                   className="flex items-center gap-2 p-2 rounded hover:bg-mc-bg-tertiary transition-colors cursor-pointer"
                 >
                   <span className="text-xl">{agent.avatar || "🤖"}</span>
@@ -206,6 +220,11 @@ export function AgentList() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Agent Detail Modal */}
+      {selectedAgent && (
+        <AgentDetail agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
       )}
     </>
   );
