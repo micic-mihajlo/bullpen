@@ -1,27 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  /* Mission Control inspired palette */
-  --mc-bg: #0d1117;
-  --mc-bg-secondary: #161b22;
-  --mc-bg-tertiary: #21262d;
-  --mc-border: #30363d;
-  --mc-text: #c9d1d9;
-  --mc-text-secondary: #8b949e;
-  --mc-accent: #58a6ff;
-  --mc-accent-green: #3fb950;
-  --mc-accent-yellow: #d29922;
-  --mc-accent-red: #f85149;
-  --mc-accent-purple: #a371f7;
-  --mc-accent-pink: #db61a2;
-  --mc-accent-cyan: #39d353;
+  --mc-bg: #0a0a0a;
+  --mc-bg-secondary: #111111;
+  --mc-bg-tertiary: #1a1a1a;
+  --mc-border: #262626;
+  --mc-text: #e5e5e5;
+  --mc-text-secondary: #737373;
+  --mc-accent: #3b82f6;
+  --mc-accent-green: #22c55e;
+  --mc-accent-yellow: #eab308;
+  --mc-accent-red: #ef4444;
+  --mc-accent-purple: #a855f7;
+  --mc-accent-pink: #ec4899;
+  --mc-accent-cyan: #06b6d4;
 }
 
 @theme inline {
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-mono);
   
-  /* Expose colors to Tailwind */
   --color-mc-bg: var(--mc-bg);
   --color-mc-bg-secondary: var(--mc-bg-secondary);
   --color-mc-bg-tertiary: var(--mc-bg-tertiary);
@@ -43,25 +41,21 @@
 }
 
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--mc-bg-secondary);
+  background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
   background: var(--mc-border);
-  border-radius: 3px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: var(--mc-text-secondary);
+  border-radius: 2px;
 }
 
 html, body {
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13px;
 }
 
 body {
@@ -70,43 +64,28 @@ body {
 }
 
 ::selection {
-  background: rgba(88, 166, 255, 0.3);
-  color: var(--mc-text);
+  background: rgba(59, 130, 246, 0.3);
 }
 
-:focus-visible {
-  outline: 2px solid var(--mc-accent);
-  outline-offset: 2px;
-}
-
-/* Status badges */
-.status-standby {
-  background: var(--mc-bg-tertiary);
-  color: var(--mc-text-secondary);
-  border: 1px solid var(--mc-border);
-}
-
+/* Status */
 .status-online {
-  background: rgba(63, 185, 80, 0.2);
+  background: rgba(34, 197, 94, 0.15);
   color: var(--mc-accent-green);
-  border: 1px solid rgba(63, 185, 80, 0.5);
 }
 
-.status-working, .status-busy {
-  background: rgba(210, 153, 34, 0.2);
+.status-busy {
+  background: rgba(234, 179, 8, 0.15);
   color: var(--mc-accent-yellow);
-  border: 1px solid rgba(210, 153, 34, 0.5);
 }
 
 .status-offline {
-  background: rgba(248, 81, 73, 0.2);
-  color: var(--mc-accent-red);
-  border: 1px solid rgba(248, 81, 73, 0.5);
+  background: var(--mc-bg-tertiary);
+  color: var(--mc-text-secondary);
 }
 
-/* Task column borders */
+/* Columns */
 .column-pending {
-  border-top: 2px solid var(--mc-accent-pink);
+  border-top: 2px solid var(--mc-text-secondary);
 }
 
 .column-running {
@@ -117,21 +96,10 @@ body {
   border-top: 2px solid var(--mc-accent-green);
 }
 
-/* Animations */
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
+/* Animations - subtle only */
 @keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fade-in {
@@ -139,19 +107,10 @@ body {
   to { opacity: 1; }
 }
 
-.animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
-}
-
 .animate-slide-in {
-  animation: slide-in 0.2s ease-out;
+  animation: slide-in 0.15s ease-out;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
-/* Glow effect for online status */
-.online-glow {
-  box-shadow: 0 0 10px var(--mc-accent-green), 0 0 20px rgba(63, 185, 80, 0.3);
+  animation: fade-in 0.2s ease-out;
 }

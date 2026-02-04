@@ -3,31 +3,24 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Plus, X, Link2 } from "lucide-react";
+import { Plus, X, Link2 } from "lucide-react";
 
 type FilterTab = "all" | "online" | "offline";
 
-const AVATAR_OPTIONS = ["🤖", "🦾", "🧠", "👾", "🎯", "⚡", "🔮", "🦊", "🐙", "🌟"];
 const ROLE_OPTIONS = [
-  "Squad Lead",
-  "Product Analyst", 
-  "Customer Researcher",
-  "SEO Analyst",
-  "Content Writer",
-  "Social Media Manager",
-  "Designer",
-  "Email Marketing",
-  "Developer",
-  "Documentation",
+  "Squad Lead", "Product Analyst", "Customer Researcher", "SEO Analyst",
+  "Content Writer", "Social Media Manager", "Designer", "Email Marketing",
+  "Developer", "Documentation",
 ];
 
 const MODEL_OPTIONS = [
-  { value: "cerebras/zai-glm-4.7", label: "Cerebras (fast/cheap)" },
-  { value: "anthropic/claude-opus-4-5", label: "Claude Opus (powerful)" },
-  { value: "anthropic/claude-sonnet-4-20250514", label: "Claude Sonnet (balanced)" },
+  { value: "cerebras/zai-glm-4.7", label: "Cerebras" },
+  { value: "anthropic/claude-opus-4-5", label: "Opus" },
+  { value: "anthropic/claude-sonnet-4-20250514", label: "Sonnet" },
 ];
+
+const AVATARS = ["🤖", "🦾", "🧠", "👾", "🎯", "⚡", "🔮", "🦊", "🐙", "🌟"];
 
 export function AgentList() {
   const agents = useQuery(api.agents.list);
@@ -40,20 +33,19 @@ export function AgentList() {
   const [newModel, setNewModel] = useState("cerebras/zai-glm-4.7");
   const [isCreating, setIsCreating] = useState(false);
 
-  const filteredAgents = agents?.filter((agent) => {
+  const filtered = agents?.filter((a) => {
     if (filter === "all") return true;
-    if (filter === "online") return agent.status === "online" || agent.status === "busy";
-    return agent.status === "offline";
+    if (filter === "online") return a.status === "online" || a.status === "busy";
+    return a.status === "offline";
   });
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-
     setIsCreating(true);
     try {
-      await createAgent({ 
-        name: newName.trim(), 
+      await createAgent({
+        name: newName.trim(),
         avatar: newAvatar,
         soul: newRole ? `Role: ${newRole}` : undefined,
         model: newModel,
@@ -68,47 +60,32 @@ export function AgentList() {
     }
   };
 
-  const onlineCount = agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0;
-
-  // Extract role from soul string
-  const getRole = (soul?: string) => {
-    if (!soul) return null;
-    const match = soul.match(/Role:\s*(.+)/);
-    return match ? match[1] : null;
-  };
+  const getRole = (soul?: string) => soul?.match(/Role:\s*(.+)/)?.[1];
+  const online = agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0;
 
   return (
     <>
-      <aside className="h-full bg-mc-bg-secondary border border-mc-border rounded-xl flex flex-col">
+      <div className="h-full flex flex-col bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="p-3 border-b border-mc-border">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <ChevronRight className="w-4 h-4 text-mc-text-secondary" />
-              <span className="text-sm font-medium uppercase tracking-wider">Agents</span>
-              <span className="bg-mc-bg-tertiary text-mc-text-secondary text-xs px-2 py-0.5 rounded">
-                {agents?.length ?? 0}
-              </span>
-            </div>
-            {onlineCount > 0 && (
-              <span className="flex items-center gap-1.5 text-xs text-mc-accent-green">
-                <StatusDot status="online" />
-                {onlineCount} online
-              </span>
+        <div className="p-2.5 border-b border-mc-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
+              Agents ({agents?.length ?? 0})
+            </span>
+            {online > 0 && (
+              <span className="text-xs text-mc-accent-green">{online} online</span>
             )}
           </div>
-
-          {/* Filter Tabs */}
-          <div className="flex gap-1">
+          <div className="flex gap-0.5">
             {(["all", "online", "offline"] as FilterTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
                 className={cn(
-                  "px-3 py-1 text-xs rounded uppercase transition-colors",
+                  "px-2 py-1 text-xs rounded transition-colors",
                   filter === tab
-                    ? "bg-mc-accent text-mc-bg font-medium"
-                    : "text-mc-text-secondary hover:bg-mc-bg-tertiary"
+                    ? "bg-mc-bg-tertiary text-mc-text"
+                    : "text-mc-text-secondary hover:text-mc-text"
                 )}
               >
                 {tab}
@@ -117,201 +94,113 @@ export function AgentList() {
           </div>
         </div>
 
-        {/* Agent List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
           {!agents ? (
-            <div className="space-y-2 p-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 bg-mc-bg-tertiary/50 rounded-lg animate-pulse" />
-              ))}
-            </div>
-          ) : filteredAgents?.length === 0 ? (
-            <div className="text-center py-8 text-mc-text-secondary text-sm">
-              No agents found
-            </div>
+            <div className="p-2 text-xs text-mc-text-secondary">Loading...</div>
+          ) : filtered?.length === 0 ? (
+            <div className="p-4 text-xs text-mc-text-secondary text-center">No agents</div>
           ) : (
-            filteredAgents?.map((agent) => {
+            filtered?.map((agent) => {
               const role = getRole(agent.soul);
               return (
                 <div
                   key={agent._id}
-                  className={cn(
-                    "w-full rounded-lg hover:bg-mc-bg-tertiary transition-colors cursor-pointer",
-                    "animate-slide-in"
-                  )}
+                  className="flex items-center gap-2 p-2 rounded hover:bg-mc-bg-tertiary transition-colors cursor-pointer"
                 >
-                  <div className="flex items-center gap-3 p-2">
-                    {/* Avatar */}
-                    <div className="text-2xl relative flex-shrink-0">
-                      {agent.avatar || "🤖"}
-                      {agent.status === "online" && (
-                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-mc-accent-green rounded-full border-2 border-mc-bg-secondary" />
-                      )}
+                  <span className="text-base">{agent.avatar || "🤖"}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-medium truncate">{agent.name}</span>
+                      {agent.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
                     </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{agent.name}</span>
-                        {agent.sessionKey && (
-                          <Link2 className="w-3 h-3 text-mc-accent" title="Linked to OpenClaw" />
-                        )}
-                      </div>
-                      <div className="text-xs text-mc-text-secondary truncate flex items-center gap-1">
-                        <span>{role || (agent.currentTaskId ? "Working on task" : "Idle")}</span>
-                        {agent.model && (
-                          <span className="text-mc-text-secondary/50">
-                            · {agent.model.includes("cerebras") ? "⚡" : "🧠"}
-                          </span>
-                        )}
-                      </div>
+                    <div className="text-xs text-mc-text-secondary truncate">
+                      {role || "—"}
+                      {agent.model?.includes("cerebras") && " · ⚡"}
                     </div>
-
-                    {/* Status */}
-                    <StatusBadge status={agent.status} />
                   </div>
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                    agent.status === "online" ? "bg-mc-accent-green" :
+                    agent.status === "busy" ? "bg-mc-accent-yellow" : "bg-mc-border"
+                  )} />
                 </div>
               );
             })
           )}
         </div>
 
-        {/* Add Agent Button */}
-        <div className="p-3 border-t border-mc-border">
+        {/* Add button */}
+        <div className="p-2 border-t border-mc-border">
           <button
             onClick={() => setShowModal(true)}
-            className={cn(
-              "w-full flex items-center justify-center gap-2 px-3 py-2",
-              "bg-mc-bg-tertiary hover:bg-mc-border rounded-lg",
-              "text-sm text-mc-text-secondary hover:text-mc-text transition-colors"
-            )}
+            className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text hover:bg-mc-bg-tertiary rounded transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Add Agent
+            <Plus className="w-3.5 h-3.5" />
+            Add agent
           </button>
         </div>
-      </aside>
+      </div>
 
-      {/* Create Agent Modal */}
+      {/* Modal */}
       {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="bg-mc-bg-secondary border border-mc-border rounded-xl w-full max-w-md animate-fade-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-mc-border flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Add New Agent</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
-              >
-                <X className="w-5 h-5 text-mc-text-secondary" />
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="p-3 border-b border-mc-border flex items-center justify-between">
+              <span className="text-sm font-medium">New Agent</span>
+              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-mc-bg-tertiary rounded">
+                <X className="w-4 h-4 text-mc-text-secondary" />
               </button>
             </div>
-
-            <form onSubmit={handleCreate} className="p-4 space-y-4">
-              {/* Avatar selector */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
-                  Avatar
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {AVATAR_OPTIONS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setNewAvatar(emoji)}
-                      className={cn(
-                        "w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all",
-                        newAvatar === emoji
-                          ? "bg-mc-accent/20 border-2 border-mc-accent scale-110"
-                          : "bg-mc-bg border border-mc-border hover:border-mc-accent/50"
-                      )}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+            <form onSubmit={handleCreate} className="p-3 space-y-3">
+              <div className="flex gap-1.5 flex-wrap">
+                {AVATARS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setNewAvatar(e)}
+                    className={cn(
+                      "w-8 h-8 rounded text-base flex items-center justify-center",
+                      newAvatar === e ? "bg-mc-accent/20 ring-1 ring-mc-accent" : "bg-mc-bg hover:bg-mc-bg-tertiary"
+                    )}
+                  >
+                    {e}
+                  </button>
+                ))}
               </div>
-
-              {/* Name input */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g., Jarvis, Shuri, Loki"
-                  className={cn(
-                    "w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2",
-                    "focus:outline-none focus:border-mc-accent",
-                    "placeholder:text-mc-text-secondary/50"
-                  )}
-                  autoFocus
-                />
-              </div>
-
-              {/* Role selector */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
-                  Role
-                </label>
-                <select
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value)}
-                  className={cn(
-                    "w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2",
-                    "focus:outline-none focus:border-mc-accent"
-                  )}
-                >
-                  <option value="">Select a role...</option>
-                  {ROLE_OPTIONS.map((role) => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Model selector */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
-                  Model
-                </label>
-                <select
-                  value={newModel}
-                  onChange={(e) => setNewModel(e.target.value)}
-                  className={cn(
-                    "w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2",
-                    "focus:outline-none focus:border-mc-accent"
-                  )}
-                >
-                  {MODEL_OPTIONS.map((m) => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-mc-text-secondary hover:text-mc-text transition-colors"
-                >
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Name"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+                autoFocus
+              />
+              <select
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+              >
+                <option value="">Role...</option>
+                {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <select
+                value={newModel}
+                onChange={(e) => setNewModel(e.target.value)}
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+              >
+                {MODEL_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => setShowModal(false)} className="px-3 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text">
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!newName.trim() || isCreating}
-                  className={cn(
-                    "px-6 py-2 bg-mc-accent text-mc-bg rounded-lg font-medium",
-                    "hover:bg-mc-accent/90 disabled:opacity-50 transition-colors"
-                  )}
+                  className="px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 disabled:opacity-50"
                 >
-                  {isCreating ? "Creating..." : "Create Agent"}
+                  {isCreating ? "..." : "Create"}
                 </button>
               </div>
             </form>

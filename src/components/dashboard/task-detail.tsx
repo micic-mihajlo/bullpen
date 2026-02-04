@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { X, Clock, User, CheckCircle, AlertCircle, Play, Inbox } from "lucide-react";
+import { X } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 
 interface Agent {
@@ -30,143 +30,115 @@ interface TaskDetailProps {
   onClose: () => void;
 }
 
-const statusConfig = {
-  pending: { icon: Inbox, color: "text-mc-text-secondary", bg: "bg-mc-bg-tertiary", label: "Pending" },
-  assigned: { icon: User, color: "text-mc-accent-yellow", bg: "bg-mc-accent-yellow/10", label: "Assigned" },
-  running: { icon: Play, color: "text-mc-accent", bg: "bg-mc-accent/10", label: "Running" },
-  completed: { icon: CheckCircle, color: "text-mc-accent-green", bg: "bg-mc-accent-green/10", label: "Completed" },
-  failed: { icon: AlertCircle, color: "text-mc-accent-red", bg: "bg-mc-accent-red/10", label: "Failed" },
+const statusLabel: Record<string, { label: string; color: string }> = {
+  pending: { label: "Pending", color: "text-mc-text-secondary" },
+  assigned: { label: "Assigned", color: "text-mc-accent-yellow" },
+  running: { label: "Running", color: "text-mc-accent" },
+  completed: { label: "Completed", color: "text-mc-accent-green" },
+  failed: { label: "Failed", color: "text-mc-accent-red" },
 };
+
+function formatTime(ts: number) {
+  return new Date(ts).toLocaleString(undefined, {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+  });
+}
+
+function formatDuration(start: number, end: number) {
+  const ms = end - start;
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${(ms / 60000).toFixed(1)}m`;
+}
 
 export function TaskDetail({ task, onClose }: TaskDetailProps) {
   if (!task) return null;
 
-  const config = statusConfig[task.status];
-  const StatusIcon = config.icon;
-
-  const formatTime = (ts: number) => {
-    return new Date(ts).toLocaleString();
-  };
-
-  const formatDuration = (start: number, end: number) => {
-    const ms = end - start;
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-    return `${(ms / 60000).toFixed(1)}m`;
-  };
+  const status = statusLabel[task.status];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div 
-        className="bg-mc-bg-secondary border border-mc-border rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-fade-in"
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-lg max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 border-b border-mc-border flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
+        <div className="p-3 border-b border-mc-border flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className={cn("p-1 rounded", config.bg)}>
-                <StatusIcon className={cn("w-4 h-4", config.color)} />
-              </span>
-              <span className={cn("text-xs font-medium uppercase", config.color)}>
-                {config.label}
-              </span>
-              {task.priority && (
-                <span className="text-xs text-mc-text-secondary">
-                  Priority {task.priority}/5
-                </span>
-              )}
+              <span className={cn("text-xs font-medium uppercase", status.color)}>{status.label}</span>
+              {task.priority && <span className="text-xs text-mc-text-secondary">P{task.priority}</span>}
             </div>
-            <h2 className="text-lg font-semibold">{task.title}</h2>
+            <h2 className="text-sm font-medium leading-snug">{task.title}</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors">
-            <X className="w-5 h-5 text-mc-text-secondary" />
+          <button onClick={onClose} className="p-1 hover:bg-mc-bg-tertiary rounded flex-shrink-0">
+            <X className="w-4 h-4 text-mc-text-secondary" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Description */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-4">
           {task.description && (
             <div>
-              <h3 className="text-xs font-medium text-mc-text-secondary uppercase tracking-wider mb-2">
-                Description
-              </h3>
-              <p className="text-sm text-mc-text">{task.description}</p>
+              <div className="text-xs text-mc-text-secondary uppercase mb-1">Description</div>
+              <p className="text-sm">{task.description}</p>
             </div>
           )}
 
-          {/* Agent */}
           {task.agent && (
             <div>
-              <h3 className="text-xs font-medium text-mc-text-secondary uppercase tracking-wider mb-2">
-                Assigned To
-              </h3>
-              <div className="flex items-center gap-2 p-2 bg-mc-bg rounded-lg border border-mc-border inline-flex">
-                <span className="text-xl">{task.agent.avatar || "🤖"}</span>
-                <span className="font-medium text-sm">{task.agent.name}</span>
+              <div className="text-xs text-mc-text-secondary uppercase mb-1">Assigned to</div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-mc-bg rounded text-sm">
+                <span>{task.agent.avatar || "🤖"}</span>
+                <span>{task.agent.name}</span>
               </div>
             </div>
           )}
 
-          {/* Timeline */}
           <div>
-            <h3 className="text-xs font-medium text-mc-text-secondary uppercase tracking-wider mb-2">
-              Timeline
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-mc-text-secondary" />
-                <span className="text-mc-text-secondary">Created:</span>
+            <div className="text-xs text-mc-text-secondary uppercase mb-1">Timeline</div>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-mc-text-secondary">Created</span>
                 <span>{formatTime(task.createdAt)}</span>
               </div>
               {task.startedAt && (
-                <div className="flex items-center gap-2">
-                  <Play className="w-4 h-4 text-mc-accent-yellow" />
-                  <span className="text-mc-text-secondary">Started:</span>
+                <div className="flex justify-between">
+                  <span className="text-mc-text-secondary">Started</span>
                   <span>{formatTime(task.startedAt)}</span>
                 </div>
               )}
               {task.completedAt && (
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-mc-accent-green" />
-                  <span className="text-mc-text-secondary">Completed:</span>
-                  <span>{formatTime(task.completedAt)}</span>
-                  {task.startedAt && (
-                    <span className="text-mc-accent-green text-xs">
-                      ({formatDuration(task.startedAt, task.completedAt)})
-                    </span>
-                  )}
+                <div className="flex justify-between">
+                  <span className="text-mc-text-secondary">Completed</span>
+                  <span>
+                    {formatTime(task.completedAt)}
+                    {task.startedAt && (
+                      <span className="text-mc-accent-green ml-2">
+                        ({formatDuration(task.startedAt, task.completedAt)})
+                      </span>
+                    )}
+                  </span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Result */}
           {task.result && (
             <div>
-              <h3 className="text-xs font-medium text-mc-text-secondary uppercase tracking-wider mb-2">
-                Output
-              </h3>
-              <div className="p-4 bg-mc-bg rounded-lg border border-mc-border">
-                <pre className="text-sm whitespace-pre-wrap break-words font-mono text-mc-text">
-                  {task.result}
-                </pre>
-              </div>
+              <div className="text-xs text-mc-text-secondary uppercase mb-1">Output</div>
+              <pre className="p-3 bg-mc-bg rounded text-xs whitespace-pre-wrap break-words overflow-x-auto max-h-64 overflow-y-auto">
+                {task.result}
+              </pre>
             </div>
           )}
 
-          {/* Error */}
           {task.error && (
             <div>
-              <h3 className="text-xs font-medium text-mc-accent-red uppercase tracking-wider mb-2">
-                Error
-              </h3>
-              <div className="p-4 bg-mc-accent-red/10 rounded-lg border border-mc-accent-red/30">
-                <pre className="text-sm whitespace-pre-wrap break-words font-mono text-mc-accent-red">
-                  {task.error}
-                </pre>
-              </div>
+              <div className="text-xs text-mc-accent-red uppercase mb-1">Error</div>
+              <pre className="p-3 bg-mc-accent-red/10 border border-mc-accent-red/30 rounded text-xs text-mc-accent-red whitespace-pre-wrap break-words">
+                {task.error}
+              </pre>
             </div>
           )}
         </div>

@@ -3,56 +3,39 @@
 import { AgentList } from "@/components/dashboard/agent-list";
 import { EventFeed } from "@/components/dashboard/event-feed";
 import { TaskBoard } from "@/components/dashboard/task-board";
-import { Settings } from "lucide-react";
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen flex flex-col bg-mc-bg">
-      {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary">
-        <div className="max-w-[1920px] mx-auto px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🐂</span>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight">Bullpen</h1>
-                <p className="text-xs text-mc-text-secondary -mt-0.5">
-                  Agent Orchestration
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-mc-bg-tertiary border border-mc-border">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mc-accent-green opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-mc-accent-green" />
-                </span>
-                <span className="text-xs text-mc-text-secondary font-medium">
-                  Connected
-                </span>
-              </div>
-              <button className="p-2 hover:bg-mc-bg-tertiary rounded-lg transition-colors">
-                <Settings className="w-5 h-5 text-mc-text-secondary" />
-              </button>
-            </div>
+    <div className="h-screen flex flex-col bg-mc-bg overflow-hidden">
+      {/* Header - minimal */}
+      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/50">
+        <div className="px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🐂</span>
+            <span className="font-semibold text-sm tracking-tight">bullpen</span>
+            <span className="text-mc-text-secondary text-xs">/ orchestration</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-mc-text-secondary">
+            <span className="w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
+            <span>connected</span>
           </div>
         </div>
       </header>
 
-      {/* Main content - full height layout */}
-      <main className="flex-1 flex overflow-hidden">
-        {/* Left sidebar - Agents */}
-        <div className="w-72 flex-shrink-0 p-4 overflow-hidden">
+      {/* Main content */}
+      <main className="flex-1 flex min-h-0">
+        {/* Left - Agents */}
+        <div className="w-64 flex-shrink-0 p-3 min-h-0">
           <AgentList />
         </div>
 
-        {/* Center - Task Board */}
-        <div className="flex-1 p-4 pl-0 overflow-hidden">
+        {/* Center - Tasks */}
+        <div className="flex-1 p-3 pl-0 min-h-0">
           <TaskBoard />
         </div>
 
-        {/* Right sidebar - Event Feed */}
-        <div className="w-80 flex-shrink-0 p-4 pl-0 overflow-hidden">
+        {/* Right - Feed */}
+        <div className="w-72 flex-shrink-0 p-3 pl-0 min-h-0">
           <EventFeed />
         </div>
       </main>
