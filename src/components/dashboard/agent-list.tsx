@@ -31,7 +31,7 @@ export function AgentList() {
   const fetchSessions = useCallback(async () => {
     try {
       setSessionsLoading(true);
-      const res = await fetch("/bullpen/api/openclaw/sessions");
+      const res = await fetch("/api/openclaw/sessions");
       const data = await res.json();
       setSessions(data.sessions || []);
       setLastRefresh(new Date());
