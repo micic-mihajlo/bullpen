@@ -1,100 +1,72 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
-import { ChevronRight, RefreshCw, Zap } from "lucide-react";
-
-interface OpenClawSession {
-  key: string;
-  kind: string;
-  displayName?: string;
-  channel?: string;
-  groupChannel?: string;
-  chatType?: string;
-  updatedAt: number;
-  model?: string;
-  modelProvider?: string;
-  totalTokens?: number;
-  inputTokens?: number;
-  outputTokens?: number;
-}
+import { ChevronRight, Plus, X, Link2 } from "lucide-react";
 
 type FilterTab = "all" | "online" | "offline";
 
-interface AgentListProps {
-  selectedKey?: string | null;
-  onSelect?: (session: OpenClawSession) => void;
-}
+const AVATAR_OPTIONS = ["🤖", "🦾", "🧠", "👾", "🎯", "⚡", "🔮", "🦊", "🐙", "🌟"];
+const ROLE_OPTIONS = [
+  "Squad Lead",
+  "Product Analyst", 
+  "Customer Researcher",
+  "SEO Analyst",
+  "Content Writer",
+  "Social Media Manager",
+  "Designer",
+  "Email Marketing",
+  "Developer",
+  "Documentation",
+];
 
-export function AgentList({ selectedKey, onSelect }: AgentListProps) {
+export function AgentList() {
+  const agents = useQuery(api.agents.list);
+  const createAgent = useMutation(api.agents.create);
   const [filter, setFilter] = useState<FilterTab>("all");
-  const [sessions, setSessions] = useState<OpenClawSession[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newRole, setNewRole] = useState("");
+  const [newAvatar, setNewAvatar] = useState("🤖");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const fetchSessions = useCallback(async () => {
-    try {
-      setSessionsLoading(true);
-      const res = await fetch("/api/openclaw/sessions");
-      const data = await res.json();
-      setSessions(data.sessions || []);
-      setLastRefresh(new Date());
-    } catch (err) {
-      console.error("Failed to fetch sessions:", err);
-    } finally {
-      setSessionsLoading(false);
-    }
-  }, []);
-
-  // Fetch sessions on mount and every 30 seconds
-  useEffect(() => {
-    fetchSessions();
-    const interval = setInterval(fetchSessions, 30000);
-    return () => clearInterval(interval);
-  }, [fetchSessions]);
-
-  // Filter sessions based on filter state
-  const filteredSessions = sessions.filter((session) => {
+  const filteredAgents = agents?.filter((agent) => {
     if (filter === "all") return true;
-    // Consider sessions active if updated in last 5 minutes
-    const isActive = Date.now() - session.updatedAt < 5 * 60 * 1000;
-    if (filter === "online") return isActive;
-    return !isActive;
+    if (filter === "online") return agent.status === "online" || agent.status === "busy";
+    return agent.status === "offline";
   });
 
-  // Get session display info
-  const getSessionInfo = (session: OpenClawSession) => {
-    const keyParts = session.key.split(":");
-    const isDiscord = session.channel === "discord";
-    const isCron = keyParts.includes("cron");
-    const isHeartbeat = session.key.includes("main:main");
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
 
-    let icon = "🤖";
-    let name = session.displayName || session.key;
-    
-    if (isDiscord && session.groupChannel) {
-      icon = "💬";
-      name = session.groupChannel;
-    } else if (isCron) {
-      icon = "⏰";
-      name = "Cron Job";
-    } else if (isHeartbeat) {
-      icon = "💓";
-      name = "Heartbeat";
+    setIsCreating(true);
+    try {
+      await createAgent({ 
+        name: newName.trim(), 
+        avatar: newAvatar,
+        soul: newRole ? `Role: ${newRole}` : undefined,
+      });
+      setNewName("");
+      setNewRole("");
+      setNewAvatar("🤖");
+      setShowModal(false);
+    } finally {
+      setIsCreating(false);
     }
-
-    return { icon, name };
   };
 
-  const formatTokens = (tokens?: number) => {
-    if (!tokens) return null;
-    if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
-    if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(0)}K`;
-    return tokens.toString();
-  };
+  const onlineCount = agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0;
 
-  const activeSessionCount = sessions.filter((s) => Date.now() - s.updatedAt < 5 * 60 * 1000).length;
+  // Extract role from soul string
+  const getRole = (soul?: string) => {
+    if (!soul) return null;
+    const match = soul.match(/Role:\s*(.+)/);
+    return match ? match[1] : null;
+  };
 
   return (
     <>
@@ -104,27 +76,17 @@ export function AgentList({ selectedKey, onSelect }: AgentListProps) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <ChevronRight className="w-4 h-4 text-mc-text-secondary" />
-              <span className="text-sm font-medium uppercase tracking-wider">Sessions</span>
+              <span className="text-sm font-medium uppercase tracking-wider">Agents</span>
               <span className="bg-mc-bg-tertiary text-mc-text-secondary text-xs px-2 py-0.5 rounded">
-                {sessions.length}
+                {agents?.length ?? 0}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              {activeSessionCount > 0 && (
-                <span className="flex items-center gap-1.5 text-xs text-mc-accent-green">
-                  <StatusDot status="online" />
-                  {activeSessionCount} active
-                </span>
-              )}
-              <button
-                onClick={fetchSessions}
-                disabled={sessionsLoading}
-                className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
-                title="Refresh sessions"
-              >
-                <RefreshCw className={cn("w-3.5 h-3.5 text-mc-text-secondary", sessionsLoading && "animate-spin")} />
-              </button>
-            </div>
+            {onlineCount > 0 && (
+              <span className="flex items-center gap-1.5 text-xs text-mc-accent-green">
+                <StatusDot status="online" />
+                {onlineCount} online
+              </span>
+            )}
           </div>
 
           {/* Filter Tabs */}
@@ -146,39 +108,34 @@ export function AgentList({ selectedKey, onSelect }: AgentListProps) {
           </div>
         </div>
 
-        {/* Session List */}
+        {/* Agent List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {sessionsLoading && sessions.length === 0 ? (
+          {!agents ? (
             <div className="space-y-2 p-2">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-16 bg-mc-bg-tertiary/50 rounded-lg animate-pulse" />
               ))}
             </div>
-          ) : filteredSessions.length === 0 ? (
+          ) : filteredAgents?.length === 0 ? (
             <div className="text-center py-8 text-mc-text-secondary text-sm">
-              No sessions found
+              No agents found
             </div>
           ) : (
-            filteredSessions.map((session) => {
-              const { icon, name } = getSessionInfo(session);
-              const isActive = Date.now() - session.updatedAt < 5 * 60 * 1000;
-              const tokens = formatTokens(session.totalTokens);
-
+            filteredAgents?.map((agent) => {
+              const role = getRole(agent.soul);
               return (
                 <div
-                  key={session.key}
-                  onClick={() => onSelect?.(session)}
+                  key={agent._id}
                   className={cn(
                     "w-full rounded-lg hover:bg-mc-bg-tertiary transition-colors cursor-pointer",
-                    "animate-slide-in",
-                    selectedKey === session.key && "bg-mc-bg-tertiary ring-1 ring-mc-accent"
+                    "animate-slide-in"
                   )}
                 >
                   <div className="flex items-center gap-3 p-2">
-                    {/* Icon */}
+                    {/* Avatar */}
                     <div className="text-2xl relative flex-shrink-0">
-                      {icon}
-                      {isActive && (
+                      {agent.avatar || "🤖"}
+                      {agent.status === "online" && (
                         <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-mc-accent-green rounded-full border-2 border-mc-bg-secondary" />
                       )}
                     </div>
@@ -186,29 +143,18 @@ export function AgentList({ selectedKey, onSelect }: AgentListProps) {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{name}</span>
-                        {session.channel && (
-                          <span className="text-xs px-1.5 py-0.5 bg-mc-bg-tertiary rounded text-mc-text-secondary">
-                            {session.channel}
-                          </span>
+                        <span className="font-medium text-sm truncate">{agent.name}</span>
+                        {agent.sessionKey && (
+                          <Link2 className="w-3 h-3 text-mc-accent" title="Linked to OpenClaw" />
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-mc-text-secondary">
-                        <span className="truncate">{session.model || "unknown"}</span>
-                        {tokens && (
-                          <>
-                            <span>·</span>
-                            <span className="flex items-center gap-0.5">
-                              <Zap className="w-3 h-3" />
-                              {tokens}
-                            </span>
-                          </>
-                        )}
+                      <div className="text-xs text-mc-text-secondary truncate">
+                        {role || (agent.currentTaskId ? "Working on task" : "Idle")}
                       </div>
                     </div>
 
                     {/* Status */}
-                    <StatusBadge status={isActive ? "online" : "offline"} />
+                    <StatusBadge status={agent.status} />
                   </div>
                 </div>
               );
@@ -216,18 +162,129 @@ export function AgentList({ selectedKey, onSelect }: AgentListProps) {
           )}
         </div>
 
-        {/* Footer with last refresh time */}
+        {/* Add Agent Button */}
         <div className="p-3 border-t border-mc-border">
-          <div className="text-xs text-mc-text-secondary text-center">
-            {lastRefresh ? (
-              <>Last updated: {lastRefresh.toLocaleTimeString()}</>
-            ) : (
-              <>Loading sessions...</>
+          <button
+            onClick={() => setShowModal(true)}
+            className={cn(
+              "w-full flex items-center justify-center gap-2 px-3 py-2",
+              "bg-mc-bg-tertiary hover:bg-mc-border rounded-lg",
+              "text-sm text-mc-text-secondary hover:text-mc-text transition-colors"
             )}
-          </div>
+          >
+            <Plus className="w-4 h-4" />
+            Add Agent
+          </button>
         </div>
       </aside>
 
+      {/* Create Agent Modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-mc-bg-secondary border border-mc-border rounded-xl w-full max-w-md animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-mc-border flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Add New Agent</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
+              >
+                <X className="w-5 h-5 text-mc-text-secondary" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="p-4 space-y-4">
+              {/* Avatar selector */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
+                  Avatar
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_OPTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setNewAvatar(emoji)}
+                      className={cn(
+                        "w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all",
+                        newAvatar === emoji
+                          ? "bg-mc-accent/20 border-2 border-mc-accent scale-110"
+                          : "bg-mc-bg border border-mc-border hover:border-mc-accent/50"
+                      )}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Name input */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g., Jarvis, Shuri, Loki"
+                  className={cn(
+                    "w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2",
+                    "focus:outline-none focus:border-mc-accent",
+                    "placeholder:text-mc-text-secondary/50"
+                  )}
+                  autoFocus
+                />
+              </div>
+
+              {/* Role selector */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
+                  Role
+                </label>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  className={cn(
+                    "w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2",
+                    "focus:outline-none focus:border-mc-accent"
+                  )}
+                >
+                  <option value="">Select a role...</option>
+                  {ROLE_OPTIONS.map((role) => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-mc-text-secondary hover:text-mc-text transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newName.trim() || isCreating}
+                  className={cn(
+                    "px-6 py-2 bg-mc-accent text-mc-bg rounded-lg font-medium",
+                    "hover:bg-mc-accent/90 disabled:opacity-50 transition-colors"
+                  )}
+                >
+                  {isCreating ? "Creating..." : "Create Agent"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

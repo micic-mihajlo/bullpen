@@ -1,29 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { AgentList } from "@/components/dashboard/agent-list";
 import { EventFeed } from "@/components/dashboard/event-feed";
-import { SessionDetail } from "@/components/dashboard/session-detail";
+import { TaskBoard } from "@/components/dashboard/task-board";
 import { Settings } from "lucide-react";
 
-interface OpenClawSession {
-  key: string;
-  kind: string;
-  displayName?: string;
-  channel?: string;
-  groupChannel?: string;
-  chatType?: string;
-  updatedAt: number;
-  model?: string;
-  modelProvider?: string;
-  totalTokens?: number;
-  inputTokens?: number;
-  outputTokens?: number;
-  contextTokens?: number;
-}
-
 export default function Dashboard() {
-  const [selectedSession, setSelectedSession] = useState<OpenClawSession | null>(null);
   return (
     <div className="min-h-screen flex flex-col bg-mc-bg">
       {/* Header */}
@@ -59,20 +41,14 @@ export default function Dashboard() {
 
       {/* Main content - full height layout */}
       <main className="flex-1 flex overflow-hidden">
-        {/* Left sidebar - Sessions */}
+        {/* Left sidebar - Agents */}
         <div className="w-72 flex-shrink-0 p-4 overflow-hidden">
-          <AgentList 
-            selectedKey={selectedSession?.key}
-            onSelect={setSelectedSession}
-          />
+          <AgentList />
         </div>
 
-        {/* Center - Session Detail */}
+        {/* Center - Task Board */}
         <div className="flex-1 p-4 pl-0 overflow-hidden">
-          <SessionDetail 
-            session={selectedSession}
-            onClose={() => setSelectedSession(null)}
-          />
+          <TaskBoard />
         </div>
 
         {/* Right sidebar - Event Feed */}
