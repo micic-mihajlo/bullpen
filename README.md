@@ -16,6 +16,47 @@ Bullpen gives you a visual command center for managing AI agents — assign task
 - **🎯 Lifecycle Hooks** — Automatic agent status sync via OpenClaw hooks
 - **🔔 Webhook API** — Programmatic task completion for automation pipelines
 
+## 🎬 How It Works
+
+Drop tasks into Bullpen, watch AI agents complete them in real-time.
+
+```
+You                    Bullpen                 Coordinator            Sub-Agent
+ │                        │                        │                      │
+ ├─ Create task ─────────▶│                        │                      │
+ │                        │                        │                      │
+ ├─ Assign to agent ─────▶│                        │                      │
+ │                        │                        │                      │
+ ├─ Click "Dispatch" ────▶│                        │                      │
+ │                        ├─ Send to coordinator ─▶│                      │
+ │                        │                        ├─ Spawn sub-agent ───▶│
+ │                        │                        │                      │
+ │                        │                        │                 ┌────┴────┐
+ │                        │                        │                 │  Work   │
+ │                        │                        │                 └────┬────┘
+ │                        │                        │                      │
+ │                        │◀─────────── Webhook: task complete ──────────┤
+ │                        │                        │                      │
+ │◀─ See result ──────────│                        │                      │
+ │   in real-time         │                        │                      │
+```
+
+### The Flow
+
+1. **Create a task** — Title, description, priority (1-5)
+2. **Assign to an agent** — Pick from your agent registry
+3. **Dispatch** — Bullpen sends the task to your coordinator agent
+4. **Work happens** — Coordinator spawns a sub-agent with the right model
+5. **Result delivered** — Sub-agent calls webhook, task marked complete
+6. **See it live** — Dashboard updates in real-time via Convex
+
+### Why This Matters
+
+- **Visual task tracking** — See what's running, what's done, what failed
+- **Agent specialization** — Route tasks to the right agent (researcher, coder, reviewer)
+- **Audit trail** — Every action logged in the event feed
+- **Webhook integration** — Plug into any automation pipeline
+
 ## 🏗️ Architecture
 
 ```
