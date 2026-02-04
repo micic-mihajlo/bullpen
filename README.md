@@ -1,84 +1,264 @@
 # 🐂 Bullpen
 
-Multi-agent orchestration dashboard for OpenClaw.
+**Multi-agent orchestration dashboard for [OpenClaw](https://github.com/openclaw/openclaw).**
 
-## Features
+Bullpen gives you a visual command center for managing AI agents — assign tasks, track progress, and watch your agent swarm work in real-time.
 
-- **Agent Management**: Create, configure, and monitor AI agents
-- **Task Board**: Kanban-style task management with assignment and dispatch
-- **Live Event Feed**: Real-time activity stream from all agents
-- **OpenClaw Integration**: Direct connection to OpenClaw gateway for session management
-- **Model Selection**: Choose between Cerebras (fast/cheap) and Opus (powerful)
-- **Webhook API**: Programmatic task completion for automation
+![Status](https://img.shields.io/badge/status-alpha-orange)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend**: Next.js 16, React, Tailwind CSS
-- **Backend**: Convex (real-time database)
-- **Integration**: OpenClaw Gateway (WebSocket RPC)
+- **🤖 Agent Registry** — Create and manage AI agents with custom personas, models, and capabilities
+- **📋 Task Board** — Kanban-style task management with priority, assignment, and status tracking
+- **📡 Live Event Feed** — Real-time activity stream from all agents via WebSocket
+- **🔗 OpenClaw Integration** — Direct gateway connection for session management and dispatch
+- **🎯 Lifecycle Hooks** — Automatic agent status sync via OpenClaw hooks
+- **🔔 Webhook API** — Programmatic task completion for automation pipelines
 
-## Setup
+## 🏗️ Architecture
 
-1. Clone and install:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Bullpen Dashboard                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │   Agents    │  │   Tasks     │  │      Event Feed         │  │
+│  │  Registry   │  │   Board     │  │   (real-time)           │  │
+│  └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘  │
+└─────────┼────────────────┼──────────────────────┼───────────────┘
+          │                │                      │
+          ▼                ▼                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                         Convex (Real-time DB)                    │
+│         agents • tasks • events • messages                       │
+└─────────────────────────────────────────────────────────────────┘
+          ▲                                      ▲
+          │ WebSocket RPC                        │ Webhooks
+          │                                      │
+┌─────────┴───────────────────────────┐  ┌──────┴──────────────────┐
+│         OpenClaw Gateway            │  │   bullpen-sync hook     │
+│  ┌─────────┐ ┌─────────┐ ┌───────┐  │  │  (lifecycle events)     │
+│  │ Discord │ │Telegram │ │ Cron  │  │  └─────────────────────────┘
+│  │ Session │ │ Session │ │ Jobs  │  │
+│  └─────────┘ └─────────┘ └───────┘  │
+└─────────────────────────────────────┘
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- OpenClaw gateway running
+- Convex account (free tier works)
+
+### Installation
+
 ```bash
+# Clone
 git clone https://github.com/micic-mihajlo/bullpen.git
 cd bullpen
-npm install
-```
 
-2. Configure environment:
-```bash
+# Install dependencies
+pnpm install  # or npm install
+
+# Configure environment
 cp .env.example .env.local
-# Edit .env.local with your credentials
 ```
 
-Required env vars:
-- `NEXT_PUBLIC_CONVEX_URL` - Convex deployment URL
-- `OPENCLAW_GATEWAY_URL` - OpenClaw gateway WebSocket URL
-- `OPENCLAW_GATEWAY_TOKEN` - Gateway auth token
-
-3. Run Convex:
+Edit `.env.local`:
 ```bash
+NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
+OPENCLAW_GATEWAY_URL=ws://localhost:18789
+OPENCLAW_GATEWAY_TOKEN=your-gateway-token
+BULLPEN_WEBHOOK_URL=http://localhost:3001  # for hook callbacks
+```
+
+### Run
+
+```bash
+# Terminal 1: Convex backend
 npx convex dev
+
+# Terminal 2: Next.js dashboard
+pnpm dev
 ```
 
-4. Start the dashboard:
+Open [http://localhost:3001](http://localhost:3001)
+
+## 🔌 OpenClaw Hook Setup
+
+Bullpen includes a lifecycle hook that syncs agent events automatically.
+
+### Install the hook
+
 ```bash
-npm run dev
+# Copy hook to OpenClaw managed hooks
+cp -r hooks/bullpen-sync ~/.openclaw/hooks/
+
+# Or create manually:
+mkdir -p ~/.openclaw/hooks/bullpen-sync
+# Add HOOK.md and handler.ts (see hooks/bullpen-sync/)
 ```
 
-## API Endpoints
+### Enable it
 
-### Tasks
-- `POST /api/tasks/[id]/dispatch` - Dispatch task to assigned agent
-- `POST /api/tasks/[id]/complete` - Mark task as complete with result
+```bash
+openclaw hooks enable bullpen-sync
+openclaw gateway restart  # or restart your gateway
+```
+
+Now Bullpen receives real-time events for:
+- `command:new` — session started
+- `command:reset` — session reset
+- `command:stop` — session stopped
+- `agent:bootstrap` — agent initialized
+- `gateway:startup` — gateway came online
+
+## 📡 API Reference
 
 ### Webhooks
-- `POST /api/webhooks/task-result` - Agent reports task completion
-  ```json
-  {
-    "taskId": "...",
-    "status": "completed" | "failed",
-    "result": "output text",
-    "error": "error message"
+
+#### `POST /api/webhooks/task-result`
+Agent reports task completion.
+
+```bash
+curl -X POST http://localhost:3001/api/webhooks/task-result \
+  -H "Content-Type: application/json" \
+  -d '{
+    "taskId": "jh79...",
+    "status": "completed",
+    "result": "Task output here",
+    "agentName": "Clawdfather"
+  }'
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `taskId` | string | ✅ | Convex task ID |
+| `status` | `"completed"` \| `"failed"` | ✅ | Result status |
+| `result` | string | | Output for completed tasks |
+| `error` | string | | Error message for failed tasks |
+| `agentName` | string | | For logging |
+
+#### `POST /api/webhooks/agent-event`
+OpenClaw hook reports lifecycle events.
+
+```bash
+curl -X POST http://localhost:3001/api/webhooks/agent-event \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "command",
+    "action": "new",
+    "sessionKey": "agent:main:discord:...",
+    "timestamp": "2026-02-04T21:57:00.000Z"
+  }'
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | `"command"` \| `"agent"` \| `"gateway"` | ✅ | Event category |
+| `action` | string | ✅ | Event action (new, reset, stop, etc.) |
+| `sessionKey` | string | | OpenClaw session identifier |
+| `timestamp` | string | | ISO timestamp |
+| `context` | object | | Additional context (commandSource, senderId) |
+
+### OpenClaw Proxy
+
+#### `GET /api/openclaw/sessions`
+List active OpenClaw sessions.
+
+#### `GET /api/openclaw/sessions/[key]/history`
+Get message history for a session.
+
+#### `POST /api/openclaw/sessions/[key]/send`
+Send a message to a session.
+
+### Health
+
+#### `GET /api/status`
+Service health check.
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "services": {
+    "convex": true,
+    "openclaw": true
   }
-  ```
+}
+```
 
-### OpenClaw
-- `GET /api/openclaw/sessions` - List active sessions
-- `GET /api/openclaw/sessions/[key]/history` - Get session message history
-- `POST /api/openclaw/sessions/[key]/send` - Send message to session
+## ⌨️ Keyboard Shortcuts
 
-### Status
-- `GET /api/status` - Health check and service status
+| Key | Action |
+|-----|--------|
+| `n` | New task |
+| `a` | New agent |
+| `r` | Refresh data |
+| `Esc` | Close modal |
 
-## Keyboard Shortcuts
+## 🛠️ Tech Stack
 
-- `n` - New task
-- `a` - New agent
-- `r` - Refresh
-- `Esc` - Close modals
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Database**: [Convex](https://convex.dev/) (real-time, serverless)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Font**: JetBrains Mono
+- **Integration**: OpenClaw Gateway (WebSocket RPC)
 
-## License
+## 📦 Deployment
 
-MIT
+### PM2 (recommended for VPS)
+
+```bash
+# Build
+pnpm build
+
+# Start with PM2
+pm2 start npm --name bullpen -- start
+
+# Or use ecosystem file
+pm2 start ecosystem.config.js
+```
+
+### Vercel
+
+```bash
+vercel deploy
+```
+
+Set environment variables in Vercel dashboard.
+
+### Docker
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+## 🗺️ Roadmap
+
+- [x] Agent registry with Convex
+- [x] Task board (kanban)
+- [x] Webhook task completion
+- [x] OpenClaw session integration
+- [x] Lifecycle hook sync
+- [ ] Task dispatch via sessions_spawn
+- [ ] Agent-to-agent messaging
+- [ ] Analytics dashboard
+- [ ] Multi-workspace support
+
+## 🤝 Contributing
+
+PRs welcome! Please open an issue first to discuss major changes.
+
+## 📄 License
+
+MIT © 2026
