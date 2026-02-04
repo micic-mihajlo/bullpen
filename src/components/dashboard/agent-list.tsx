@@ -23,6 +23,12 @@ const ROLE_OPTIONS = [
   "Documentation",
 ];
 
+const MODEL_OPTIONS = [
+  { value: "cerebras/zai-glm-4.7", label: "Cerebras (fast/cheap)" },
+  { value: "anthropic/claude-opus-4-5", label: "Claude Opus (powerful)" },
+  { value: "anthropic/claude-sonnet-4-20250514", label: "Claude Sonnet (balanced)" },
+];
+
 export function AgentList() {
   const agents = useQuery(api.agents.list);
   const createAgent = useMutation(api.agents.create);
@@ -31,6 +37,7 @@ export function AgentList() {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newAvatar, setNewAvatar] = useState("🤖");
+  const [newModel, setNewModel] = useState("cerebras/zai-glm-4.7");
   const [isCreating, setIsCreating] = useState(false);
 
   const filteredAgents = agents?.filter((agent) => {
@@ -49,10 +56,12 @@ export function AgentList() {
         name: newName.trim(), 
         avatar: newAvatar,
         soul: newRole ? `Role: ${newRole}` : undefined,
+        model: newModel,
       });
       setNewName("");
       setNewRole("");
       setNewAvatar("🤖");
+      setNewModel("cerebras/zai-glm-4.7");
       setShowModal(false);
     } finally {
       setIsCreating(false);
@@ -148,8 +157,13 @@ export function AgentList() {
                           <Link2 className="w-3 h-3 text-mc-accent" title="Linked to OpenClaw" />
                         )}
                       </div>
-                      <div className="text-xs text-mc-text-secondary truncate">
-                        {role || (agent.currentTaskId ? "Working on task" : "Idle")}
+                      <div className="text-xs text-mc-text-secondary truncate flex items-center gap-1">
+                        <span>{role || (agent.currentTaskId ? "Working on task" : "Idle")}</span>
+                        {agent.model && (
+                          <span className="text-mc-text-secondary/50">
+                            · {agent.model.includes("cerebras") ? "⚡" : "🧠"}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -258,6 +272,25 @@ export function AgentList() {
                   <option value="">Select a role...</option>
                   {ROLE_OPTIONS.map((role) => (
                     <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Model selector */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-mc-text-secondary uppercase tracking-wider">
+                  Model
+                </label>
+                <select
+                  value={newModel}
+                  onChange={(e) => setNewModel(e.target.value)}
+                  className={cn(
+                    "w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2",
+                    "focus:outline-none focus:border-mc-accent"
+                  )}
+                >
+                  {MODEL_OPTIONS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
               </div>

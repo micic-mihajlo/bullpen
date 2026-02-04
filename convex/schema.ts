@@ -12,6 +12,7 @@ export default defineSchema({
     ),
     soul: v.optional(v.string()), // SOUL.md content
     avatar: v.optional(v.string()), // emoji or image URL
+    model: v.optional(v.string()), // default model for this agent (e.g., "cerebras/zai-glm-4.7")
     lastSeen: v.number(), // timestamp
     currentTaskId: v.optional(v.id("tasks")),
     metadata: v.optional(v.any()), // flexible extra data

@@ -34,6 +34,7 @@ export const create = mutation({
     name: v.string(),
     soul: v.optional(v.string()),
     avatar: v.optional(v.string()),
+    model: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const agentId = await ctx.db.insert("agents", {
@@ -41,6 +42,7 @@ export const create = mutation({
       status: "offline",
       soul: args.soul,
       avatar: args.avatar,
+      model: args.model,
       lastSeen: Date.now(),
     });
 
