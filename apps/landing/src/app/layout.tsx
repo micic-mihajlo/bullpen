@@ -25,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <div className="dot-grid" />
         <div className="grain" />
         {children}
       </body>
