@@ -1,41 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How It Works" },
+  { href: "#how-it-works", label: "Process" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ];
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
-        scrolled
-          ? "bg-bg/95 backdrop-blur-md border-b border-border"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2">
             <span className="text-xl">🐂</span>
-            <span className="font-display font-semibold text-lg text-text">Bullpen</span>
+            <span className="font-display text-xl text-text uppercase tracking-tight">Bullpen</span>
           </a>
 
           {/* Desktop Nav */}
@@ -44,7 +29,7 @@ export function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm text-text-secondary hover:text-text transition-colors"
+                className="font-mono text-xs text-text-secondary hover:text-accent transition-colors uppercase tracking-wider"
               >
                 {link.label}
               </a>
@@ -52,12 +37,12 @@ export function Navbar() {
           </div>
 
           {/* CTA */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center">
             <a
               href="#get-started"
-              className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-hover transition-colors"
+              className="px-4 py-2 bg-text text-bg font-mono text-xs uppercase tracking-wider hover:bg-accent transition-colors"
             >
-              Get Started
+              Start Project
             </a>
           </div>
 
@@ -78,12 +63,12 @@ export function Navbar() {
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-bg border-b border-border">
-          <div className="px-4 py-4 space-y-3">
+          <div className="px-4 py-4 space-y-4">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="block text-text-secondary hover:text-text transition-colors"
+                className="block font-mono text-sm text-text-secondary hover:text-accent transition-colors uppercase tracking-wider"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
@@ -91,10 +76,10 @@ export function Navbar() {
             ))}
             <a
               href="#get-started"
-              className="block mt-4 px-4 py-2 bg-accent text-white text-center font-medium rounded-lg"
+              className="block w-full py-3 bg-text text-bg text-center font-mono text-sm uppercase tracking-wider"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Get Started
+              Start Project
             </a>
           </div>
         </div>

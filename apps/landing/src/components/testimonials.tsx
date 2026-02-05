@@ -4,45 +4,45 @@ import { Marquee } from "@/components/magicui/marquee";
 
 const testimonials = [
   {
-    quote: "We needed market research for our Series A pitch. Bullpen delivered a 50-page report in 4 days that would have taken us weeks to compile.",
+    quote: "50-page market research report in 4 days. Would have taken us weeks.",
     author: "Sarah Chen",
-    role: "CEO, TechStartup",
+    role: "CEO",
   },
   {
-    quote: "The MVP they built is now our production app. Clean code, great documentation, and they even set up CI/CD. Unreal.",
-    author: "Marcus Johnson",
-    role: "Founder, DevTools Co",
+    quote: "The MVP they built is now our production app. Clean code, great docs.",
+    author: "Marcus J.",
+    role: "Founder",
   },
   {
-    quote: "I was skeptical about AI agencies. Then I saw the quality. Now I send all my side projects to Bullpen.",
+    quote: "I was skeptical about AI agencies. Then I saw the quality.",
     author: "Alex Rivera",
     role: "Solo Founder",
   },
   {
-    quote: "Fastest turnaround I've ever seen. They understood our requirements immediately and delivered exactly what we needed.",
+    quote: "Fastest turnaround I've ever seen. They just get it.",
     author: "Jamie Park",
-    role: "CTO, Fintech Startup",
+    role: "CTO",
   },
   {
-    quote: "The research quality rivals what I'd expect from a top consulting firm, at a fraction of the cost and time.",
+    quote: "Research quality rivals top consulting firms. Fraction of the cost.",
     author: "David Kim",
-    role: "VP Product, SaaS Co",
+    role: "VP Product",
   },
 ];
 
 function TestimonialCard({ quote, author, role }: { quote: string; author: string; role: string }) {
   return (
-    <div className="w-80 mx-4 p-6 bg-surface/80 rounded-xl border border-border/50">
-      <p className="text-text-secondary text-sm leading-relaxed mb-4">
+    <div className="w-96 mx-4 p-6 border-2 border-text bg-surface">
+      <p className="text-text text-lg leading-relaxed mb-6">
         &ldquo;{quote}&rdquo;
       </p>
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-xs font-medium">
-          {author.split(' ').map(n => n[0]).join('')}
+        <div className="w-10 h-10 bg-text text-bg flex items-center justify-center font-display text-lg">
+          {author[0]}
         </div>
         <div>
-          <p className="text-sm font-medium text-text">{author}</p>
-          <p className="text-xs text-muted">{role}</p>
+          <p className="font-medium text-text">{author}</p>
+          <p className="font-mono text-xs text-muted uppercase tracking-wider">{role}</p>
         </div>
       </div>
     </div>
@@ -51,23 +51,21 @@ function TestimonialCard({ quote, author, role }: { quote: string; author: strin
 
 export function Testimonials() {
   return (
-    <section className="py-20 overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-12">
-        <div className="text-center">
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-text mb-4">
-            What founders say
-          </h2>
-          <p className="text-text-secondary">
-            Don&apos;t take our word for it.
-          </p>
-        </div>
+    <section className="py-24 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
+        <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-2">
+          Testimonials
+        </p>
+        <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
+          What Founders Say
+        </h2>
       </div>
 
       <div className="relative">
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-bg to-transparent z-10" />
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-bg to-transparent z-10" />
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-bg to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-bg to-transparent z-10" />
         
-        <Marquee pauseOnHover className="[--duration:40s]">
+        <Marquee pauseOnHover className="[--duration:50s]">
           {testimonials.map((t) => (
             <TestimonialCard key={t.author} {...t} />
           ))}

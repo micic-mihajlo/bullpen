@@ -1,66 +1,78 @@
 "use client";
 
-import { FileText, Users, Rocket, CheckCircle } from "lucide-react";
-
 const steps = [
   {
     number: "01",
-    icon: FileText,
-    title: "Submit Your Brief",
-    description: "Tell us what you need — landing page, research, MVP.",
+    title: "Brief",
+    description: "Tell us what you need. Landing page, research report, MVP — be as detailed or high-level as you want.",
   },
   {
     number: "02",
-    icon: Users,
-    title: "We Assemble Your Team",
-    description: "AI agents spin up with the right skills for your project.",
+    title: "Assemble",
+    description: "We spin up the right agents for your project. Research, code, design — whatever it takes.",
   },
   {
     number: "03",
-    icon: Rocket,
-    title: "Watch Progress Live",
-    description: "Track your project in real-time. Give feedback anytime.",
+    title: "Execute",
+    description: "Track progress in real-time. See what agents are working on. Give feedback anytime.",
   },
   {
     number: "04",
-    icon: CheckCircle,
-    title: "Receive Deliverables",
-    description: "Human-reviewed, polished, ready to use.",
+    title: "Deliver",
+    description: "Human-reviewed, polished, ready to use. Code deployed, research actionable, designs production-ready.",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 px-4 sm:px-6 bg-bg-alt/30">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-text mb-4">
-            How it works
-          </h2>
-          <p className="text-text-secondary">
-            From brief to deliverable in days, not weeks.
+    <section id="how-it-works" className="py-24 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-16">
+          <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-2">
+            Process
           </p>
+          <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
+            How It Works
+          </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((step) => (
+        {/* Steps - horizontal on desktop, vertical on mobile */}
+        <div className="grid md:grid-cols-4 gap-8 md:gap-4">
+          {steps.map((step, index) => (
             <div key={step.number} className="relative">
-              <div className="p-6 bg-surface/50 rounded-xl border border-border/50">
-                <div className="text-xs font-mono text-accent mb-4">
-                  {step.number}
+              {/* Connector line */}
+              {index < steps.length - 1 && (
+                <div className="hidden md:block absolute top-8 left-full w-full h-px bg-border -translate-x-4" />
+              )}
+              
+              {/* Step */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <span className="font-display text-6xl text-accent">{step.number}</span>
                 </div>
-                <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center mb-4">
-                  <step.icon className="w-5 h-5 text-accent" />
-                </div>
-                <h3 className="font-display font-semibold text-text mb-2">
+                <h3 className="font-display text-2xl text-text uppercase tracking-tight">
                   {step.title}
                 </h3>
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-text-secondary leading-relaxed">
                   {step.description}
                 </p>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-16 pt-8 border-t-2 border-text flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <p className="text-text-secondary">
+            From brief to deliverable in days, not weeks.
+          </p>
+          <a
+            href="#get-started"
+            className="inline-flex items-center gap-2 font-mono text-sm text-accent hover:underline uppercase tracking-wider"
+          >
+            Start Your Project →
+          </a>
         </div>
       </div>
     </section>

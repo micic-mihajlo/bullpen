@@ -1,45 +1,29 @@
 "use client";
 
-const footerLinks = {
-  product: [
-    { label: "Features", href: "#features" },
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "FAQ", href: "#faq" },
-  ],
-  company: [
-    { label: "About", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Contact", href: "#get-started" },
-  ],
-  legal: [
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
-  ],
-};
-
 export function Footer() {
   return (
-    <footer className="py-12 px-4 sm:px-6 border-t border-border/50">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          <div className="col-span-2 md:col-span-1">
+    <footer className="py-12 px-4 sm:px-6 border-t-2 border-text">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-4 gap-8 mb-12">
+          {/* Logo */}
+          <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">🐂</span>
-              <span className="font-display font-semibold text-text">Bullpen</span>
+              <span className="text-2xl">🐂</span>
+              <span className="font-display text-2xl text-text uppercase tracking-tight">Bullpen</span>
             </div>
-            <p className="text-sm text-text-secondary">
-              Your AI workforce.
+            <p className="font-mono text-xs text-muted uppercase tracking-wider">
+              Your AI Workforce
             </p>
           </div>
 
+          {/* Links */}
           <div>
-            <h4 className="font-medium text-text mb-3">Product</h4>
+            <h4 className="font-display text-lg text-text uppercase tracking-tight mb-4">Product</h4>
             <ul className="space-y-2">
-              {footerLinks.product.map((link) => (
-                <li key={link.label}>
-                  <a href={link.href} className="text-sm text-text-secondary hover:text-text transition-colors">
-                    {link.label}
+              {["Features", "How It Works", "Pricing", "FAQ"].map((item) => (
+                <li key={item}>
+                  <a href={`#${item.toLowerCase().replace(/ /g, '-')}`} className="text-sm text-text-secondary hover:text-accent transition-colors">
+                    {item}
                   </a>
                 </li>
               ))}
@@ -47,12 +31,12 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-medium text-text mb-3">Company</h4>
+            <h4 className="font-display text-lg text-text uppercase tracking-tight mb-4">Company</h4>
             <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
-                <li key={link.label}>
-                  <a href={link.href} className="text-sm text-text-secondary hover:text-text transition-colors">
-                    {link.label}
+              {["About", "Blog", "Contact"].map((item) => (
+                <li key={item}>
+                  <a href="#" className="text-sm text-text-secondary hover:text-accent transition-colors">
+                    {item}
                   </a>
                 </li>
               ))}
@@ -60,12 +44,12 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-medium text-text mb-3">Legal</h4>
+            <h4 className="font-display text-lg text-text uppercase tracking-tight mb-4">Legal</h4>
             <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.label}>
-                  <a href={link.href} className="text-sm text-text-secondary hover:text-text transition-colors">
-                    {link.label}
+              {["Privacy", "Terms"].map((item) => (
+                <li key={item}>
+                  <a href="#" className="text-sm text-text-secondary hover:text-accent transition-colors">
+                    {item}
                   </a>
                 </li>
               ))}
@@ -73,9 +57,13 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-border/50 text-center">
-          <p className="text-sm text-muted">
+        {/* Bottom */}
+        <div className="pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="font-mono text-xs text-muted uppercase tracking-wider">
             © {new Date().getFullYear()} Bullpen
+          </p>
+          <p className="font-mono text-xs text-muted uppercase tracking-wider">
+            Built by AI agents + humans
           </p>
         </div>
       </div>
