@@ -5,9 +5,9 @@ import { AsciiBull } from "./ascii-bull";
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen pt-20">
+    <section className="relative min-h-screen pt-20 hero-divider">
       {/* Grid background */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
           backgroundImage: `
@@ -18,10 +18,18 @@ export function Hero() {
         }}
       />
 
+      {/* Oversized background text for brutalist effect */}
+      <div
+        className="absolute top-1/4 -right-8 font-display text-[20vw] leading-none text-text/[0.02] uppercase pointer-events-none select-none hidden lg:block"
+        aria-hidden="true"
+      >
+        BULL
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-4 items-end">
-          {/* Main headline - takes 7 cols */}
-          <div className="lg:col-span-7 space-y-8">
+          {/* Main headline - takes 7 cols, slight rotation for asymmetry */}
+          <div className="lg:col-span-7 space-y-8 lg:-rotate-1 lg:origin-bottom-left">
             <div className="space-y-2">
               <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase">
                 AI-Powered Agency
@@ -33,8 +41,14 @@ export function Hero() {
               </h1>
             </div>
 
+            {/* Horizontal rule accent with offset */}
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-[3px] bg-accent" />
+              <div className="w-8 h-[3px] bg-text/20" />
+            </div>
+
             <p className="text-lg sm:text-xl text-text-secondary max-w-md leading-relaxed">
-              Ship products 10x faster with specialized AI agents. 
+              Ship products 10x faster with specialized AI agents.
               Research, code, design — delivered.
             </p>
 
@@ -58,13 +72,19 @@ export function Hero() {
           {/* ASCII Bull - takes 5 cols, offset upward */}
           <div className="lg:col-span-5 lg:-mb-16">
             <div className="relative">
-              {/* Label */}
-              <div className="absolute -top-8 left-0 font-mono text-xs text-muted tracking-wider uppercase">
-                Agent Status: Online
+              {/* Terminal header */}
+              <div className="terminal-header">
+                <div className="terminal-dot terminal-dot--red" />
+                <div className="terminal-dot terminal-dot--yellow" />
+                <div className="terminal-dot terminal-dot--green" />
+                <span className="ml-3 flex items-center gap-2">
+                  bullpen_agent.exe
+                  <span className="blink-cursor text-accent">_</span>
+                </span>
               </div>
-              
-              {/* Bull container */}
-              <div className="bg-surface border-2 border-text p-8 sm:p-12">
+
+              {/* Bull container with CRT effect */}
+              <div className="bg-surface border-2 border-t-0 border-text p-8 sm:p-12 crt-scanlines">
                 <AsciiBull />
               </div>
 
@@ -78,15 +98,15 @@ export function Hero() {
         <div className="mt-20 pt-8 border-t-2 border-text">
           <div className="grid grid-cols-3 gap-8">
             <div>
-              <div className="font-display text-4xl sm:text-5xl text-text">50+</div>
+              <div className="font-display text-4xl sm:text-5xl stat-number">50+</div>
               <div className="font-mono text-xs text-muted uppercase tracking-wider mt-1">Projects Shipped</div>
             </div>
-            <div>
-              <div className="font-display text-4xl sm:text-5xl text-text">10X</div>
+            <div className="border-l-2 border-border pl-8">
+              <div className="font-display text-4xl sm:text-5xl stat-number">10X</div>
               <div className="font-mono text-xs text-muted uppercase tracking-wider mt-1">Faster Delivery</div>
             </div>
-            <div>
-              <div className="font-display text-4xl sm:text-5xl text-text">24/7</div>
+            <div className="border-l-2 border-border pl-8">
+              <div className="font-display text-4xl sm:text-5xl stat-number">24/7</div>
               <div className="font-mono text-xs text-muted uppercase tracking-wider mt-1">Agent Uptime</div>
             </div>
           </div>

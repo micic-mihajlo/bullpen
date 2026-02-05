@@ -6,84 +6,84 @@ import { motion } from "framer-motion";
 // ASCII art frames for the bull animation
 const bullFrames = [
   `
-        (__) 
-        (oo) 
-  /------\\/ 
- / |    ||   
-*  /\\---/\\  
-   ~~   ~~   
+        (__)
+        (oo)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+   ~~   ~~
 `,
   `
-        (__) 
-        (oo) 
-  /------\\/ 
- / |    ||   
-*  /\\---/\\  
-   ~    ~~   
+        (__)
+        (oo)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+   ~    ~~
 `,
   `
-        (__) 
-        (oo) 
-  /------\\/ 
- / |    ||   
-*  /\\---/\\  
-  ~~    ~    
+        (__)
+        (oo)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+  ~~    ~
 `,
   `
-        (__) 
-        (oo) 
-  /------\\/ 
- / |    ||   
-*  /\\---/\\  
-   ~~   ~~   
+        (__)
+        (oo)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+   ~~   ~~
 `,
 ];
 
 // Idle breathing frames
 const idleFrames = [
   `
-        (__) 
-        (oo) 
-  /------\\/ 
- / |    ||   
-*  /\\---/\\  
-   ~~   ~~   
+        (__)
+        (oo)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+   ~~   ~~
 `,
   `
-        (__) 
-        (••) 
-  /------\\/ 
- / |    ||   
-*  /\\---/\\  
-   ~~   ~~   
+        (__)
+        (••)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+   ~~   ~~
 `,
 ];
 
 // Charging bull frames
 const chargeFrames = [
   `
-        (__) 
-        (@@) 
-  /------\\/ 
- / |    ||   
-*  /\\---/\\  
-   ~~   ~~   
+        (__)
+        (@@)
+  /------\\/
+ / |    ||
+*  /\\---/\\
+   ~~   ~~
 `,
   `
-       (__)  
-       (@@)  
- /------\\/  
-/ |    ||    
-  /\\---/\\   
-  ~~   ~~    
+       (__)
+       (@@)
+ /------\\/
+/ |    ||
+  /\\---/\\
+  ~~   ~~
 `,
   `
-      (__)   
-      (@@)   
-/------\\/   
-|    ||      
- /\\---/\\    
- ~~   ~~     
+      (__)
+      (@@)
+/------\\/
+|    ||
+ /\\---/\\
+ ~~   ~~
 `,
 ];
 
@@ -131,18 +131,24 @@ export function AsciiBull() {
       onClick={handleClick}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      className="cursor-pointer select-none"
+      className={`cursor-pointer select-none transition-shadow duration-300 ${isCharging ? "pulse-glow" : ""}`}
     >
-      <pre className="font-mono text-sm sm:text-base md:text-lg text-bull leading-tight whitespace-pre transition-all duration-100">
+      <pre className={`font-mono text-sm sm:text-base md:text-lg leading-tight whitespace-pre transition-all duration-100 ${isCharging ? "text-accent" : "text-bull"}`}>
         {frames[currentFrame]}
       </pre>
-      <motion.p 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center font-mono text-xs text-muted mt-2"
-      >
-        {isCharging ? "[ CHARGING... ]" : "[ click me ]"}
-      </motion.p>
+      <div className="flex items-center justify-between mt-3 font-mono text-xs">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-muted"
+        >
+          {isCharging ? "[ CHARGING... ]" : "[ click to charge ]"}
+        </motion.p>
+        <div className="flex items-center gap-2 text-muted">
+          <span className={`inline-block w-2 h-2 rounded-full ${isCharging ? "bg-accent pulse-glow" : "bg-green-600"}`} />
+          <span>{isCharging ? "ACTIVE" : "IDLE"}</span>
+        </div>
+      </div>
     </motion.div>
   );
 }

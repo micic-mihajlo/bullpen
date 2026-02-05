@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Minus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const ease = [0.25, 0.1, 0.25, 1] as const;
 
 const faqs = [
   {
@@ -26,6 +29,27 @@ const faqs = [
   },
 ];
 
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease,
+    },
+  },
+};
+
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
@@ -33,55 +57,82 @@ export function FAQ() {
     <section id="faq" className="py-28 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.3, ease }}
+          className="mb-20"
+        >
           <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-3">
             FAQ
           </p>
           <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
             Questions
           </h2>
-        </div>
+        </motion.div>
 
         {/* FAQ items */}
-        <div className="border-t-2 border-text">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+          className="border-t-2 border-text"
+        >
           {faqs.map((faq, index) => (
-            <div key={index} className="border-b-2 border-text">
+            <motion.div
+              key={index}
+              variants={itemVariants}
+              className="border-b-2 border-text"
+            >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
                 className="w-full py-7 flex items-center justify-between text-left group cursor-pointer"
               >
                 <div className="flex items-center gap-6 pr-8">
-                  <span className="font-mono text-xs text-muted tracking-[0.1em] shrink-0">
+                  <motion.span
+                    animate={{ color: openIndex === index ? "var(--color-accent)" : "var(--color-muted)" }}
+                    transition={{ duration: 0.3, ease }}
+                    className="font-mono text-xs tracking-[0.1em] shrink-0"
+                  >
                     {String(index + 1).padStart(2, "0")}
-                  </span>
+                  </motion.span>
                   <span className="font-display text-xl sm:text-2xl text-text uppercase tracking-tight group-hover:text-accent transition-colors duration-300 ease-out">
                     {faq.question}
                   </span>
                 </div>
-                <div className="w-8 h-8 border border-border flex items-center justify-center shrink-0 group-hover:border-accent transition-colors duration-300 ease-out">
-                  {openIndex === index ? (
-                    <Minus className="w-4 h-4 text-accent" strokeWidth={2} />
-                  ) : (
-                    <Plus className="w-4 h-4 text-text group-hover:text-accent transition-colors duration-300 ease-out" strokeWidth={2} />
-                  )}
-                </div>
+                <motion.div
+                  animate={{ rotate: openIndex === index ? 45 : 0 }}
+                  transition={{ duration: 0.3, ease }}
+                  className="w-8 h-8 border border-border flex items-center justify-center shrink-0 group-hover:border-accent transition-colors duration-300 ease-out"
+                >
+                  <Plus
+                    className={`w-4 h-4 transition-colors duration-300 ease-out ${
+                      openIndex === index ? "text-accent" : "text-text group-hover:text-accent"
+                    }`}
+                    strokeWidth={2}
+                  />
+                </motion.div>
               </button>
-              <div
-                className={`grid transition-all duration-300 ease-out ${
-                  openIndex === index
-                    ? "grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0"
-                }`}
-              >
-                <div className="overflow-hidden">
-                  <p className="text-text-secondary leading-relaxed max-w-2xl pl-[3.25rem] pb-7">
-                    {faq.answer}
-                  </p>
-                </div>
-              </div>
-            </div>
+              <AnimatePresence initial={false}>
+                {openIndex === index && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease }}
+                    className="overflow-hidden"
+                  >
+                    <p className="text-text-secondary leading-relaxed max-w-2xl pl-[3.25rem] pb-7">
+                      {faq.answer}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

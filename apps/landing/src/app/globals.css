@@ -122,3 +122,165 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted);
 }
+
+/* ===== Visual Designer additions ===== */
+
+/* CRT scanline overlay */
+.crt-scanlines {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: scanline-shift 8s linear infinite;
+}
+
+.crt-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes scanline-shift {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(4px);
+  }
+}
+
+/* CRT glow effect for charge state */
+.crt-glow {
+  box-shadow:
+    0 0 15px rgba(194, 65, 12, 0.3),
+    0 0 30px rgba(194, 65, 12, 0.15),
+    inset 0 0 15px rgba(194, 65, 12, 0.05);
+}
+
+/* Terminal header bar */
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #1a1a1a;
+  border-bottom: 2px solid #2a2a2a;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid #444;
+}
+
+.terminal-dot--red { border-color: #c2410c; background: rgba(194, 65, 12, 0.3); }
+.terminal-dot--yellow { border-color: #a16207; background: rgba(161, 98, 7, 0.3); }
+.terminal-dot--green { border-color: #15803d; background: rgba(21, 128, 61, 0.3); }
+
+/* Blinking cursor */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blink-cursor {
+  animation: blink-cursor 1.2s step-end infinite;
+}
+
+/* Pulse glow for charge */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(194, 65, 12, 0.3),
+      0 0 30px rgba(194, 65, 12, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(194, 65, 12, 0.5),
+      0 0 50px rgba(194, 65, 12, 0.25);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+/* Diagonal stripe pattern for CTA */
+.diagonal-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 20px,
+    rgba(194, 65, 12, 0.06) 20px,
+    rgba(194, 65, 12, 0.06) 22px
+  );
+}
+
+/* Hero section diagonal divider */
+.hero-divider {
+  position: relative;
+}
+
+.hero-divider::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--color-bg);
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+  z-index: 1;
+}
+
+/* Stats counter text shimmer */
+@keyframes text-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.stat-number {
+  background: linear-gradient(
+    90deg,
+    var(--color-text) 0%,
+    var(--color-text) 40%,
+    var(--color-accent) 50%,
+    var(--color-text) 60%,
+    var(--color-text) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-shimmer 4s linear infinite;
+}

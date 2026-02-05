@@ -32,12 +32,12 @@ const testimonials = [
 
 function TestimonialCard({ quote, author, role }: { quote: string; author: string; role: string }) {
   return (
-    <div className="w-96 mx-4 p-6 border-2 border-text bg-surface">
-      <p className="text-text text-lg leading-relaxed mb-6">
+    <div className="w-72 sm:w-80 md:w-96 mx-3 sm:mx-4 p-5 sm:p-6 border-2 border-text bg-surface">
+      <p className="text-text text-base sm:text-lg leading-relaxed mb-5 sm:mb-6">
         &ldquo;{quote}&rdquo;
       </p>
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-text text-bg flex items-center justify-center font-display text-lg">
+        <div className="w-10 h-10 bg-text text-bg flex items-center justify-center font-display text-lg shrink-0">
           {author[0]}
         </div>
         <div>
@@ -51,20 +51,20 @@ function TestimonialCard({ quote, author, role }: { quote: string; author: strin
 
 export function Testimonials() {
   return (
-    <section className="py-24 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-12">
+    <section className="py-16 sm:py-24 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 sm:mb-12">
         <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-2">
           Testimonials
         </p>
-        <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
+        <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-text uppercase tracking-tight">
           What Founders Say
         </h2>
       </div>
 
       <div className="relative">
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-bg to-transparent z-10" />
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-bg to-transparent z-10" />
-        
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-bg to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-bg to-transparent z-10" />
+
         <Marquee pauseOnHover className="[--duration:50s]">
           {testimonials.map((t) => (
             <TestimonialCard key={t.author} {...t} />

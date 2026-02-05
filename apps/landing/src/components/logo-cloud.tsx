@@ -15,16 +15,16 @@ const logos = [
 
 export function LogoCloud() {
   return (
-    <section className="py-8 border-y border-border bg-bg-alt/50 overflow-hidden">
+    <section className="py-6 sm:py-8 border-y border-border bg-bg-alt/50 overflow-hidden">
       <div className="relative">
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-bg-alt/50 to-transparent z-10" />
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-bg-alt/50 to-transparent z-10" />
-        
-        <Marquee className="[--duration:40s] [--gap:3rem]">
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-bg-alt/50 to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-bg-alt/50 to-transparent z-10" />
+
+        <Marquee className="[--duration:40s] [--gap:2rem] sm:[--gap:3rem]">
           {logos.map((logo) => (
             <span
               key={logo}
-              className="font-mono text-xs text-muted uppercase tracking-[0.2em]"
+              className="font-mono text-[11px] sm:text-xs text-muted uppercase tracking-[0.15em] sm:tracking-[0.2em]"
             >
               {logo}
             </span>

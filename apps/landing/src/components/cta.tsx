@@ -4,21 +4,44 @@ import { ArrowRight } from "lucide-react";
 
 export function CTA() {
   return (
-    <section id="get-started" className="py-28 px-4 sm:px-6 bg-text text-bg">
-      <div className="max-w-4xl mx-auto">
+    <section id="get-started" className="relative py-28 px-4 sm:px-6 bg-text text-bg overflow-hidden">
+      {/* Diagonal stripe background */}
+      <div className="absolute inset-0 diagonal-stripes pointer-events-none" />
+
+      {/* Oversized background text */}
+      <div
+        className="absolute -top-6 -left-4 font-display text-[18vw] leading-none text-bg/[0.03] uppercase pointer-events-none select-none"
+        aria-hidden="true"
+      >
+        SHIP IT
+      </div>
+
+      {/* Geometric accent - top right corner block */}
+      <div
+        className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-accent/10 pointer-events-none"
+        style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-4xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <div>
             <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-4">
               Get Started
             </p>
-            <h2 className="font-display text-5xl sm:text-6xl text-bg uppercase tracking-tight mb-6">
+            <h2 className="font-display text-6xl sm:text-7xl md:text-8xl text-bg uppercase tracking-tight mb-6 leading-[0.9]">
               Ready To
               <br />
-              Ship?
+              <span className="text-accent">Ship?</span>
             </h2>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-[3px] bg-accent" />
+              <div className="w-6 h-[3px] bg-bg/20" />
+            </div>
             <p className="text-bg/60 leading-relaxed">
-              Tell us what you&apos;re building. We&apos;ll put together a plan and get started within 24 hours.
+              Tell us what you&apos;re building. We&apos;ll put together a plan
+              and get started within 24 hours.
             </p>
           </div>
 
@@ -54,6 +77,13 @@ export function CTA() {
           </div>
         </div>
       </div>
+
+      {/* Bottom geometric accent - left corner block */}
+      <div
+        className="absolute bottom-0 left-0 w-24 h-24 sm:w-36 sm:h-36 bg-accent/10 pointer-events-none"
+        style={{ clipPath: "polygon(0 0, 0 100%, 100% 100%)" }}
+        aria-hidden="true"
+      />
     </section>
   );
 }

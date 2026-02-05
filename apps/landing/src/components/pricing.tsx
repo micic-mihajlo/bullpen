@@ -1,6 +1,9 @@
 "use client";
 
 import { ArrowRight, Check } from "lucide-react";
+import { motion } from "framer-motion";
+
+const ease = [0.25, 0.1, 0.25, 1] as const;
 
 const plans = [
   {
@@ -49,28 +52,67 @@ const plans = [
   },
 ];
 
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.12,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease,
+    },
+  },
+};
+
 export function Pricing() {
   return (
     <section id="pricing" className="py-28 px-4 sm:px-6 bg-bg-alt">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.3, ease }}
+          className="mb-20"
+        >
           <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-3">
             Pricing
           </p>
           <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
             Simple Plans
           </h2>
-        </div>
+        </motion.div>
 
         {/* Plans */}
-        <div className="grid lg:grid-cols-3 gap-0">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="grid lg:grid-cols-3 gap-0"
+        >
           {plans.map((plan) => (
-            <div
+            <motion.div
               key={plan.name}
+              variants={cardVariants}
+              whileHover={
+                plan.featured
+                  ? { y: -6, transition: { duration: 0.3, ease } }
+                  : { y: -4, boxShadow: "8px 8px 0px 0px rgba(15,15,15,0.08)", transition: { duration: 0.3, ease } }
+              }
               className={`p-10 border-2 -ml-[2px] first:ml-0 transition-all duration-300 ease-out ${
                 plan.featured
-                  ? "bg-text text-bg border-text relative lg:-my-4 lg:py-14"
+                  ? "bg-text text-bg border-text relative lg:-my-4 lg:py-14 shadow-[0_8px_32px_rgba(15,15,15,0.15)]"
                   : "bg-bg-alt border-border hover:border-text"
               }`}
             >
@@ -136,20 +178,23 @@ export function Pricing() {
               </ul>
 
               {/* CTA */}
-              <a
+              <motion.a
                 href="#get-started"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.15, ease }}
                 className={`group/btn flex items-center justify-center gap-2 w-full py-4 font-mono text-sm uppercase tracking-[0.15em] transition-all duration-300 ease-out ${
                   plan.featured
-                    ? "bg-accent text-bg hover:bg-accent-hover"
+                    ? "bg-accent text-bg hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(194,65,12,0.3)]"
                     : "border-2 border-text text-text hover:bg-text hover:text-bg"
                 }`}
               >
                 {plan.cta}
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 ease-out group-hover/btn:translate-x-1" />
-              </a>
-            </div>
+              </motion.a>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
