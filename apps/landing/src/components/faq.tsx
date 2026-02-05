@@ -30,11 +30,11 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-24 px-4 sm:px-6">
+    <section id="faq" className="py-28 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-16">
-          <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-2">
+        <div className="mb-20">
+          <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-3">
             FAQ
           </p>
           <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
@@ -43,29 +43,42 @@ export function FAQ() {
         </div>
 
         {/* FAQ items */}
-        <div className="divide-y-2 divide-text border-y-2 border-text">
+        <div className="border-t-2 border-text">
           {faqs.map((faq, index) => (
-            <div key={index}>
+            <div key={index} className="border-b-2 border-text">
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full py-6 flex items-start justify-between text-left group"
+                className="w-full py-7 flex items-center justify-between text-left group cursor-pointer"
               >
-                <span className="font-display text-xl sm:text-2xl text-text uppercase tracking-tight pr-8 group-hover:text-accent transition-colors">
-                  {faq.question}
-                </span>
-                {openIndex === index ? (
-                  <Minus className="w-6 h-6 text-accent shrink-0" />
-                ) : (
-                  <Plus className="w-6 h-6 text-text shrink-0" />
-                )}
+                <div className="flex items-center gap-6 pr-8">
+                  <span className="font-mono text-xs text-muted tracking-[0.1em] shrink-0">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="font-display text-xl sm:text-2xl text-text uppercase tracking-tight group-hover:text-accent transition-colors duration-300 ease-out">
+                    {faq.question}
+                  </span>
+                </div>
+                <div className="w-8 h-8 border border-border flex items-center justify-center shrink-0 group-hover:border-accent transition-colors duration-300 ease-out">
+                  {openIndex === index ? (
+                    <Minus className="w-4 h-4 text-accent" strokeWidth={2} />
+                  ) : (
+                    <Plus className="w-4 h-4 text-text group-hover:text-accent transition-colors duration-300 ease-out" strokeWidth={2} />
+                  )}
+                </div>
               </button>
-              {openIndex === index && (
-                <div className="pb-6">
-                  <p className="text-text-secondary leading-relaxed max-w-2xl">
+              <div
+                className={`grid transition-all duration-300 ease-out ${
+                  openIndex === index
+                    ? "grid-rows-[1fr] opacity-100"
+                    : "grid-rows-[0fr] opacity-0"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <p className="text-text-secondary leading-relaxed max-w-2xl pl-[3.25rem] pb-7">
                     {faq.answer}
                   </p>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>
