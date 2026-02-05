@@ -11,10 +11,14 @@ import { Pricing } from "@/components/pricing";
 import { FAQ } from "@/components/faq";
 import { CTA } from "@/components/cta";
 import { Footer } from "@/components/footer";
+import { ScrollProgress } from "@/components/scroll-progress";
+import { BackToTop } from "@/components/back-to-top";
 
 export default function Home() {
   return (
     <main className="min-h-screen">
+      <ScrollProgress />
+      <BackToTop />
       <Navbar />
       <Hero />
       <LogoCloud />
