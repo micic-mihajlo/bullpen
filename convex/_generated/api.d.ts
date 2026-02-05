@@ -9,8 +9,11 @@
  */
 
 import type * as agents from "../agents.js";
+import type * as clients from "../clients.js";
+import type * as deliverables from "../deliverables.js";
 import type * as events from "../events.js";
 import type * as messages from "../messages.js";
+import type * as projects from "../projects.js";
 import type * as tasks from "../tasks.js";
 
 import type {
@@ -21,8 +24,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agents: typeof agents;
+  clients: typeof clients;
+  deliverables: typeof deliverables;
   events: typeof events;
   messages: typeof messages;
+  projects: typeof projects;
   tasks: typeof tasks;
 }>;
 
