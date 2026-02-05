@@ -1,18 +1,43 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { useState, useCallback } from "react";
 import { api } from "../../convex/_generated/api";
 import { AgentList } from "@/components/dashboard/agent-list";
 import { EventFeed } from "@/components/dashboard/event-feed";
 import { TaskBoard } from "@/components/dashboard/task-board";
-import { useShortcuts } from "@/components/shortcuts-provider";
-import { Keyboard } from "lucide-react";
+import { useShortcuts, useRegisterShortcut } from "@/components/shortcuts-provider";
+import { useToast } from "@/components/toast";
+import { Keyboard, RefreshCw } from "lucide-react";
 
 export default function Dashboard() {
   const agents = useQuery(api.agents.list);
   const tasks = useQuery(api.tasks.list);
 
   const { setShowHelp } = useShortcuts();
+  const { addToast } = useToast();
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = useCallback(async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/agents/sync", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        addToast(data.message || "Synced", "success");
+      } else {
+        addToast(data.error || "Sync failed", "error");
+      }
+    } catch {
+      addToast("Network error", "error");
+    } finally {
+      setSyncing(false);
+    }
+  }, [syncing, addToast]);
+
+  // Register refresh shortcut
+  useRegisterShortcut("refresh", handleSync);
   
   const stats = {
     agents: agents?.length ?? 0,
@@ -37,6 +62,14 @@ export default function Dashboard() {
             <span title="Completed tasks">✓ {stats.completed} done</span>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="p-1 text-mc-text-secondary hover:text-mc-text rounded hover:bg-mc-bg-tertiary transition-colors disabled:opacity-50"
+              title="Sync agents (R)"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+            </button>
             <button
               onClick={() => setShowHelp(true)}
               className="p-1 text-mc-text-secondary hover:text-mc-text rounded hover:bg-mc-bg-tertiary transition-colors"
