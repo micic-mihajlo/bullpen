@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Zap, Bot, Code } from "lucide-react";
+import { AsciiBull } from "./ascii-bull";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -163,20 +164,9 @@ export function Hero() {
                   }}
                 />
                 
-                {/* ASCII Art placeholder - Razeen will replace */}
-                <pre className="font-mono text-sm sm:text-base text-bull leading-tight whitespace-pre z-10">
-{`         (__)
-         (oo)
-   /------\\/
-  / |    ||
- *  /\\---/\\
-    ~~   ~~`}
-                </pre>
-                
-                <div className="mt-6 text-center z-10">
-                  <p className="font-mono text-xs text-muted uppercase tracking-wider">
-                    [ Razeen&apos;s ASCII Animation ]
-                  </p>
+                {/* Animated ASCII Bull */}
+                <div className="z-10">
+                  <AsciiBull />
                 </div>
               </div>
 
