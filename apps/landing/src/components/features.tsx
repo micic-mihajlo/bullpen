@@ -8,37 +8,31 @@ const features = [
     icon: Brain,
     title: "Specialized Agents",
     description: "Each agent is trained for specific tasks — research, coding, design. No jack-of-all-trades.",
-    gradient: "from-purple-500/20 to-purple-500/5",
   },
   {
     icon: Code,
     title: "Production-Ready Code",
     description: "Get working MVPs, not prototypes. Deployed, tested, and documented.",
-    gradient: "from-blue-500/20 to-blue-500/5",
   },
   {
     icon: Search,
     title: "Deep Research",
     description: "Market analysis, competitor research, user interviews — synthesized into actionable insights.",
-    gradient: "from-green-500/20 to-green-500/5",
   },
   {
     icon: Palette,
     title: "Design Systems",
     description: "From wireframes to polished UI. Consistent, scalable, beautiful.",
-    gradient: "from-pink-500/20 to-pink-500/5",
   },
   {
     icon: Zap,
     title: "10x Faster",
     description: "What takes weeks, we deliver in days. Parallel agents, no meetings, pure execution.",
-    gradient: "from-yellow-500/20 to-yellow-500/5",
   },
   {
     icon: Shield,
     title: "Human Oversight",
     description: "Every deliverable is reviewed by humans before it reaches you. Quality guaranteed.",
-    gradient: "from-accent/20 to-accent/5",
   },
 ];
 
@@ -103,9 +97,6 @@ export function Features() {
             >
               {/* Card */}
               <div className="relative h-full p-8 bg-surface/80 backdrop-blur-sm rounded-2xl border border-border/50 hover:border-accent/30 transition-all duration-300 hover:shadow-xl hover:shadow-accent/5">
-                {/* Gradient background on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                
                 <div className="relative">
                   {/* Icon */}
                   <div className="w-14 h-14 bg-accent/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-accent/20 transition-all duration-300">

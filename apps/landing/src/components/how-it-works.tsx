@@ -9,28 +9,24 @@ const steps = [
     icon: FileText,
     title: "Submit Your Brief",
     description: "Tell us what you need — a landing page, market research, MVP prototype. Be as detailed or high-level as you want.",
-    color: "from-blue-500 to-blue-600",
   },
   {
     number: "02",
     icon: Users,
     title: "We Assemble Your Team",
     description: "Our AI agents spin up with the right skills for your project. Research, code, design — whatever it takes.",
-    color: "from-purple-500 to-purple-600",
   },
   {
     number: "03",
     icon: Rocket,
     title: "Watch Progress Live",
     description: "Track your project in real-time. See what agents are working on, review drafts, give feedback.",
-    color: "from-orange-500 to-orange-600",
   },
   {
     number: "04",
     icon: CheckCircle,
     title: "Receive Deliverables",
     description: "Human-reviewed, polished, ready to use. Code is deployed, research is actionable, designs are production-ready.",
-    color: "from-green-500 to-green-600",
   },
 ];
 
@@ -88,15 +84,15 @@ export function HowItWorks() {
                 >
                   {/* Number circle */}
                   <div className="flex justify-center mb-8">
-                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white font-bold text-lg shadow-lg relative z-10`}>
+                    <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-white font-bold text-lg shadow-lg relative z-10">
                       {step.number}
                     </div>
                   </div>
 
                   {/* Card */}
                   <div className="bg-surface/80 backdrop-blur-sm rounded-2xl border border-border/50 p-6 h-full hover:border-accent/30 hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 group">
-                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${step.color} bg-opacity-10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                      <step.icon className="w-7 h-7 text-white" />
+                    <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                      <step.icon className="w-7 h-7 text-accent" />
                     </div>
                     
                     <h3 className="font-display text-xl font-semibold text-text mb-3">
@@ -127,7 +123,7 @@ export function HowItWorks() {
               <div className="flex gap-4">
                 {/* Number and line */}
                 <div className="flex flex-col items-center">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0`}>
+                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0">
                     {step.number}
                   </div>
                   {index < steps.length - 1 && (
@@ -138,8 +134,8 @@ export function HowItWorks() {
                 {/* Card */}
                 <div className="flex-1 bg-surface/80 backdrop-blur-sm rounded-2xl border border-border/50 p-6 mb-4">
                   <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center shrink-0`}>
-                      <step.icon className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                      <step.icon className="w-6 h-6 text-accent" />
                     </div>
                     <div>
                       <h3 className="font-display text-lg font-semibold text-text mb-2">
