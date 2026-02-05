@@ -5,11 +5,15 @@ import { api } from "../../convex/_generated/api";
 import { AgentList } from "@/components/dashboard/agent-list";
 import { EventFeed } from "@/components/dashboard/event-feed";
 import { TaskBoard } from "@/components/dashboard/task-board";
+import { useShortcuts } from "@/components/shortcuts-provider";
+import { Keyboard } from "lucide-react";
 
 export default function Dashboard() {
   const agents = useQuery(api.agents.list);
   const tasks = useQuery(api.tasks.list);
 
+  const { setShowHelp } = useShortcuts();
+  
   const stats = {
     agents: agents?.length ?? 0,
     online: agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0,
@@ -32,9 +36,18 @@ export default function Dashboard() {
             <span title="Running tasks">⚡ {stats.running} running</span>
             <span title="Completed tasks">✓ {stats.completed} done</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-mc-text-secondary">
-            <span className="w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
-            <span>connected</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowHelp(true)}
+              className="p-1 text-mc-text-secondary hover:text-mc-text rounded hover:bg-mc-bg-tertiary transition-colors"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-1.5 text-sm text-mc-text-secondary">
+              <span className="w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
+              <span>connected</span>
+            </div>
           </div>
         </div>
       </header>

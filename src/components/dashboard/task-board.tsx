@@ -3,11 +3,12 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Plus, X, Send } from "lucide-react";
 import { TaskDetail } from "./task-detail";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useToast } from "@/components/toast";
+import { useRegisterShortcut } from "@/components/shortcuts-provider";
 
 type Task = {
   _id: Id<"tasks">;
@@ -57,6 +58,10 @@ export function TaskBoard() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
   const { addToast } = useToast();
+
+  // Register keyboard shortcut for new task
+  const openModal = useCallback(() => setShowModal(true), []);
+  useRegisterShortcut("newTask", openModal);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

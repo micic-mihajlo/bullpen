@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { Plus, X, Link2 } from "lucide-react";
 import { AgentDetail } from "./agent-detail";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useToast } from "@/components/toast";
+import { useRegisterShortcut } from "@/components/shortcuts-provider";
 
 type Agent = {
   _id: Id<"agents">;
@@ -47,6 +48,10 @@ export function AgentList() {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const { addToast } = useToast();
+
+  // Register keyboard shortcut for new agent
+  const openModal = useCallback(() => setShowModal(true), []);
+  useRegisterShortcut("newAgent", openModal);
 
   const filtered = agents?.filter((a) => {
     if (filter === "all") return true;
