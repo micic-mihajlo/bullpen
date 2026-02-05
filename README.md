@@ -21,21 +21,21 @@ Bullpen gives you a visual command center for managing AI agents — assign task
 Drop tasks into Bullpen, watch AI agents complete them in real-time.
 
 ```
-You                    Bullpen                 Coordinator            Sub-Agent
+You                    Bullpen                 OpenClaw                Agent
  │                        │                        │                      │
  ├─ Create task ─────────▶│                        │                      │
  │                        │                        │                      │
  ├─ Assign to agent ─────▶│                        │                      │
  │                        │                        │                      │
  ├─ Click "Dispatch" ────▶│                        │                      │
- │                        ├─ Send to coordinator ─▶│                      │
- │                        │                        ├─ Spawn sub-agent ───▶│
+ │                        ├── sessions_spawn ─────▶│                      │
+ │                        │    (isolated session)  ├─ Start agent ───────▶│
  │                        │                        │                      │
  │                        │                        │                 ┌────┴────┐
  │                        │                        │                 │  Work   │
  │                        │                        │                 └────┬────┘
  │                        │                        │                      │
- │                        │◀─────────── Webhook: task complete ──────────┤
+ │                        │◀───────────── Webhook: task complete ─────────┤
  │                        │                        │                      │
  │◀─ See result ──────────│                        │                      │
  │   in real-time         │                        │                      │
@@ -45,14 +45,15 @@ You                    Bullpen                 Coordinator            Sub-Agent
 
 1. **Create a task** — Title, description, priority (1-5)
 2. **Assign to an agent** — Pick from your agent registry
-3. **Dispatch** — Bullpen sends the task to your coordinator agent
-4. **Work happens** — Coordinator spawns a sub-agent with the right model
-5. **Result delivered** — Sub-agent calls webhook, task marked complete
+3. **Dispatch** — Bullpen spawns an isolated OpenClaw session directly
+4. **Work happens** — Agent runs in isolation with configured model
+5. **Result delivered** — Agent calls webhook, task marked complete
 6. **See it live** — Dashboard updates in real-time via Convex
 
 ### Why This Matters
 
 - **Visual task tracking** — See what's running, what's done, what failed
+- **Direct dispatch** — No coordinator middleman, sessions_spawn goes straight to work
 - **Agent specialization** — Route tasks to the right agent (researcher, coder, reviewer)
 - **Audit trail** — Every action logged in the event feed
 - **Webhook integration** — Plug into any automation pipeline
@@ -291,7 +292,7 @@ CMD ["npm", "start"]
 - [x] Webhook task completion
 - [x] OpenClaw session integration
 - [x] Lifecycle hook sync
-- [ ] Task dispatch via sessions_spawn
+- [x] Task dispatch via sessions_spawn
 - [ ] Agent-to-agent messaging
 - [ ] Analytics dashboard
 - [ ] Multi-workspace support
