@@ -110,15 +110,15 @@ export default function AgentsPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/50 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold">Agents</h1>
-            <p className="text-xs text-mc-text-secondary">{agents?.length ?? 0} total · {online} online</p>
+            <h1 className="font-display text-2xl tracking-wide text-mc-text uppercase">Agents</h1>
+            <p className="text-xs text-mc-text-secondary font-mono-jb">{agents?.length ?? 0} total · {online} online</p>
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             New Agent
@@ -157,9 +157,9 @@ export default function AgentsPage() {
               key={tab}
               onClick={() => setFilter(tab)}
               className={cn(
-                "px-2.5 py-1 text-xs rounded transition-colors capitalize",
+                "px-2.5 py-1 text-xs rounded transition-colors capitalize font-mono-jb",
                 filter === tab
-                  ? "bg-mc-bg-tertiary text-mc-text"
+                  ? "bg-mc-bg-tertiary text-mc-text border border-mc-border"
                   : "text-mc-text-secondary hover:text-mc-text"
               )}
             >
@@ -187,13 +187,13 @@ export default function AgentsPage() {
                 <div
                   key={agent._id}
                   onClick={() => setSelectedAgent(agent as Agent)}
-                  className="p-4 bg-mc-bg-secondary border border-mc-border rounded-lg hover:border-mc-border/80 cursor-pointer transition-colors group"
+                  className="p-4 bg-mc-bg-secondary border border-mc-border rounded-lg hover:border-mc-accent/30 cursor-pointer transition-colors group"
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <span className="text-2xl">{agent.avatar || "🤖"}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium truncate">{agent.name}</span>
+                        <span className="text-sm font-medium truncate text-mc-text">{agent.name}</span>
                         {agent.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
                       </div>
                       <div className="text-xs text-mc-text-secondary">
@@ -208,20 +208,20 @@ export default function AgentsPage() {
                   </div>
 
                   {/* Model */}
-                  <div className="flex items-center gap-2 text-xs text-mc-text-secondary mb-2">
+                  <div className="flex items-center gap-2 text-xs text-mc-text-secondary mb-2 font-mono-jb">
                     {agent.model?.includes("cerebras") && <Zap className="w-3 h-3 text-mc-accent-yellow" />}
                     <span>{agent.model ? MODEL_OPTIONS.find((m) => m.value === agent.model)?.label ?? agent.model.split("/")[1] : "No model"}</span>
                   </div>
 
                   {/* Current task */}
                   {currentTask && (
-                    <div className="text-xs bg-mc-accent-yellow/10 text-mc-accent-yellow px-2 py-1.5 rounded mb-2 truncate">
+                    <div className="text-xs bg-mc-accent-yellow/10 text-mc-accent-yellow px-2 py-1.5 rounded mb-2 truncate font-mono-jb">
                       Working: {currentTask.title}
                     </div>
                   )}
 
                   {/* Last seen */}
-                  <div className="text-xs text-mc-text-secondary/60">
+                  <div className="text-xs text-mc-muted font-mono-jb">
                     {agent.status === "online" || agent.status === "busy"
                       ? "Active now"
                       : `Last seen ${formatTime(agent.lastSeen)}`}
@@ -244,7 +244,7 @@ export default function AgentsPage() {
                 onClick={() => setNewAvatar(e)}
                 className={cn(
                   "w-8 h-8 rounded text-base flex items-center justify-center transition-colors",
-                  newAvatar === e ? "bg-mc-accent/20 ring-1 ring-mc-accent" : "bg-mc-bg hover:bg-mc-bg-tertiary"
+                  newAvatar === e ? "bg-mc-accent/20 ring-1 ring-mc-accent" : "bg-mc-bg-tertiary hover:bg-mc-bg-tertiary/80"
                 )}
               >
                 {e}
@@ -256,13 +256,13 @@ export default function AgentsPage() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Agent name"
-            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
             autoFocus
           />
           <select
             value={newRole}
             onChange={(e) => setNewRole(e.target.value)}
-            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
           >
             <option value="">Role...</option>
             {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -270,7 +270,7 @@ export default function AgentsPage() {
           <select
             value={newModel}
             onChange={(e) => setNewModel(e.target.value)}
-            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
           >
             {MODEL_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
@@ -281,7 +281,7 @@ export default function AgentsPage() {
             <button
               type="submit"
               disabled={!newName.trim() || isCreating}
-              className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 disabled:opacity-50"
+              className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover disabled:opacity-50"
             >
               {isCreating ? "Creating..." : "Create Agent"}
             </button>

@@ -6,12 +6,12 @@ type Status = "online" | "offline" | "busy" | "standby" | "pending" | "assigned"
 
 const statusConfig: Record<Status, { class: string; pulse?: boolean }> = {
   online: { class: "status-online", pulse: true },
-  standby: { class: "status-standby" },
+  standby: { class: "status-busy" },
   offline: { class: "status-offline" },
-  busy: { class: "status-working", pulse: true },
-  pending: { class: "status-standby" },
-  assigned: { class: "status-working" },
-  running: { class: "status-working", pulse: true },
+  busy: { class: "status-busy", pulse: true },
+  pending: { class: "status-busy" },
+  assigned: { class: "status-busy" },
+  running: { class: "status-busy", pulse: true },
   completed: { class: "status-online" },
   failed: { class: "status-offline" },
 };
@@ -28,7 +28,7 @@ export function StatusBadge({ status, showLabel = true, className }: StatusBadge
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs uppercase font-medium",
+        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs uppercase font-medium font-mono-jb",
         config.class,
         config.pulse && "animate-pulse-soft",
         className

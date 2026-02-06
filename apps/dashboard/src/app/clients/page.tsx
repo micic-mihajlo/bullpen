@@ -23,9 +23,9 @@ import {
 type ClientStatus = "active" | "inactive" | "churned";
 
 const statusColors: Record<ClientStatus, { color: string; bg: string }> = {
-  active: { color: "text-mc-accent-green", bg: "bg-mc-accent-green/15" },
+  active: { color: "text-mc-accent-green", bg: "bg-mc-accent-green/12" },
   inactive: { color: "text-mc-text-secondary", bg: "bg-mc-bg-tertiary" },
-  churned: { color: "text-mc-accent-red", bg: "bg-mc-accent-red/15" },
+  churned: { color: "text-mc-accent-red", bg: "bg-mc-accent-red/12" },
 };
 
 const PLAN_OPTIONS = ["starter", "pro", "enterprise"];
@@ -133,15 +133,15 @@ export default function ClientsPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/50 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold">Clients</h1>
-            <p className="text-xs text-mc-text-secondary">{clients?.length ?? 0} total</p>
+            <h1 className="font-display text-2xl tracking-wide text-mc-text uppercase">Clients</h1>
+            <p className="text-xs text-mc-text-secondary font-mono-jb">{clients?.length ?? 0} total</p>
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Client
@@ -157,9 +157,9 @@ export default function ClientsPage() {
               key={tab}
               onClick={() => setFilter(tab)}
               className={cn(
-                "px-2.5 py-1 text-xs rounded transition-colors capitalize",
+                "px-2.5 py-1 text-xs rounded transition-colors capitalize font-mono-jb",
                 filter === tab
-                  ? "bg-mc-bg-tertiary text-mc-text"
+                  ? "bg-mc-bg-tertiary text-mc-text border border-mc-border"
                   : "text-mc-text-secondary hover:text-mc-text"
               )}
             >
@@ -207,8 +207,8 @@ export default function ClientsPage() {
                       <span className="text-lg flex-shrink-0">{client.avatar || "👤"}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium truncate">{client.name}</span>
-                          <span className={cn("text-xs px-1.5 py-0.5 rounded capitalize flex-shrink-0", sc.bg, sc.color)}>
+                          <span className="text-sm font-medium truncate text-mc-text">{client.name}</span>
+                          <span className={cn("text-xs px-1.5 py-0.5 rounded capitalize flex-shrink-0 font-mono-jb", sc.bg, sc.color)}>
                             {client.status}
                           </span>
                         </div>
@@ -232,8 +232,8 @@ export default function ClientsPage() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{selectedClient.avatar || "👤"}</span>
                 <div>
-                  <h2 className="text-base font-semibold">{selectedClient.name}</h2>
-                  <div className="text-xs text-mc-text-secondary">
+                  <h2 className="font-display text-xl tracking-wide text-mc-text uppercase">{selectedClient.name}</h2>
+                  <div className="text-xs text-mc-text-secondary font-mono-jb">
                     {selectedClient.company || "Individual"}
                     <span className="mx-1.5">·</span>
                     {selectedClient.plan ?? "starter"} plan
@@ -258,39 +258,39 @@ export default function ClientsPage() {
 
             {/* Info */}
             <div className="bg-mc-bg-secondary border border-mc-border rounded-lg p-4 mb-6 space-y-3">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm text-mc-text">
                 <Mail className="w-4 h-4 text-mc-text-secondary" />
                 <span>{selectedClient.email}</span>
               </div>
               {selectedClient.company && (
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm text-mc-text">
                   <Building2 className="w-4 h-4 text-mc-text-secondary" />
                   <span>{selectedClient.company}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm text-mc-text">
                 <CreditCard className="w-4 h-4 text-mc-text-secondary" />
                 <span className="capitalize">{selectedClient.plan ?? "starter"} plan</span>
               </div>
               {selectedClient.channel && (
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm text-mc-text">
                   <MessageSquare className="w-4 h-4 text-mc-text-secondary" />
                   <span className="capitalize">{selectedClient.channel}</span>
                   {selectedClient.channelId && (
-                    <span className="text-mc-text-secondary text-xs">({selectedClient.channelId})</span>
+                    <span className="text-mc-muted text-xs font-mono-jb">({selectedClient.channelId})</span>
                   )}
                 </div>
               )}
-              <div className="text-xs text-mc-text-secondary pt-1 border-t border-mc-border">
+              <div className="text-xs text-mc-muted pt-1 border-t border-mc-border font-mono-jb">
                 Client since {formatTime(selectedClient.createdAt)}
               </div>
             </div>
 
             {/* Projects */}
             <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-mc-border flex items-center gap-2">
-                <FolderKanban className="w-4 h-4 text-mc-text-secondary" />
-                <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
+              <div className="terminal-header border-b border-mc-border">
+                <FolderKanban className="w-4 h-4 text-mc-text-secondary terminal-header-text" />
+                <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide ml-2">
                   Projects ({selectedClient.projects?.length ?? 0})
                 </span>
               </div>
@@ -301,12 +301,12 @@ export default function ClientsPage() {
                   selectedClient.projects.map((p) => (
                     <div key={p._id} className="px-4 py-2.5 hover:bg-mc-bg-tertiary/50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">{p.name}</span>
+                        <span className="text-sm text-mc-text">{p.name}</span>
                         <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded capitalize",
-                          p.status === "active" ? "bg-mc-accent-green/15 text-mc-accent-green" :
-                          p.status === "review" ? "bg-mc-accent-yellow/15 text-mc-accent-yellow" :
-                          p.status === "delivered" ? "bg-mc-accent/15 text-mc-accent" :
+                          "text-xs px-1.5 py-0.5 rounded capitalize font-mono-jb",
+                          p.status === "active" ? "bg-mc-accent-green/12 text-mc-accent-green" :
+                          p.status === "review" ? "bg-mc-accent-yellow/12 text-mc-accent-yellow" :
+                          p.status === "delivered" ? "bg-mc-accent/12 text-mc-accent" :
                           "bg-mc-bg-tertiary text-mc-text-secondary"
                         )}>
                           {p.status}
@@ -343,7 +343,7 @@ export default function ClientsPage() {
                     "w-8 h-8 rounded text-base flex items-center justify-center transition-colors",
                     formAvatar === e
                       ? "bg-mc-accent/20 ring-1 ring-mc-accent"
-                      : "bg-mc-bg hover:bg-mc-bg-tertiary"
+                      : "bg-mc-bg-tertiary hover:bg-mc-bg-tertiary/80"
                   )}
                 >
                   {e}
@@ -361,7 +361,7 @@ export default function ClientsPage() {
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="John Doe"
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
                 required
                 autoFocus
               />
@@ -373,7 +373,7 @@ export default function ClientsPage() {
                 value={formEmail}
                 onChange={(e) => setFormEmail(e.target.value)}
                 placeholder="john@company.com"
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
                 required
               />
             </div>
@@ -388,7 +388,7 @@ export default function ClientsPage() {
                 value={formCompany}
                 onChange={(e) => setFormCompany(e.target.value)}
                 placeholder="Acme Inc."
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
               />
             </div>
             <div>
@@ -396,7 +396,7 @@ export default function ClientsPage() {
               <select
                 value={formPlan}
                 onChange={(e) => setFormPlan(e.target.value)}
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent capitalize"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent capitalize"
               >
                 {PLAN_OPTIONS.map((p) => (
                   <option key={p} value={p} className="capitalize">{p}</option>
@@ -412,7 +412,7 @@ export default function ClientsPage() {
               <select
                 value={formChannel}
                 onChange={(e) => setFormChannel(e.target.value)}
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent capitalize"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent capitalize"
               >
                 <option value="">None</option>
                 {CHANNEL_OPTIONS.map((c) => (
@@ -428,7 +428,7 @@ export default function ClientsPage() {
                   value={formChannelId}
                   onChange={(e) => setFormChannelId(e.target.value)}
                   placeholder={formChannel === "whatsapp" ? "+1234567890" : "channel-id"}
-                  className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+                  className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
                 />
               </div>
             )}
@@ -445,7 +445,7 @@ export default function ClientsPage() {
             <button
               type="submit"
               disabled={!formName.trim() || !formEmail.trim() || saving}
-              className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 disabled:opacity-50 transition-colors"
+              className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover disabled:opacity-50 transition-colors"
             >
               {saving ? "Saving..." : editingId ? "Save Changes" : "Create Client"}
             </button>

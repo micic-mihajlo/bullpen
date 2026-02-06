@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { ConvexClientProvider } from "@/lib/convex";
 import { ToastProvider } from "@/components/toast";
 import { ShortcutsProvider } from "@/components/shortcuts-provider";
 import { DashboardShell } from "@/components/dashboard-shell";
 import "./globals.css";
 
+const ibmPlexSans = IBM_Plex_Sans({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -23,8 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${jetbrainsMono.variable} font-mono antialiased`}>
+    <html lang="en">
+      <body className={`${ibmPlexSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <div className="dot-grid" />
         <ConvexClientProvider>
           <ToastProvider>
             <ShortcutsProvider>
@@ -32,6 +41,7 @@ export default function RootLayout({
             </ShortcutsProvider>
           </ToastProvider>
         </ConvexClientProvider>
+        <div className="grain" />
       </body>
     </html>
   );

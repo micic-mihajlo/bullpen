@@ -108,15 +108,15 @@ export default function ProjectsPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/50 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold">Projects</h1>
-            <p className="text-xs text-mc-text-secondary">{projects?.length ?? 0} total</p>
+            <h1 className="font-display text-2xl tracking-wide text-mc-text uppercase">Projects</h1>
+            <p className="text-xs text-mc-text-secondary font-mono-jb">{projects?.length ?? 0} total</p>
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             New Project

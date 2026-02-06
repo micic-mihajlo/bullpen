@@ -33,23 +33,23 @@ export function Modal({ open, onClose, title, children, className, size = "sm" }
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in"
+      className="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
         className={cn(
-          "bg-mc-bg-secondary border border-mc-border rounded-lg w-full animate-slide-in",
+          "bg-mc-bg-secondary border border-mc-border rounded-lg w-full shadow-lg animate-slide-in",
           sizeClass,
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="p-3 border-b border-mc-border flex items-center justify-between">
-            <span className="text-sm font-medium">{title}</span>
+          <div className="terminal-header border-b border-mc-border">
+            <span className="terminal-header-text text-sm font-medium font-mono-jb text-mc-text">{title}</span>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
+              className="ml-auto p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
             >
               <X className="w-4 h-4 text-mc-text-secondary" />
             </button>

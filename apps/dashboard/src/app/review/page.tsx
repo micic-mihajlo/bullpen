@@ -82,11 +82,11 @@ export default function ReviewPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/50 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold">Review Queue</h1>
-            <p className="text-xs text-mc-text-secondary">
+            <h1 className="font-display text-2xl tracking-wide text-mc-text uppercase">Review Queue</h1>
+            <p className="text-xs text-mc-text-secondary font-mono-jb">
               {pendingReview?.length ?? 0} deliverables awaiting review
             </p>
           </div>
@@ -210,7 +210,7 @@ export default function ReviewPage() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="prose prose-invert prose-sm max-w-none">
+              <div className="prose-warm prose-sm max-w-none">
                 {selectedDeliverable.format === "code" ? (
                   <pre className="p-4 bg-mc-bg rounded-lg border border-mc-border text-sm overflow-x-auto whitespace-pre-wrap break-words">
                     {selectedDeliverable.content}

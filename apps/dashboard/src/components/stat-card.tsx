@@ -21,18 +21,18 @@ const accentColors = {
 export function StatCard({ label, value, icon, trend, accent = "blue", className }: StatCardProps) {
   return (
     <div className={cn(
-      "p-4 bg-mc-bg-secondary border border-mc-border rounded-lg",
+      "p-4 bg-mc-bg-secondary border border-mc-border rounded-lg relative overflow-hidden crt-scanlines",
       className
     )}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-mc-text-secondary uppercase tracking-wide">{label}</span>
+      <div className="flex items-center justify-between mb-2 relative z-10">
+        <span className="text-xs text-mc-text-secondary uppercase tracking-wide font-body">{label}</span>
         {icon && <span className={cn("opacity-60", accentColors[accent])}>{icon}</span>}
       </div>
-      <div className="flex items-baseline gap-2">
-        <span className={cn("text-2xl font-semibold", accentColors[accent])}>{value}</span>
+      <div className="flex items-baseline gap-2 relative z-10">
+        <span className={cn("text-2xl font-display tracking-wide", accentColors[accent])}>{value}</span>
         {trend && (
           <span className={cn(
-            "text-xs",
+            "text-xs font-mono-jb",
             trend.positive ? "text-mc-accent-green" : "text-mc-accent-red"
           )}>
             {trend.value}

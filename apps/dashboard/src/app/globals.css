@@ -1,25 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* ── Warm Brutalist Design System ── */
+
 :root {
-  --mc-bg: #0a0a0a;
-  --mc-bg-secondary: #111111;
-  --mc-bg-tertiary: #1a1a1a;
-  --mc-border: #262626;
-  --mc-text: #e5e5e5;
-  --mc-text-secondary: #737373;
-  --mc-accent: #3b82f6;
-  --mc-accent-green: #22c55e;
-  --mc-accent-yellow: #eab308;
-  --mc-accent-red: #ef4444;
-  --mc-accent-purple: #a855f7;
-  --mc-accent-pink: #ec4899;
-  --mc-accent-cyan: #06b6d4;
+  --mc-bg: #f4f1eb;
+  --mc-bg-secondary: #faf9f7;
+  --mc-bg-tertiary: #e8e4db;
+  --mc-border: #c5c0b6;
+  --mc-text: #0f0f0f;
+  --mc-text-secondary: #3d3d3d;
+  --mc-accent: #c2410c;
+  --mc-accent-hover: #9a3412;
+  --mc-accent-green: #16a34a;
+  --mc-accent-yellow: #ca8a04;
+  --mc-accent-red: #dc2626;
+  --mc-accent-purple: #9333ea;
+  --mc-accent-pink: #db2777;
+  --mc-accent-cyan: #0891b2;
+  --mc-muted: #6b6b6b;
+  --mc-bull: #1a1a1a;
 }
 
 @theme inline {
-  --font-sans: var(--font-outfit);
-  --font-mono: var(--font-mono);
-  
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Bebas Neue', ui-sans-serif, system-ui, sans-serif;
+
   --color-mc-bg: var(--mc-bg);
   --color-mc-bg-secondary: var(--mc-bg-secondary);
   --color-mc-bg-tertiary: var(--mc-bg-tertiary);
@@ -27,14 +34,18 @@
   --color-mc-text: var(--mc-text);
   --color-mc-text-secondary: var(--mc-text-secondary);
   --color-mc-accent: var(--mc-accent);
+  --color-mc-accent-hover: var(--mc-accent-hover);
   --color-mc-accent-green: var(--mc-accent-green);
   --color-mc-accent-yellow: var(--mc-accent-yellow);
   --color-mc-accent-red: var(--mc-accent-red);
   --color-mc-accent-purple: var(--mc-accent-purple);
   --color-mc-accent-pink: var(--mc-accent-pink);
   --color-mc-accent-cyan: var(--mc-accent-cyan);
+  --color-mc-muted: var(--mc-muted);
+  --color-mc-bull: var(--mc-bull);
 }
 
+/* ── Scrollbar ── */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--mc-border) transparent;
@@ -53,8 +64,9 @@
   border-radius: 2px;
 }
 
+/* ── Base Typography ── */
 html, body {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
@@ -62,18 +74,114 @@ body {
   color: var(--mc-text);
 }
 
-::selection {
-  background: rgba(59, 130, 246, 0.3);
+/* ── Font Utility Classes ── */
+.font-display {
+  font-family: 'Bebas Neue', ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Status */
+.font-body {
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mono-jb {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: var(--mc-accent);
+  color: white;
+}
+
+/* ── Focus States ── */
+*:focus-visible {
+  outline: 2px solid var(--mc-accent);
+  outline-offset: 2px;
+}
+
+/* ── Grain Overlay ── */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  z-index: 1000;
+  mix-blend-mode: multiply;
+}
+
+/* ── Dot Grid Background ── */
+.dot-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  background-image: radial-gradient(var(--mc-border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  z-index: -1;
+}
+
+/* ── Terminal Header ── */
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.terminal-header::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 14px 0 0 #eab308, 28px 0 0 #22c55e;
+  flex-shrink: 0;
+}
+
+.terminal-header-text {
+  margin-left: 28px;
+}
+
+/* ── CRT Scanline Effect ── */
+.crt-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* ── Diagonal Stripes ── */
+.diagonal-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.03) 4px,
+    rgba(0, 0, 0, 0.03) 8px
+  );
+}
+
+/* ── Status Classes ── */
 .status-online {
-  background: rgba(34, 197, 94, 0.15);
+  background: rgba(22, 163, 74, 0.12);
   color: var(--mc-accent-green);
 }
 
-.status-busy {
-  background: rgba(234, 179, 8, 0.15);
+.status-busy,
+.status-working,
+.status-standby {
+  background: rgba(202, 138, 4, 0.12);
   color: var(--mc-accent-yellow);
 }
 
@@ -82,24 +190,24 @@ body {
   color: var(--mc-text-secondary);
 }
 
-/* Columns */
+/* ── Column Indicators ── */
 .column-pending {
-  border-top: 2px solid var(--mc-text-secondary);
+  border-top: 3px solid var(--mc-text-secondary);
 }
 
 .column-running {
-  border-top: 2px solid var(--mc-accent-yellow);
+  border-top: 3px solid var(--mc-accent-yellow);
 }
 
 .column-completed {
-  border-top: 2px solid var(--mc-accent-green);
+  border-top: 3px solid var(--mc-accent-green);
 }
 
 .column-failed {
-  border-top: 2px solid var(--mc-accent-red);
+  border-top: 3px solid var(--mc-accent-red);
 }
 
-/* Animations - subtle only */
+/* ── Animations ── */
 @keyframes slide-in {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -110,6 +218,22 @@ body {
   to { opacity: 1; }
 }
 
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .animate-slide-in {
   animation: slide-in 0.15s ease-out;
 }
@@ -118,23 +242,25 @@ body {
   animation: fade-in 0.2s ease-out;
 }
 
-/* Skeleton shimmer */
-@keyframes shimmer {
-  0% { opacity: 0.5; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.5; }
-}
-
 .animate-shimmer {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Slide-in from left */
-@keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
 .animate-slide-in-left {
   animation: slide-in-left 0.15s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* ── Prose overrides for light theme ── */
+.prose-warm {
+  color: var(--mc-text);
+}
+
+.prose-warm pre {
+  background: var(--mc-bg-tertiary);
+  border: 1px solid var(--mc-border);
+  color: var(--mc-text);
 }

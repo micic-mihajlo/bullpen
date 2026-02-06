@@ -82,10 +82,10 @@ export default function OverviewPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/50 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold">Overview</h1>
+            <h1 className="font-display text-2xl tracking-wide text-mc-text uppercase">Overview</h1>
             <p className="text-xs text-mc-text-secondary">Mission control at a glance</p>
           </div>
           <div className="flex items-center gap-3">
@@ -96,7 +96,7 @@ export default function OverviewPage() {
             >
               <Keyboard className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-1.5 text-xs text-mc-text-secondary">
+            <div className="flex items-center gap-1.5 text-xs text-mc-text-secondary font-mono-jb">
               <span className="w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
               connected
             </div>
@@ -141,11 +141,11 @@ export default function OverviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Active Projects */}
           <div className="lg:col-span-2 bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-mc-border flex items-center justify-between">
-              <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">Active Projects</span>
+            <div className="terminal-header border-b border-mc-border">
+              <span className="terminal-header-text text-xs font-medium text-mc-text-secondary uppercase tracking-wide">Active Projects</span>
               <button
                 onClick={() => router.push("/projects")}
-                className="text-xs text-mc-accent hover:text-mc-accent/80 transition-colors flex items-center gap-1"
+                className="ml-auto text-xs text-mc-accent hover:text-mc-accent-hover transition-colors flex items-center gap-1 font-mono-jb"
               >
                 View all <ArrowRight className="w-3 h-3" />
               </button>
@@ -169,11 +169,11 @@ export default function OverviewPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium truncate">{project.name}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        <span className="text-sm font-medium truncate text-mc-text">{project.name}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-mono-jb ${
                           project.status === "active"
-                            ? "bg-mc-accent-green/15 text-mc-accent-green"
-                            : "bg-mc-accent-yellow/15 text-mc-accent-yellow"
+                            ? "bg-mc-accent-green/12 text-mc-accent-green"
+                            : "bg-mc-accent-yellow/12 text-mc-accent-yellow"
                         }`}>
                           {project.status}
                         </span>
@@ -183,7 +183,7 @@ export default function OverviewPage() {
                         {project.deadline && ` · Due ${new Date(project.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
                       </div>
                     </div>
-                    <span className="text-xs text-mc-text-secondary">{project.type}</span>
+                    <span className="text-xs text-mc-text-secondary font-mono-jb">{project.type}</span>
                   </div>
                 ))
               )}
@@ -194,8 +194,8 @@ export default function OverviewPage() {
           <div className="space-y-6">
             {/* Quick Actions */}
             <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-mc-border">
-                <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">Quick Actions</span>
+              <div className="terminal-header border-b border-mc-border">
+                <span className="terminal-header-text text-xs font-medium text-mc-text-secondary uppercase tracking-wide">Quick Actions</span>
               </div>
               <div className="p-3 space-y-1.5">
                 <button
@@ -204,7 +204,7 @@ export default function OverviewPage() {
                 >
                   <Plus className="w-4 h-4" />
                   <span>New Project</span>
-                  <kbd className="ml-auto text-xs text-mc-text-secondary/50">P</kbd>
+                  <kbd className="ml-auto text-xs text-mc-muted font-mono-jb">P</kbd>
                 </button>
                 <button
                   onClick={() => router.push("/tasks")}
@@ -212,7 +212,7 @@ export default function OverviewPage() {
                 >
                   <CheckSquare className="w-4 h-4" />
                   <span>New Task</span>
-                  <kbd className="ml-auto text-xs text-mc-text-secondary/50">N</kbd>
+                  <kbd className="ml-auto text-xs text-mc-muted font-mono-jb">N</kbd>
                 </button>
                 <button
                   onClick={() => router.push("/agents")}
@@ -220,7 +220,7 @@ export default function OverviewPage() {
                 >
                   <Zap className="w-4 h-4" />
                   <span>Dispatch Agent</span>
-                  <kbd className="ml-auto text-xs text-mc-text-secondary/50">A</kbd>
+                  <kbd className="ml-auto text-xs text-mc-muted font-mono-jb">A</kbd>
                 </button>
                 {stats.reviewQueue > 0 && (
                   <button
@@ -237,9 +237,9 @@ export default function OverviewPage() {
 
             {/* Recent Activity */}
             <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-mc-border flex items-center justify-between">
-                <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">Recent Activity</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
+              <div className="terminal-header border-b border-mc-border">
+                <span className="terminal-header-text text-xs font-medium text-mc-text-secondary uppercase tracking-wide">Recent Activity</span>
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-mc-accent-green" />
               </div>
               <div className="divide-y divide-mc-border max-h-[320px] overflow-y-auto">
                 {!events ? (
@@ -255,7 +255,7 @@ export default function OverviewPage() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-mc-text leading-relaxed truncate">{event.message}</p>
-                          <span className="text-xs text-mc-text-secondary">{formatTime(event.timestamp)}</span>
+                          <span className="text-xs text-mc-muted font-mono-jb">{formatTime(event.timestamp)}</span>
                         </div>
                       </div>
                     </div>

@@ -74,18 +74,25 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-full flex flex-col bg-mc-bg-secondary border-r border-mc-border transition-all duration-200 flex-shrink-0",
+        "h-full flex flex-col bg-[#1a1a1a] border-r border-[#2a2a2a] transition-all duration-200 flex-shrink-0",
         collapsed ? "w-14" : "w-52"
       )}
     >
-      {/* Logo */}
+      {/* Logo with terminal dots */}
       <div className={cn(
-        "flex items-center gap-2 px-3 py-3 border-b border-mc-border",
+        "flex items-center gap-2 px-3 py-3 border-b border-[#2a2a2a]",
         collapsed && "justify-center"
       )}>
+        {!collapsed && (
+          <div className="flex items-center gap-1.5 mr-2">
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+          </div>
+        )}
         <span className="text-lg flex-shrink-0">🐂</span>
         {!collapsed && (
-          <span className="font-semibold text-sm tracking-tight truncate">bullpen</span>
+          <span className="font-display text-lg tracking-wider text-white uppercase">Bullpen</span>
         )}
       </div>
 
@@ -98,30 +105,30 @@ export function Sidebar() {
               key={item.href}
               onClick={() => router.push(item.href)}
               className={cn(
-                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors relative",
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-mono-jb transition-colors relative",
                 active
-                  ? "bg-mc-accent/10 text-mc-accent"
-                  : "text-mc-text-secondary hover:text-mc-text hover:bg-mc-bg-tertiary",
+                  ? "bg-[#c2410c]/15 text-[#c2410c]"
+                  : "text-[#888] hover:text-white hover:bg-[#252525]",
                 collapsed && "justify-center px-0"
               )}
               title={collapsed ? `${item.label} (${item.shortcut})` : undefined}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-mc-accent rounded-r" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#c2410c] rounded-r" />
               )}
               <span className="flex-shrink-0">{item.icon}</span>
               {!collapsed && (
                 <>
-                  <span className="truncate">{item.label}</span>
+                  <span className="truncate text-xs">{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className="ml-auto text-xs bg-mc-accent/20 text-mc-accent px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                    <span className="ml-auto text-xs bg-[#c2410c]/20 text-[#c2410c] px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
                       {item.badge}
                     </span>
                   )}
                 </>
               )}
               {collapsed && item.badge !== undefined && item.badge > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-mc-accent rounded-full" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#c2410c] rounded-full" />
               )}
             </button>
           );
@@ -129,11 +136,11 @@ export function Sidebar() {
       </nav>
 
       {/* Collapse toggle */}
-      <div className="p-2 border-t border-mc-border">
+      <div className="p-2 border-t border-[#2a2a2a]">
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            "w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs text-mc-text-secondary hover:text-mc-text hover:bg-mc-bg-tertiary transition-colors",
+            "w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs text-[#888] hover:text-white hover:bg-[#252525] transition-colors font-mono-jb",
             collapsed && "justify-center px-0"
           )}
         >
