@@ -64,7 +64,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center">
             <a
               href="#get-started"
-              className="min-h-[44px] px-4 py-2 bg-text text-bg font-mono text-xs uppercase tracking-wider transition-all duration-300 hover:bg-accent hover:-translate-y-0.5"
+              className="inline-flex items-center min-h-[44px] px-5 py-2 bg-text text-bg font-mono text-xs uppercase tracking-wider transition-all duration-300 hover:bg-accent hover:-translate-y-0.5"
             >
               Start Project
             </a>
