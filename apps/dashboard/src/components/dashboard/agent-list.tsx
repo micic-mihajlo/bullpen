@@ -4,9 +4,11 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
-import { Plus, X, Link2 } from "lucide-react";
+import { Plus, Link2 } from "lucide-react";
 import { AgentDetail } from "./agent-detail";
 import { Id } from "../../../convex/_generated/dataModel";
+import { useStableData } from "@/lib/hooks";
+import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/toast";
 import { useRegisterShortcut } from "@/components/shortcuts-provider";
 
@@ -37,7 +39,7 @@ const MODEL_OPTIONS = [
 const AVATARS = ["🤖", "🦾", "🧠", "👾", "🎯", "⚡", "🔮", "🦊", "🐙", "🌟"];
 
 export function AgentList() {
-  const agents = useQuery(api.agents.list);
+  const agents = useStableData(useQuery(api.agents.list));
   const createAgent = useMutation(api.agents.create);
   const [filter, setFilter] = useState<FilterTab>("all");
   const [showModal, setShowModal] = useState(false);
@@ -92,11 +94,11 @@ export function AgentList() {
         {/* Header */}
         <div className="p-2.5 border-b border-mc-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
+            <span className="text-[10px] font-semibold text-mc-text-secondary uppercase tracking-wider font-mono-jb">
               Agents ({agents?.length ?? 0})
             </span>
             {online > 0 && (
-              <span className="text-xs text-mc-accent-green">{online} online</span>
+              <span className="text-[10px] text-mc-accent-green font-mono-jb font-semibold">{online} online</span>
             )}
           </div>
           <div className="flex gap-0.5">
@@ -105,10 +107,10 @@ export function AgentList() {
                 key={tab}
                 onClick={() => setFilter(tab)}
                 className={cn(
-                  "px-2 py-1 text-xs rounded transition-colors",
+                  "px-2 py-1 text-[10px] rounded transition-colors font-mono-jb capitalize",
                   filter === tab
-                    ? "bg-mc-bg-tertiary text-mc-text"
-                    : "text-mc-text-secondary hover:text-mc-text"
+                    ? "bg-mc-accent/10 text-mc-accent border border-mc-accent/30 font-medium"
+                    : "text-mc-text-secondary hover:text-mc-text hover:bg-mc-bg-tertiary"
                 )}
               >
                 {tab}
@@ -120,9 +122,9 @@ export function AgentList() {
         {/* List */}
         <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
           {!agents ? (
-            <div className="p-2 text-xs text-mc-text-secondary">Loading...</div>
+            <div className="p-2 text-[10px] text-mc-text-secondary font-mono-jb">Loading...</div>
           ) : filtered?.length === 0 ? (
-            <div className="p-4 text-xs text-mc-text-secondary text-center">No agents</div>
+            <div className="p-4 text-[10px] text-mc-text-secondary text-center font-mono-jb">No agents</div>
           ) : (
             filtered?.map((agent) => {
               const role = getRole(agent.soul);
@@ -135,10 +137,10 @@ export function AgentList() {
                   <span className="text-xl">{agent.avatar || "🤖"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-medium truncate">{agent.name}</span>
+                      <span className="text-sm font-medium truncate text-mc-text">{agent.name}</span>
                       {agent.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
                     </div>
-                    <div className="text-xs text-mc-text-secondary truncate">
+                    <div className="text-[10px] text-mc-text-secondary truncate font-mono-jb">
                       {role || "—"}
                       {agent.model?.includes("cerebras") && " · ⚡"}
                     </div>
@@ -158,7 +160,7 @@ export function AgentList() {
         <div className="p-2 border-t border-mc-border">
           <button
             onClick={() => setShowModal(true)}
-            className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text hover:bg-mc-bg-tertiary rounded transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-mc-text-secondary hover:text-mc-text hover:bg-mc-bg-tertiary rounded transition-colors font-mono-jb uppercase tracking-wider"
           >
             <Plus className="w-3.5 h-3.5" />
             Add agent
@@ -166,71 +168,61 @@ export function AgentList() {
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="p-3 border-b border-mc-border flex items-center justify-between">
-              <span className="text-sm font-medium">New Agent</span>
-              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-mc-bg-tertiary rounded">
-                <X className="w-4 h-4 text-mc-text-secondary" />
+      {/* Create Modal */}
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="New Agent" size="sm">
+        <form onSubmit={handleCreate} className="p-3 space-y-3">
+          <div className="flex gap-1.5 flex-wrap">
+            {AVATARS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => setNewAvatar(e)}
+                className={cn(
+                  "w-8 h-8 rounded text-base flex items-center justify-center transition-colors",
+                  newAvatar === e ? "bg-mc-accent/20 ring-1 ring-mc-accent" : "bg-mc-bg-tertiary hover:bg-mc-bg-tertiary/80"
+                )}
+              >
+                {e}
               </button>
-            </div>
-            <form onSubmit={handleCreate} className="p-3 space-y-3">
-              <div className="flex gap-1.5 flex-wrap">
-                {AVATARS.map((e) => (
-                  <button
-                    key={e}
-                    type="button"
-                    onClick={() => setNewAvatar(e)}
-                    className={cn(
-                      "w-8 h-8 rounded text-base flex items-center justify-center",
-                      newAvatar === e ? "bg-mc-accent/20 ring-1 ring-mc-accent" : "bg-mc-bg hover:bg-mc-bg-tertiary"
-                    )}
-                  >
-                    {e}
-                  </button>
-                ))}
-              </div>
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Name"
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
-                autoFocus
-              />
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
-              >
-                <option value="">Role...</option>
-                {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-              <select
-                value={newModel}
-                onChange={(e) => setNewModel(e.target.value)}
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
-              >
-                {MODEL_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-              </select>
-              <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setShowModal(false)} className="px-3 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text">
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!newName.trim() || isCreating}
-                  className="px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 disabled:opacity-50"
-                >
-                  {isCreating ? "..." : "Create"}
-                </button>
-              </div>
-            </form>
+            ))}
           </div>
-        </div>
-      )}
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Name"
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
+            autoFocus
+          />
+          <select
+            value={newRole}
+            onChange={(e) => setNewRole(e.target.value)}
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
+          >
+            <option value="">Role...</option>
+            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <select
+            value={newModel}
+            onChange={(e) => setNewModel(e.target.value)}
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
+          >
+            {MODEL_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={() => setShowModal(false)} className="px-3 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!newName.trim() || isCreating}
+              className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover disabled:opacity-50 font-mono-jb uppercase tracking-wider"
+            >
+              {isCreating ? "Creating..." : "Create"}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Agent Detail Modal */}
       {selectedAgent && (

@@ -38,7 +38,7 @@ export function Dropdown({ trigger, items, align = "left", className }: Dropdown
       {open && (
         <div
           className={cn(
-            "absolute top-full mt-1 z-50 min-w-[160px] bg-mc-bg-secondary border border-mc-border rounded-lg py-1 shadow-lg animate-fade-in",
+            "absolute top-full mt-1 z-50 min-w-[160px] bg-mc-bg-secondary border border-mc-border rounded py-1 shadow-xl animate-fade-in",
             align === "right" ? "right-0" : "left-0"
           )}
         >

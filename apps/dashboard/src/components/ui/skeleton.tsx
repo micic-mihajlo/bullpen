@@ -46,11 +46,11 @@ export function SkeletonList({ count = 3 }: { count?: number }) {
 
 export function SkeletonStats() {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="p-4 bg-mc-bg-secondary border border-mc-border rounded-lg space-y-2">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-8 w-12" />
+        <div key={i} className="bg-mc-bg-secondary border border-mc-border rounded overflow-hidden">
+          <div className="px-3 py-1.5 bg-[#1a1a1a]"><Skeleton className="h-2.5 w-16 opacity-30" /></div>
+          <div className="px-3 py-2.5"><Skeleton className="h-7 w-10" /></div>
         </div>
       ))}
     </div>

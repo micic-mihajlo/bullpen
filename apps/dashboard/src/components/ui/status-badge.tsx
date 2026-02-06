@@ -28,7 +28,7 @@ export function StatusBadge({ status, showLabel = true, className }: StatusBadge
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs uppercase font-medium font-mono-jb",
+        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] uppercase font-semibold font-mono-jb tracking-wide",
         config.class,
         config.pulse && "animate-pulse-soft",
         className

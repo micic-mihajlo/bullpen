@@ -21,23 +21,27 @@ const accentColors = {
 export function StatCard({ label, value, icon, trend, accent = "blue", className }: StatCardProps) {
   return (
     <div className={cn(
-      "p-4 bg-mc-bg-secondary border border-mc-border rounded-lg relative overflow-hidden crt-scanlines",
+      "bg-mc-bg-secondary border border-mc-border rounded overflow-hidden crt-scanlines",
       className
     )}>
-      <div className="flex items-center justify-between mb-2 relative z-10">
-        <span className="text-xs text-mc-text-secondary uppercase tracking-wide font-body">{label}</span>
-        {icon && <span className={cn("opacity-60", accentColors[accent])}>{icon}</span>}
+      {/* Dark header bar — terminal readout label */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#1a1a1a]">
+        <span className="text-[10px] text-[#888] uppercase tracking-wider font-mono-jb">{label}</span>
+        {icon && <span className={cn("opacity-80", accentColors[accent])}>{icon}</span>}
       </div>
-      <div className="flex items-baseline gap-2 relative z-10">
-        <span className={cn("text-2xl font-display tracking-wide", accentColors[accent])}>{value}</span>
-        {trend && (
-          <span className={cn(
-            "text-xs font-mono-jb",
-            trend.positive ? "text-mc-accent-green" : "text-mc-accent-red"
-          )}>
-            {trend.value}
-          </span>
-        )}
+      {/* Value readout */}
+      <div className="px-3 py-2.5 relative z-10">
+        <div className="flex items-baseline gap-2">
+          <span className={cn("text-2xl font-mono-jb font-medium", accentColors[accent])}>{value}</span>
+          {trend && (
+            <span className={cn(
+              "text-xs font-mono-jb",
+              trend.positive ? "text-mc-accent-green" : "text-mc-accent-red"
+            )}>
+              {trend.value}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/utils";
+import { useStableData } from "@/lib/hooks";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
@@ -33,7 +34,7 @@ const CHANNEL_OPTIONS = ["email", "whatsapp", "slack", "discord", "telegram"];
 const AVATARS = ["👤", "🏢", "🚀", "💼", "🌟", "🎯", "⚡", "🔮"];
 
 export default function ClientsPage() {
-  const clients = useQuery(api.clients.list);
+  const clients = useStableData(useQuery(api.clients.list));
   const createClient = useMutation(api.clients.create);
   const updateClient = useMutation(api.clients.update);
   const { addToast } = useToast();
@@ -43,7 +44,6 @@ export default function ClientsPage() {
   const [editingId, setEditingId] = useState<Id<"clients"> | null>(null);
   const [selectedId, setSelectedId] = useState<Id<"clients"> | null>(null);
 
-  // Form state
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formCompany, setFormCompany] = useState("");
@@ -124,7 +124,6 @@ export default function ClientsPage() {
     }
   };
 
-  // Client detail view
   const selectedClient = useQuery(
     api.clients.withProjects,
     selectedId ? { id: selectedId } : "skip"
@@ -136,12 +135,12 @@ export default function ClientsPage() {
       <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-2xl tracking-wide text-mc-text uppercase">Clients</h1>
-            <p className="text-xs text-mc-text-secondary font-mono-jb">{clients?.length ?? 0} total</p>
+            <h1 className="font-display text-3xl tracking-wider text-mc-text uppercase">Clients</h1>
+            <p className="text-[10px] text-mc-muted font-mono-jb uppercase tracking-widest">/// {clients?.length ?? 0} total</p>
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs bg-mc-accent text-white uppercase tracking-wider hover:bg-mc-accent-hover transition-colors font-mono-jb"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Client
@@ -159,8 +158,8 @@ export default function ClientsPage() {
               className={cn(
                 "px-2.5 py-1 text-xs rounded transition-colors capitalize font-mono-jb",
                 filter === tab
-                  ? "bg-mc-bg-tertiary text-mc-text border border-mc-border"
-                  : "text-mc-text-secondary hover:text-mc-text"
+                  ? "bg-mc-accent/10 text-mc-accent border border-mc-accent/30 font-medium"
+                  : "text-mc-text-secondary hover:text-mc-text hover:bg-mc-bg-tertiary"
               )}
             >
               {tab}
@@ -199,7 +198,7 @@ export default function ClientsPage() {
                     className={cn(
                       "px-4 py-3 cursor-pointer transition-colors",
                       selectedId === client._id
-                        ? "bg-mc-accent/10 border-l-2 border-l-mc-accent"
+                        ? "bg-mc-accent/10 border-l-[3px] border-l-mc-accent"
                         : "hover:bg-mc-bg-tertiary/50"
                     )}
                   >
@@ -208,7 +207,7 @@ export default function ClientsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium truncate text-mc-text">{client.name}</span>
-                          <span className={cn("text-xs px-1.5 py-0.5 rounded capitalize flex-shrink-0 font-mono-jb", sc.bg, sc.color)}>
+                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded capitalize flex-shrink-0 font-mono-jb font-semibold", sc.bg, sc.color)}>
                             {client.status}
                           </span>
                         </div>
@@ -227,13 +226,13 @@ export default function ClientsPage() {
 
         {/* Detail panel */}
         {selectedId && selectedClient && (
-          <div className="flex-1 overflow-y-auto p-6 animate-slide-in-left">
-            <div className="flex items-center justify-between mb-6">
+          <div className="flex-1 overflow-y-auto p-4 animate-slide-in-left">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{selectedClient.avatar || "👤"}</span>
                 <div>
-                  <h2 className="font-display text-xl tracking-wide text-mc-text uppercase">{selectedClient.name}</h2>
-                  <div className="text-xs text-mc-text-secondary font-mono-jb">
+                  <h2 className="font-display text-xl tracking-wider text-mc-text uppercase">{selectedClient.name}</h2>
+                  <div className="text-[10px] text-mc-muted font-mono-jb uppercase tracking-wider">
                     {selectedClient.company || "Individual"}
                     <span className="mx-1.5">·</span>
                     {selectedClient.plan ?? "starter"} plan
@@ -243,7 +242,7 @@ export default function ClientsPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => openEdit(selectedClient)}
-                  className="px-3 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text border border-mc-border rounded hover:bg-mc-bg-tertiary transition-colors"
+                  className="px-3 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text border border-mc-border rounded hover:bg-mc-bg-tertiary transition-colors font-mono-jb uppercase tracking-wide"
                 >
                   Edit
                 </button>
@@ -257,7 +256,7 @@ export default function ClientsPage() {
             </div>
 
             {/* Info */}
-            <div className="bg-mc-bg-secondary border border-mc-border rounded-lg p-4 mb-6 space-y-3">
+            <div className="bg-mc-bg-secondary border border-mc-border rounded-lg p-4 mb-4 space-y-2.5">
               <div className="flex items-center gap-2 text-sm text-mc-text">
                 <Mail className="w-4 h-4 text-mc-text-secondary" />
                 <span>{selectedClient.email}</span>
@@ -277,20 +276,19 @@ export default function ClientsPage() {
                   <MessageSquare className="w-4 h-4 text-mc-text-secondary" />
                   <span className="capitalize">{selectedClient.channel}</span>
                   {selectedClient.channelId && (
-                    <span className="text-mc-muted text-xs font-mono-jb">({selectedClient.channelId})</span>
+                    <span className="text-mc-muted text-[10px] font-mono-jb">({selectedClient.channelId})</span>
                   )}
                 </div>
               )}
-              <div className="text-xs text-mc-muted pt-1 border-t border-mc-border font-mono-jb">
+              <div className="text-[10px] text-mc-muted pt-1.5 border-t border-mc-border font-mono-jb uppercase tracking-wider">
                 Client since {formatTime(selectedClient.createdAt)}
               </div>
             </div>
 
             {/* Projects */}
             <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-              <div className="terminal-header border-b border-mc-border">
-                <FolderKanban className="w-4 h-4 text-mc-text-secondary terminal-header-text" />
-                <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide ml-2">
+              <div className="terminal-header">
+                <span className="terminal-header-text">
                   Projects ({selectedClient.projects?.length ?? 0})
                 </span>
               </div>
@@ -299,11 +297,11 @@ export default function ClientsPage() {
                   <div className="p-4 text-xs text-mc-text-secondary text-center">No projects yet</div>
                 ) : (
                   selectedClient.projects.map((p) => (
-                    <div key={p._id} className="px-4 py-2.5 hover:bg-mc-bg-tertiary/50 transition-colors">
+                    <div key={p._id} className="px-4 py-2 hover:bg-mc-bg-tertiary/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-mc-text">{p.name}</span>
                         <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded capitalize font-mono-jb",
+                          "text-[10px] px-1.5 py-0.5 rounded capitalize font-mono-jb font-semibold",
                           p.status === "active" ? "bg-mc-accent-green/12 text-mc-accent-green" :
                           p.status === "review" ? "bg-mc-accent-yellow/12 text-mc-accent-yellow" :
                           p.status === "delivered" ? "bg-mc-accent/12 text-mc-accent" :
@@ -312,7 +310,7 @@ export default function ClientsPage() {
                           {p.status}
                         </span>
                       </div>
-                      <div className="text-xs text-mc-text-secondary mt-0.5">{p.type}</div>
+                      <div className="text-[10px] text-mc-text-secondary mt-0.5 font-mono-jb">{p.type}</div>
                     </div>
                   ))
                 )}
@@ -330,9 +328,8 @@ export default function ClientsPage() {
         size="md"
       >
         <form onSubmit={handleSave} className="p-4 space-y-4">
-          {/* Avatar */}
           <div>
-            <label className="text-xs text-mc-text-secondary uppercase tracking-wide mb-1 block">Avatar</label>
+            <label className="text-[10px] text-mc-text-secondary uppercase tracking-wider mb-1 block font-mono-jb">Avatar</label>
             <div className="flex gap-1.5 flex-wrap">
               {AVATARS.map((e) => (
                 <button
@@ -351,11 +348,9 @@ export default function ClientsPage() {
               ))}
             </div>
           </div>
-
-          {/* Name + Email */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-mc-text-secondary uppercase tracking-wide mb-1 block">Name</label>
+              <label className="text-[10px] text-mc-text-secondary uppercase tracking-wider mb-1 block font-mono-jb">Name</label>
               <input
                 type="text"
                 value={formName}
@@ -367,7 +362,7 @@ export default function ClientsPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-mc-text-secondary uppercase tracking-wide mb-1 block">Email</label>
+              <label className="text-[10px] text-mc-text-secondary uppercase tracking-wider mb-1 block font-mono-jb">Email</label>
               <input
                 type="email"
                 value={formEmail}
@@ -378,11 +373,9 @@ export default function ClientsPage() {
               />
             </div>
           </div>
-
-          {/* Company + Plan */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-mc-text-secondary uppercase tracking-wide mb-1 block">Company</label>
+              <label className="text-[10px] text-mc-text-secondary uppercase tracking-wider mb-1 block font-mono-jb">Company</label>
               <input
                 type="text"
                 value={formCompany}
@@ -392,7 +385,7 @@ export default function ClientsPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-mc-text-secondary uppercase tracking-wide mb-1 block">Plan</label>
+              <label className="text-[10px] text-mc-text-secondary uppercase tracking-wider mb-1 block font-mono-jb">Plan</label>
               <select
                 value={formPlan}
                 onChange={(e) => setFormPlan(e.target.value)}
@@ -404,11 +397,9 @@ export default function ClientsPage() {
               </select>
             </div>
           </div>
-
-          {/* Channel */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-mc-text-secondary uppercase tracking-wide mb-1 block">Channel</label>
+              <label className="text-[10px] text-mc-text-secondary uppercase tracking-wider mb-1 block font-mono-jb">Channel</label>
               <select
                 value={formChannel}
                 onChange={(e) => setFormChannel(e.target.value)}
@@ -422,7 +413,7 @@ export default function ClientsPage() {
             </div>
             {formChannel && (
               <div>
-                <label className="text-xs text-mc-text-secondary uppercase tracking-wide mb-1 block">Channel ID</label>
+                <label className="text-[10px] text-mc-text-secondary uppercase tracking-wider mb-1 block font-mono-jb">Channel ID</label>
                 <input
                   type="text"
                   value={formChannelId}
@@ -433,7 +424,6 @@ export default function ClientsPage() {
               </div>
             )}
           </div>
-
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"

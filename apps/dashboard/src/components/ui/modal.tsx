@@ -38,20 +38,20 @@ export function Modal({ open, onClose, title, children, className, size = "sm" }
     >
       <div
         className={cn(
-          "bg-mc-bg-secondary border border-mc-border rounded-lg w-full shadow-lg animate-slide-in",
+          "bg-mc-bg-secondary border border-mc-border rounded-lg w-full shadow-lg animate-slide-in overflow-hidden",
           sizeClass,
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="terminal-header border-b border-mc-border">
-            <span className="terminal-header-text text-sm font-medium font-mono-jb text-mc-text">{title}</span>
+          <div className="terminal-header">
+            <span className="terminal-header-text text-sm font-medium">{title}</span>
             <button
               onClick={onClose}
-              className="ml-auto p-1 hover:bg-mc-bg-tertiary rounded transition-colors"
+              className="ml-auto p-1 hover:bg-white/10 rounded transition-colors"
             >
-              <X className="w-4 h-4 text-mc-text-secondary" />
+              <X className="w-4 h-4 text-[#666]" />
             </button>
           </div>
         )}

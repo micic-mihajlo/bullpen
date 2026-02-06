@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { cn } from "@/lib/utils";
+import { useStableData } from "@/lib/hooks";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -29,9 +30,9 @@ export function Sidebar() {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
-  // Fetch counts for badges
-  const tasks = useQuery(api.tasks.list);
-  const pendingReview = useQuery(api.deliverables.pendingReview);
+  // Stable queries — prevent badge count flicker
+  const tasks = useStableData(useQuery(api.tasks.list));
+  const pendingReview = useStableData(useQuery(api.deliverables.pendingReview));
 
   const runningTasks = tasks?.filter((t) => t.status === "running").length ?? 0;
   const reviewCount = pendingReview?.length ?? 0;
@@ -92,7 +93,7 @@ export function Sidebar() {
         )}
         <span className="text-lg flex-shrink-0">🐂</span>
         {!collapsed && (
-          <span className="font-display text-lg tracking-wider text-white uppercase">Bullpen</span>
+          <span className="font-display text-xl tracking-widest text-white uppercase">Bullpen</span>
         )}
       </div>
 
@@ -107,21 +108,21 @@ export function Sidebar() {
               className={cn(
                 "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-mono-jb transition-colors relative",
                 active
-                  ? "bg-[#c2410c]/15 text-[#c2410c]"
+                  ? "bg-[#c2410c]/20 text-[#c2410c] font-medium"
                   : "text-[#888] hover:text-white hover:bg-[#252525]",
                 collapsed && "justify-center px-0"
               )}
               title={collapsed ? `${item.label} (${item.shortcut})` : undefined}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#c2410c] rounded-r" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#c2410c] rounded-r" />
               )}
               <span className="flex-shrink-0">{item.icon}</span>
               {!collapsed && (
                 <>
                   <span className="truncate text-xs">{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className="ml-auto text-xs bg-[#c2410c]/20 text-[#c2410c] px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                    <span className="ml-auto text-[10px] bg-[#c2410c]/25 text-[#c2410c] px-1.5 py-0.5 rounded min-w-[20px] text-center font-semibold">
                       {item.badge}
                     </span>
                   )}
