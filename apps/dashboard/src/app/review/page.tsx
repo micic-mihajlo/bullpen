@@ -60,7 +60,7 @@ export default function ReviewPage() {
     if (!rejectId || !rejectNotes.trim()) return;
     setProcessing(rejectId);
     try {
-      await rejectDeliverable({ id: rejectId, reviewedBy: "operator", reviewNotes: rejectNotes.trim() });
+      await rejectDeliverable({ id: rejectId, reviewNotes: rejectNotes.trim() });
       addToast("Deliverable rejected with notes", "success");
       setShowReject(false);
       setRejectId(null);
