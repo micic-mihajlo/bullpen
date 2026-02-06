@@ -24,9 +24,9 @@ type ProjectStatus = "intake" | "active" | "review" | "delivered" | "archived";
 
 const statusConfig: Record<ProjectStatus, { label: string; color: string; bg: string }> = {
   intake: { label: "Intake", color: "text-mc-text-secondary", bg: "bg-mc-bg-tertiary" },
-  active: { label: "Active", color: "text-mc-accent-green", bg: "bg-mc-accent-green/15" },
-  review: { label: "Review", color: "text-mc-accent-yellow", bg: "bg-mc-accent-yellow/15" },
-  delivered: { label: "Delivered", color: "text-mc-accent", bg: "bg-mc-accent/15" },
+  active: { label: "Active", color: "text-mc-accent-green", bg: "bg-mc-accent-green/12" },
+  review: { label: "Review", color: "text-mc-accent-yellow", bg: "bg-mc-accent-yellow/12" },
+  delivered: { label: "Delivered", color: "text-mc-accent", bg: "bg-mc-accent/12" },
   archived: { label: "Archived", color: "text-mc-text-secondary", bg: "bg-mc-bg-tertiary" },
 };
 
@@ -132,15 +132,15 @@ export default function ProjectsPage() {
               key={tab}
               onClick={() => setFilter(tab)}
               className={cn(
-                "px-2.5 py-1 text-xs rounded transition-colors capitalize",
+                "px-2.5 py-1 text-xs rounded transition-colors capitalize font-mono-jb",
                 filter === tab
-                  ? "bg-mc-bg-tertiary text-mc-text"
+                  ? "bg-mc-bg-tertiary text-mc-text border border-mc-border"
                   : "text-mc-text-secondary hover:text-mc-text"
               )}
             >
               {tab}
               {tab !== "all" && projects && (
-                <span className="ml-1 text-mc-text-secondary/50">
+                <span className="ml-1 text-mc-muted">
                   {projects.filter((p) => p.status === tab).length}
                 </span>
               )}
@@ -180,14 +180,14 @@ export default function ProjectsPage() {
                     <div
                       key={project._id}
                       onClick={() => setSelectedId(project._id)}
-                      className="p-4 bg-mc-bg-secondary border border-mc-border rounded-lg hover:border-mc-border/80 cursor-pointer transition-colors group"
+                      className="p-4 bg-mc-bg-secondary border border-mc-border rounded-lg hover:border-mc-accent/30 cursor-pointer transition-colors group"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-base">{typeEmoji[project.type] || "📁"}</span>
-                          <span className="text-sm font-medium truncate">{project.name}</span>
+                          <span className="text-sm font-medium truncate text-mc-text">{project.name}</span>
                         </div>
-                        <span className={cn("text-xs px-1.5 py-0.5 rounded flex-shrink-0", sc.bg, sc.color)}>
+                        <span className={cn("text-xs px-1.5 py-0.5 rounded flex-shrink-0 font-mono-jb", sc.bg, sc.color)}>
                           {sc.label}
                         </span>
                       </div>
@@ -197,9 +197,9 @@ export default function ProjectsPage() {
                         {project.type}
                       </div>
                       {project.brief && (
-                        <p className="text-xs text-mc-text-secondary/80 line-clamp-2 mb-3">{project.brief}</p>
+                        <p className="text-xs text-mc-muted line-clamp-2 mb-3">{project.brief}</p>
                       )}
-                      <div className="flex items-center justify-between text-xs text-mc-text-secondary">
+                      <div className="flex items-center justify-between text-xs text-mc-muted font-mono-jb">
                         <span>{formatTime(project.createdAt)}</span>
                         {project.deadline && (
                           <span className="flex items-center gap-1">
@@ -226,7 +226,7 @@ export default function ProjectsPage() {
             <select
               value={formClientId}
               onChange={(e) => setFormClientId(e.target.value)}
-              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
               required
             >
               <option value="">Select client...</option>
@@ -246,7 +246,7 @@ export default function ProjectsPage() {
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="e.g. Website Redesign"
-              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
               required
               autoFocus
             />
@@ -259,7 +259,7 @@ export default function ProjectsPage() {
               <select
                 value={formType}
                 onChange={(e) => setFormType(e.target.value)}
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
               >
                 <option value="research">Research</option>
                 <option value="code">Code</option>
@@ -273,7 +273,7 @@ export default function ProjectsPage() {
                 type="date"
                 value={formDeadline}
                 onChange={(e) => setFormDeadline(e.target.value)}
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
+                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
               />
             </div>
           </div>
@@ -286,7 +286,7 @@ export default function ProjectsPage() {
               onChange={(e) => setFormBrief(e.target.value)}
               placeholder="Describe the project scope and requirements..."
               rows={3}
-              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent resize-none"
+              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent resize-none"
             />
           </div>
 
@@ -301,7 +301,7 @@ export default function ProjectsPage() {
             <button
               type="submit"
               disabled={!formName.trim() || !formClientId || creating}
-              className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 disabled:opacity-50 transition-colors"
+              className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover disabled:opacity-50 transition-colors"
             >
               {creating ? "Creating..." : "Create Project"}
             </button>
@@ -345,7 +345,7 @@ function ProjectDetail({
       {/* Back */}
       <button
         onClick={onClose}
-        className="text-xs text-mc-text-secondary hover:text-mc-text mb-4 flex items-center gap-1 transition-colors"
+        className="text-xs text-mc-text-secondary hover:text-mc-text mb-4 flex items-center gap-1 transition-colors font-mono-jb"
       >
         ← Back to projects
       </button>
@@ -356,9 +356,9 @@ function ProjectDetail({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">{typeEmoji[project.type] || "📁"}</span>
-              <h2 className="text-base font-semibold">{project.name}</h2>
+              <h2 className="font-display text-xl tracking-wide text-mc-text uppercase">{project.name}</h2>
             </div>
-            <div className="text-xs text-mc-text-secondary">
+            <div className="text-xs text-mc-text-secondary font-mono-jb">
               {project.client?.name ?? "Unknown client"}
               <span className="mx-1.5">·</span>
               {project.type}
@@ -373,7 +373,7 @@ function ProjectDetail({
           <div className="relative">
             <button
               onClick={() => setShowStatusMenu(!showStatusMenu)}
-              className={cn("text-xs px-2 py-1 rounded flex items-center gap-1", sc.bg, sc.color)}
+              className={cn("text-xs px-2 py-1 rounded flex items-center gap-1 font-mono-jb", sc.bg, sc.color)}
             >
               {sc.label}
               <ChevronDown className="w-3 h-3" />
@@ -409,8 +409,8 @@ function ProjectDetail({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Tasks */}
         <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-mc-border">
-            <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
+          <div className="terminal-header border-b border-mc-border">
+            <span className="terminal-header-text text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
               Tasks ({project.tasks?.length ?? 0})
             </span>
           </div>
@@ -421,12 +421,12 @@ function ProjectDetail({
               project.tasks?.map((task) => (
                 <div key={task._id} className="px-4 py-2.5 hover:bg-mc-bg-tertiary/50 transition-colors">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm truncate">{task.title}</span>
+                    <span className="text-sm truncate text-mc-text">{task.title}</span>
                     <span className={cn(
-                      "text-xs px-1.5 py-0.5 rounded capitalize",
-                      task.status === "completed" ? "bg-mc-accent-green/15 text-mc-accent-green" :
-                      task.status === "running" ? "bg-mc-accent-yellow/15 text-mc-accent-yellow" :
-                      task.status === "failed" ? "bg-mc-accent-red/15 text-mc-accent-red" :
+                      "text-xs px-1.5 py-0.5 rounded capitalize font-mono-jb",
+                      task.status === "completed" ? "bg-mc-accent-green/12 text-mc-accent-green" :
+                      task.status === "running" ? "bg-mc-accent-yellow/12 text-mc-accent-yellow" :
+                      task.status === "failed" ? "bg-mc-accent-red/12 text-mc-accent-red" :
                       "bg-mc-bg-tertiary text-mc-text-secondary"
                     )}>
                       {task.status}
@@ -440,8 +440,8 @@ function ProjectDetail({
 
         {/* Deliverables */}
         <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-mc-border">
-            <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
+          <div className="terminal-header border-b border-mc-border">
+            <span className="terminal-header-text text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
               Deliverables ({project.deliverables?.length ?? 0})
             </span>
           </div>
@@ -453,15 +453,15 @@ function ProjectDetail({
                 <div key={d._id} className="px-4 py-2.5 hover:bg-mc-bg-tertiary/50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
-                      <span className="text-sm truncate block">{d.title}</span>
-                      <span className="text-xs text-mc-text-secondary">{d.format}</span>
+                      <span className="text-sm truncate block text-mc-text">{d.title}</span>
+                      <span className="text-xs text-mc-text-secondary font-mono-jb">{d.format}</span>
                     </div>
                     <span className={cn(
-                      "text-xs px-1.5 py-0.5 rounded capitalize flex-shrink-0 ml-2",
-                      d.status === "approved" ? "bg-mc-accent-green/15 text-mc-accent-green" :
-                      d.status === "review" ? "bg-mc-accent-yellow/15 text-mc-accent-yellow" :
-                      d.status === "rejected" ? "bg-mc-accent-red/15 text-mc-accent-red" :
-                      d.status === "delivered" ? "bg-mc-accent/15 text-mc-accent" :
+                      "text-xs px-1.5 py-0.5 rounded capitalize flex-shrink-0 ml-2 font-mono-jb",
+                      d.status === "approved" ? "bg-mc-accent-green/12 text-mc-accent-green" :
+                      d.status === "review" ? "bg-mc-accent-yellow/12 text-mc-accent-yellow" :
+                      d.status === "rejected" ? "bg-mc-accent-red/12 text-mc-accent-red" :
+                      d.status === "delivered" ? "bg-mc-accent/12 text-mc-accent" :
                       "bg-mc-bg-tertiary text-mc-text-secondary"
                     )}>
                       {d.status}
