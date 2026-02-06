@@ -1,21 +1,19 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 // List all deliverables
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const deliverables = await ctx.db.query("deliverables").order("desc").collect();
-    
-    const enriched = await Promise.all(
-      deliverables.map(async (d) => {
-        const project = await ctx.db.get(d.projectId);
+
+    return await Promise.all(
+      deliverables.map(async (deliverable) => {
+        const project = await ctx.db.get(deliverable.projectId);
         const client = project ? await ctx.db.get(project.clientId) : null;
-        return { ...d, project, client };
+        return { ...deliverable, project, client };
       })
     );
-    
-    return enriched;
   },
 });
 
@@ -25,15 +23,15 @@ export const get = query({
   handler: async (ctx, args) => {
     const deliverable = await ctx.db.get(args.id);
     if (!deliverable) return null;
-    
+
     const project = await ctx.db.get(deliverable.projectId);
     const client = project ? await ctx.db.get(project.clientId) : null;
-    
+
     return { ...deliverable, project, client };
   },
 });
 
-// List by project
+// Deliverables for a specific project
 export const byProject = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
@@ -45,24 +43,23 @@ export const byProject = query({
   },
 });
 
-// List pending review
+// Deliverables pending operator review
 export const pendingReview = query({
   args: {},
   handler: async (ctx) => {
     const deliverables = await ctx.db
       .query("deliverables")
       .withIndex("by_status", (q) => q.eq("status", "review"))
+      .order("desc")
       .collect();
-    
-    const enriched = await Promise.all(
-      deliverables.map(async (d) => {
-        const project = await ctx.db.get(d.projectId);
+
+    return await Promise.all(
+      deliverables.map(async (deliverable) => {
+        const project = await ctx.db.get(deliverable.projectId);
         const client = project ? await ctx.db.get(project.clientId) : null;
-        return { ...d, project, client };
+        return { ...deliverable, project, client };
       })
     );
-    
-    return enriched;
   },
 });
 
@@ -70,14 +67,22 @@ export const pendingReview = query({
 export const create = mutation({
   args: {
     projectId: v.id("projects"),
-    taskId: v.optional(v.id("tasks")),
     title: v.string(),
     content: v.string(),
     format: v.string(),
+    taskId: v.optional(v.id("tasks")),
   },
   handler: async (ctx, args) => {
     const project = await ctx.db.get(args.projectId);
     if (!project) throw new Error("Project not found");
+
+    if (args.taskId) {
+      const task = await ctx.db.get(args.taskId);
+      if (!task) throw new Error("Task not found");
+      if (task.projectId && task.projectId !== args.projectId) {
+        throw new Error("Task does not belong to this project");
+      }
+    }
 
     const deliverableId = await ctx.db.insert("deliverables", {
       projectId: args.projectId,
@@ -92,7 +97,7 @@ export const create = mutation({
     await ctx.db.insert("events", {
       type: "deliverable_created",
       message: `New deliverable: "${args.title}" for ${project.name}`,
-      data: { deliverableId, projectId: args.projectId },
+      data: { deliverableId, projectId: args.projectId, taskId: args.taskId },
       timestamp: Date.now(),
     });
 
@@ -112,7 +117,11 @@ export const submitForReview = mutation({
     await ctx.db.insert("events", {
       type: "deliverable_submitted",
       message: `"${deliverable.title}" submitted for review`,
-      data: { deliverableId: args.id },
+      data: {
+        deliverableId: args.id,
+        projectId: deliverable.projectId,
+        taskId: deliverable.taskId,
+      },
       timestamp: Date.now(),
     });
   },
@@ -123,7 +132,6 @@ export const approve = mutation({
   args: {
     id: v.id("deliverables"),
     reviewedBy: v.string(),
-    reviewNotes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const deliverable = await ctx.db.get(args.id);
@@ -132,23 +140,26 @@ export const approve = mutation({
     await ctx.db.patch(args.id, {
       status: "approved",
       reviewedBy: args.reviewedBy,
-      reviewNotes: args.reviewNotes,
     });
 
     await ctx.db.insert("events", {
       type: "deliverable_approved",
       message: `"${deliverable.title}" approved by ${args.reviewedBy}`,
-      data: { deliverableId: args.id },
+      data: {
+        deliverableId: args.id,
+        projectId: deliverable.projectId,
+        taskId: deliverable.taskId,
+        reviewedBy: args.reviewedBy,
+      },
       timestamp: Date.now(),
     });
   },
 });
 
-// Reject deliverable
+// Reject deliverable and send it back to draft
 export const reject = mutation({
   args: {
     id: v.id("deliverables"),
-    reviewedBy: v.string(),
     reviewNotes: v.string(),
   },
   handler: async (ctx, args) => {
@@ -156,15 +167,19 @@ export const reject = mutation({
     if (!deliverable) throw new Error("Deliverable not found");
 
     await ctx.db.patch(args.id, {
-      status: "rejected",
-      reviewedBy: args.reviewedBy,
+      status: "draft",
       reviewNotes: args.reviewNotes,
     });
 
     await ctx.db.insert("events", {
       type: "deliverable_rejected",
       message: `"${deliverable.title}" rejected: ${args.reviewNotes}`,
-      data: { deliverableId: args.id },
+      data: {
+        deliverableId: args.id,
+        projectId: deliverable.projectId,
+        taskId: deliverable.taskId,
+        reviewNotes: args.reviewNotes,
+      },
       timestamp: Date.now(),
     });
   },
@@ -189,24 +204,39 @@ export const deliver = mutation({
     await ctx.db.insert("events", {
       type: "deliverable_delivered",
       message: `"${deliverable.title}" delivered to client`,
-      data: { deliverableId: args.id },
+      data: {
+        deliverableId: args.id,
+        projectId: deliverable.projectId,
+        taskId: deliverable.taskId,
+      },
       timestamp: Date.now(),
     });
   },
 });
 
-// Update content
+// Update deliverable content
 export const update = mutation({
   args: {
     id: v.id("deliverables"),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     format: v.optional(v.string()),
+    status: v.optional(
+      v.union(
+        v.literal("draft"),
+        v.literal("review"),
+        v.literal("approved"),
+        v.literal("delivered"),
+        v.literal("rejected")
+      )
+    ),
+    reviewNotes: v.optional(v.string()),
+    reviewedBy: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
     const filtered = Object.fromEntries(
-      Object.entries(updates).filter(([_, v]) => v !== undefined)
+      Object.entries(updates).filter((entry) => entry[1] !== undefined)
     );
     await ctx.db.patch(id, filtered);
   },
@@ -224,6 +254,7 @@ export const remove = mutation({
     await ctx.db.insert("events", {
       type: "deliverable_removed",
       message: `Deliverable removed: ${deliverable.title}`,
+      data: { deliverableId: args.id, projectId: deliverable.projectId },
       timestamp: Date.now(),
     });
   },
