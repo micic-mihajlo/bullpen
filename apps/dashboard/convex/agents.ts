@@ -127,7 +127,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const agentId = await ctx.db.insert("agents", {
       name: args.name,
-      status: "offline",
+      status: "online",
       avatar: args.avatar,
       role: args.role,
       soul: args.soul,

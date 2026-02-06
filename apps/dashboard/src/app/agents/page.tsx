@@ -314,7 +314,7 @@ You are a data-driven analyst who turns numbers into insights.
 // ─── Helpers ─────────────────────────────────────────────────
 
 function getModelLabel(model?: string) {
-  if (!model) return "No model";
+  if (!model) return "Default model";
   const opt = MODEL_OPTIONS.find((m) => m.value === model);
   return opt?.label ?? model.split("/")[1] ?? model;
 }
@@ -575,7 +575,7 @@ export default function AgentsPage() {
               const a = agent as Agent;
               const role = getRole(a);
               const currentTask = getAgentTask(a._id);
-              const topSkills = a.skills?.slice(0, 3) ?? [];
+              const topSkills = a.skills?.slice(0, 2) ?? [];
               return (
                 <div
                   key={a._id}
@@ -599,7 +599,7 @@ export default function AgentsPage() {
                           {a.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
                         </div>
                         <div className="text-xs text-mc-text-secondary">
-                          {role || "Unspecialized"}
+                          {role || (a.soul ? a.soul.slice(0, 40).replace(/\n/g, " ") : "Configure this agent →")}
                         </div>
                       </div>
                       <span className={cn(
@@ -622,9 +622,9 @@ export default function AgentsPage() {
                             {s.name}
                           </span>
                         ))}
-                        {a.skills && a.skills.length > 3 && (
+                        {a.skills && a.skills.length > 2 && (
                           <span className="text-[10px] px-1.5 py-0.5 text-mc-muted font-mono-jb">
-                            +{a.skills.length - 3}
+                            +{a.skills.length - 2} more
                           </span>
                         )}
                       </div>

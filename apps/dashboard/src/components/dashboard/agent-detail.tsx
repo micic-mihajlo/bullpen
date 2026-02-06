@@ -18,6 +18,7 @@ import {
   Link2,
   Trash2,
   Save,
+  Plus,
 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useToast } from "@/components/toast";
@@ -110,6 +111,37 @@ const TOOL_GROUPS = [
   { id: "automation", label: "Automation" },
 ];
 
+const SKILL_CATALOG: { name: string; category: string }[] = [
+  { name: "coding", category: "technical" },
+  { name: "debugging", category: "technical" },
+  { name: "architecture", category: "technical" },
+  { name: "devops", category: "technical" },
+  { name: "database", category: "technical" },
+  { name: "api-design", category: "technical" },
+  { name: "copywriting", category: "creative" },
+  { name: "editing", category: "creative" },
+  { name: "ui-design", category: "creative" },
+  { name: "branding", category: "creative" },
+  { name: "storytelling", category: "creative" },
+  { name: "research", category: "analytical" },
+  { name: "data-analysis", category: "analytical" },
+  { name: "market-analysis", category: "analytical" },
+  { name: "reporting", category: "analytical" },
+  { name: "strategy", category: "analytical" },
+  { name: "seo", category: "communication" },
+  { name: "social-media", category: "communication" },
+  { name: "email-marketing", category: "communication" },
+  { name: "documentation", category: "communication" },
+  { name: "presentations", category: "communication" },
+];
+
+const THINKING_LEVELS = [
+  { value: "none", label: "None" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+] as const;
+
 const eventIcons: Record<string, string> = {
   task_created: "+",
   task_assigned: "→",
@@ -124,7 +156,7 @@ const eventIcons: Record<string, string> = {
 // ─── Helpers ─────────────────────────────────────────────────
 
 function getModelLabel(model?: string) {
-  if (!model) return "No model";
+  if (!model) return "Default model";
   return MODEL_OPTIONS.find((m) => m.value === model)?.label ?? model.split("/")[1] ?? model;
 }
 
@@ -170,6 +202,18 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const [editingSoul, setEditingSoul] = useState(false);
   const [soulDraft, setSoulDraft] = useState(agent.soul || "");
   const [savingSoul, setSavingSoul] = useState(false);
+
+  // Skill editing state
+  const [addingSkills, setAddingSkills] = useState(false);
+  const [pendingSkills, setPendingSkills] = useState<Skill[]>(agent.skills ?? []);
+  const [savingSkills, setSavingSkills] = useState(false);
+
+  // Config field editing state
+  const [editingConfig, setEditingConfig] = useState(false);
+  const [configThinking, setConfigThinking] = useState(agent.thinkingLevel ?? "none");
+  const [configToolGroups, setConfigToolGroups] = useState<string[]>(agent.toolGroups ?? []);
+  const [configModelFallback, setConfigModelFallback] = useState(agent.modelFallback ?? "");
+  const [savingConfig, setSavingConfig] = useState(false);
 
   const liveAgent = agentData ? { ...agent, ...agentData } : agent;
   const metrics = agentData?.computedMetrics;
@@ -227,6 +271,51 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
     } finally {
       setSavingSoul(false);
     }
+  };
+
+  const handleSaveSkills = async () => {
+    setSavingSkills(true);
+    try {
+      await updateAgent({ id: agent._id, skills: pendingSkills });
+      setAddingSkills(false);
+      addToast("Skills updated", "success");
+    } catch {
+      addToast("Failed to update skills", "error");
+    } finally {
+      setSavingSkills(false);
+    }
+  };
+
+  const togglePendingSkill = (name: string, category: string) => {
+    setPendingSkills((prev) => {
+      const exists = prev.find((s) => s.name === name);
+      if (exists) return prev.filter((s) => s.name !== name);
+      return [...prev, { name, category, level: "proficient" as const }];
+    });
+  };
+
+  const handleSaveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await updateAgent({
+        id: agent._id,
+        thinkingLevel: configThinking as "none" | "low" | "medium" | "high",
+        toolGroups: configToolGroups,
+        modelFallback: configModelFallback || undefined,
+      });
+      setEditingConfig(false);
+      addToast("Config updated", "success");
+    } catch {
+      addToast("Failed to update config", "error");
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const toggleConfigToolGroup = (id: string) => {
+    setConfigToolGroups((prev) =>
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+    );
   };
 
   const handleDelete = async () => {
@@ -436,7 +525,7 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
           {/* ════════ SKILLS ════════ */}
           {tab === "skills" && (
             <div className="p-4 space-y-4">
-              {liveAgent.skills && liveAgent.skills.length > 0 ? (
+              {liveAgent.skills && liveAgent.skills.length > 0 && !addingSkills && (
                 <>
                   {(["technical", "creative", "analytical", "communication"] as const).map((cat) => {
                     const catSkills = liveAgent.skills!.filter((s) => s.category === cat);
@@ -478,11 +567,78 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
                       </div>
                     </div>
                   )}
+
+                  <button
+                    onClick={() => { setPendingSkills(liveAgent.skills ?? []); setAddingSkills(true); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-mc-accent border border-mc-accent/30 rounded hover:bg-mc-accent/10 transition-colors font-mono-jb uppercase tracking-wider"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Edit Skills
+                  </button>
                 </>
-              ) : (
+              )}
+
+              {(!liveAgent.skills || liveAgent.skills.length === 0) && !addingSkills && (
                 <div className="text-center py-8">
-                  <div className="text-sm text-mc-text-secondary mb-1">No skills configured</div>
-                  <div className="text-[10px] text-mc-muted font-mono-jb">Edit this agent to add skills and capabilities</div>
+                  <div className="text-sm text-mc-text-secondary mb-2">No skills configured</div>
+                  <button
+                    onClick={() => { setPendingSkills([]); setAddingSkills(true); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-mc-accent border border-mc-accent/30 rounded hover:bg-mc-accent/10 transition-colors font-mono-jb uppercase tracking-wider"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Skills
+                  </button>
+                </div>
+              )}
+
+              {/* Inline Skill Picker */}
+              {addingSkills && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] text-mc-text-secondary uppercase tracking-wider font-mono-jb">
+                      Select Skills <span className="text-mc-muted">({pendingSkills.length} selected)</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setAddingSkills(false)}
+                        className="text-[10px] text-mc-text-secondary font-mono-jb hover:underline"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveSkills}
+                        disabled={savingSkills}
+                        className="text-[10px] text-mc-accent font-mono-jb hover:underline flex items-center gap-1"
+                      >
+                        <Save className="w-3 h-3" />
+                        {savingSkills ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                  </div>
+                  {(["technical", "creative", "analytical", "communication"] as const).map((cat) => (
+                    <div key={cat}>
+                      <div className={cn("text-[10px] uppercase tracking-wider font-mono-jb mb-1", categoryColors[cat])}>{cat}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {SKILL_CATALOG.filter((s) => s.category === cat).map((skill) => {
+                          const selected = pendingSkills.some((s) => s.name === skill.name);
+                          return (
+                            <button
+                              key={skill.name}
+                              onClick={() => togglePendingSkill(skill.name, skill.category)}
+                              className={cn(
+                                "text-[10px] px-2 py-1 rounded font-mono-jb transition-colors",
+                                selected
+                                  ? "bg-mc-accent/15 text-mc-accent border border-mc-accent/30"
+                                  : "bg-mc-bg-tertiary text-mc-text-secondary hover:text-mc-text"
+                              )}
+                            >
+                              {skill.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -535,12 +691,12 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
                 )}
               </div>
 
-              {/* Event Timeline */}
+              {/* Event Timeline (exclude task events already shown above) */}
               <div>
                 <div className="text-[10px] text-mc-text-secondary uppercase tracking-wider font-mono-jb mb-2">Events</div>
-                {activity && activity.length > 0 ? (
+                {activity && activity.filter((evt) => !evt.type.startsWith("task_")).length > 0 ? (
                   <div className="space-y-0.5 max-h-64 overflow-y-auto">
-                    {activity.map((evt) => (
+                    {activity.filter((evt) => !evt.type.startsWith("task_")).map((evt) => (
                       <div key={evt._id} className="flex items-start gap-2 py-1">
                         <span className="w-4 text-center text-xs mt-0.5 flex-shrink-0">
                           {eventIcons[evt.type] || "•"}
@@ -607,25 +763,144 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
                 )}
               </div>
 
-              {/* Model Config */}
+              {/* Model & Runtime Config */}
               <div>
-                <div className="text-[10px] text-mc-text-secondary uppercase tracking-wider font-mono-jb mb-2">Model Configuration</div>
-                <div className="bg-mc-bg border border-mc-border rounded p-3 space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[10px] text-mc-text-secondary uppercase tracking-wider font-mono-jb">Model & Runtime</div>
+                  {!editingConfig ? (
+                    <button
+                      onClick={() => {
+                        setConfigThinking(liveAgent.thinkingLevel ?? "none");
+                        setConfigToolGroups(liveAgent.toolGroups ?? []);
+                        setConfigModelFallback(liveAgent.modelFallback ?? "");
+                        setEditingConfig(true);
+                      }}
+                      className="text-[10px] text-mc-accent font-mono-jb hover:underline"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingConfig(false)}
+                        className="text-[10px] text-mc-text-secondary font-mono-jb hover:underline"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveConfig}
+                        disabled={savingConfig}
+                        className="text-[10px] text-mc-accent font-mono-jb hover:underline flex items-center gap-1"
+                      >
+                        <Save className="w-3 h-3" />
+                        {savingConfig ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="bg-mc-bg border border-mc-border rounded p-3 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-mc-text-secondary">Primary Model</span>
                     <span className="text-mc-text font-mono-jb text-xs">{getModelIcon(liveAgent.model)} {getModelLabel(liveAgent.model)}</span>
                   </div>
-                  {liveAgent.modelFallback && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-mc-text-secondary">Fallback</span>
-                      <span className="text-mc-text font-mono-jb text-xs">{getModelLabel(liveAgent.modelFallback)}</span>
-                    </div>
-                  )}
-                  {liveAgent.thinkingLevel && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-mc-text-secondary">Thinking Level</span>
-                      <span className="text-mc-text font-mono-jb text-xs capitalize">{liveAgent.thinkingLevel}</span>
-                    </div>
+
+                  {editingConfig ? (
+                    <>
+                      {/* Fallback Model */}
+                      <div>
+                        <div className="text-[10px] text-mc-muted font-mono-jb mb-1">Fallback Model</div>
+                        <select
+                          value={configModelFallback}
+                          onChange={(e) => setConfigModelFallback(e.target.value)}
+                          className="w-full bg-mc-bg-tertiary border border-mc-border rounded px-2 py-1 text-xs text-mc-text focus:outline-none focus:border-mc-accent"
+                        >
+                          <option value="">None</option>
+                          {MODEL_OPTIONS.map((m) => (
+                            <option key={m.value} value={m.value}>{m.icon} {m.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Thinking Level */}
+                      <div>
+                        <div className="text-[10px] text-mc-muted font-mono-jb mb-1">Thinking Level</div>
+                        <div className="flex gap-1">
+                          {THINKING_LEVELS.map((t) => (
+                            <button
+                              key={t.value}
+                              type="button"
+                              onClick={() => setConfigThinking(t.value)}
+                              className={cn(
+                                "px-2.5 py-1 text-[10px] rounded font-mono-jb transition-colors",
+                                configThinking === t.value
+                                  ? "bg-mc-accent/15 text-mc-accent border border-mc-accent/30"
+                                  : "bg-mc-bg-tertiary text-mc-text-secondary hover:text-mc-text"
+                              )}
+                            >
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Tool Groups */}
+                      <div>
+                        <div className="text-[10px] text-mc-muted font-mono-jb mb-1 flex items-center gap-1">
+                          <Shield className="w-3 h-3" /> Tool Permissions
+                        </div>
+                        <div className="grid grid-cols-2 gap-1">
+                          {TOOL_GROUPS.map((tg) => (
+                            <button
+                              key={tg.id}
+                              type="button"
+                              onClick={() => toggleConfigToolGroup(tg.id)}
+                              className={cn(
+                                "flex items-center gap-2 px-2 py-1 rounded text-left transition-colors",
+                                configToolGroups.includes(tg.id)
+                                  ? "bg-mc-accent-green/10 border border-mc-accent-green/30"
+                                  : "bg-mc-bg-tertiary border border-transparent"
+                              )}
+                            >
+                              <span className={cn(
+                                "w-3 h-3 rounded-sm border flex items-center justify-center text-[8px]",
+                                configToolGroups.includes(tg.id) ? "bg-mc-accent-green border-mc-accent-green text-white" : "border-mc-border"
+                              )}>
+                                {configToolGroups.includes(tg.id) && "✓"}
+                              </span>
+                              <span className="text-[10px] text-mc-text font-mono-jb">{tg.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-mc-text-secondary">Fallback</span>
+                        <span className="text-mc-text font-mono-jb text-xs">{liveAgent.modelFallback ? getModelLabel(liveAgent.modelFallback) : <span className="text-mc-muted">None</span>}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-mc-text-secondary">Thinking Level</span>
+                        <span className="text-mc-text font-mono-jb text-xs capitalize">{liveAgent.thinkingLevel || "none"}</span>
+                      </div>
+                      {liveAgent.toolGroups && liveAgent.toolGroups.length > 0 && (
+                        <div>
+                          <div className="text-[10px] text-mc-muted font-mono-jb mb-1 flex items-center gap-1">
+                            <Shield className="w-3 h-3" /> Tool Permissions
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {liveAgent.toolGroups.map((tg) => {
+                              const info = TOOL_GROUPS.find((g) => g.id === tg);
+                              return (
+                                <span key={tg} className="text-[10px] px-1.5 py-0.5 bg-mc-accent-green/10 text-mc-accent-green border border-mc-accent-green/20 rounded font-mono-jb">
+                                  {info?.label ?? tg}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
