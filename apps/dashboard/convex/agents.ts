@@ -11,11 +11,11 @@ const skillValidator = v.object({
   ),
 });
 
-// Get all agents
+// Get all agents (bounded to prevent runaway reads)
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("agents").collect();
+    return await ctx.db.query("agents").take(200);
   },
 });
 
@@ -207,7 +207,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
     const filtered = Object.fromEntries(
-      Object.entries(updates).filter(([_, v]) => v !== undefined)
+      Object.entries(updates).filter(([_, val]) => val !== undefined)
     );
     await ctx.db.patch(id, filtered);
   },
@@ -281,17 +281,13 @@ export const linkSession = mutation({
     const agent = await ctx.db.get(args.id);
     if (!agent) throw new Error("Agent not found");
 
-    const patch: Record<string, unknown> = {
+    await ctx.db.patch(args.id, {
       sessionKey: args.sessionKey,
       channel: args.channel,
-      status: "online",
+      status: "online" as const,
       lastSeen: Date.now(),
-    };
-    if (args.openclawId) {
-      patch.openclawId = args.openclawId;
-    }
-
-    await ctx.db.patch(args.id, patch);
+      ...(args.openclawId ? { openclawId: args.openclawId } : {}),
+    });
 
     await ctx.db.insert("events", {
       agentId: args.id,

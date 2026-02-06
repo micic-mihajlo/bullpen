@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,6 @@ import {
   X,
   Send,
   RefreshCw,
-  BarChart3,
   Clock,
   CheckCircle2,
   XCircle,
@@ -35,12 +34,12 @@ interface Agent {
   _id: Id<"agents">;
   name: string;
   avatar?: string;
-  status: string;
+  status: "online" | "offline" | "busy";
   role?: string;
   soul?: string;
   model?: string;
   modelFallback?: string;
-  thinkingLevel?: string;
+  thinkingLevel?: "none" | "low" | "medium" | "high";
   skills?: Skill[];
   tags?: string[];
   toolGroups?: string[];
@@ -220,11 +219,12 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const role = getRole(liveAgent);
 
   // Fetch session history
-  const fetchHistory = async () => {
-    if (!liveAgent.sessionKey) return;
+  const sessionKey = liveAgent.sessionKey;
+  const fetchHistory = useCallback(async () => {
+    if (!sessionKey) return;
     setLoadingMessages(true);
     try {
-      const res = await fetch(`/api/openclaw/sessions/${encodeURIComponent(liveAgent.sessionKey)}/history`);
+      const res = await fetch(`/api/openclaw/sessions/${encodeURIComponent(sessionKey)}/history`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data.messages || []);
@@ -232,14 +232,13 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
     } finally {
       setLoadingMessages(false);
     }
-  };
+  }, [sessionKey]);
 
   useEffect(() => {
-    if (liveAgent.sessionKey && tab === "overview") {
+    if (sessionKey && tab === "overview") {
       fetchHistory();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveAgent.sessionKey, tab]);
+  }, [sessionKey, tab, fetchHistory]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -318,18 +317,35 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
     );
   };
 
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   const handleDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
     try {
       await removeAgent({ id: agent._id });
       addToast(`Agent "${liveAgent.name}" removed`, "success");
       onClose();
     } catch {
       addToast("Failed to remove agent", "error");
+    } finally {
+      setConfirmDelete(false);
     }
   };
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label={`Agent detail: ${liveAgent.name}`} onClick={onClose}>
       <div
         className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-3xl max-h-[85vh] flex flex-col shadow-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -460,7 +476,7 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
                         .slice(-5)
                         .map((msg, i) => (
                           <div
-                            key={i}
+                            key={`${msg.role}-${msg.timestamp ?? i}`}
                             className={cn(
                               "p-2 rounded text-xs",
                               msg.role === "user" ? "bg-mc-accent/10 ml-6" : "bg-mc-bg-tertiary mr-6"
@@ -931,10 +947,11 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
                 <div className="text-[10px] text-mc-accent-red uppercase tracking-wider font-mono-jb mb-2">Danger Zone</div>
                 <button
                   onClick={handleDelete}
+                  onBlur={() => setConfirmDelete(false)}
                   className="flex items-center gap-2 px-3 py-2 text-xs text-mc-accent-red border border-mc-accent-red/30 rounded hover:bg-mc-accent-red/10 transition-colors font-mono-jb"
                 >
                   <Trash2 className="w-3 h-3" />
-                  Delete Agent
+                  {confirmDelete ? "Click again to confirm" : "Delete Agent"}
                 </button>
               </div>
             </div>

@@ -1,11 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-// Get all tasks
+// Get all tasks (bounded)
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("tasks").order("desc").collect();
+    return await ctx.db.query("tasks").order("desc").take(500);
   },
 });
 
@@ -40,20 +40,25 @@ export const byProject = query({
   },
 });
 
-// Get all tasks with joined agent info
+// Get all tasks with joined agent info (bounded, batched agent lookups)
 export const withAgent = query({
   args: {},
   handler: async (ctx) => {
-    const tasks = await ctx.db.query("tasks").order("desc").collect();
+    const tasks = await ctx.db.query("tasks").order("desc").take(200);
 
-    return await Promise.all(
-      tasks.map(async (task) => {
-        const agent = task.assignedAgentId
-          ? await ctx.db.get(task.assignedAgentId)
-          : null;
-        return { ...task, agent };
+    // Batch agent lookups to avoid redundant reads
+    const agentIds = [...new Set(tasks.map((t) => t.assignedAgentId).filter(Boolean))];
+    const agentMap = new Map<string, { _id: typeof agentIds[0]; name: string; avatar?: string; status: string } | null>();
+    await Promise.all(
+      agentIds.map(async (id) => {
+        if (id) agentMap.set(id, await ctx.db.get(id));
       })
     );
+
+    return tasks.map((task) => ({
+      ...task,
+      agent: task.assignedAgentId ? agentMap.get(task.assignedAgentId) ?? null : null,
+    }));
   },
 });
 

@@ -22,7 +22,7 @@ type Agent = {
   _id: Id<"agents">;
   name: string;
   avatar?: string;
-  status: string;
+  status: "online" | "offline" | "busy";
   role?: string;
   soul?: string;
   model?: string;

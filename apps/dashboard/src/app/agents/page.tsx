@@ -4,8 +4,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
-import { formatTime } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 import { useStableData } from "@/lib/hooks";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/empty-state";
@@ -20,13 +19,11 @@ import {
   Link2,
   Wifi,
   Activity,
-  Zap,
   Sparkles,
   Shield,
   BarChart3,
   X,
   ChevronRight,
-  Target,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -41,12 +38,12 @@ type Agent = {
   _id: Id<"agents">;
   name: string;
   avatar?: string;
-  status: string;
+  status: "online" | "offline" | "busy";
   role?: string;
   soul?: string;
   model?: string;
   modelFallback?: string;
-  thinkingLevel?: string;
+  thinkingLevel?: "none" | "low" | "medium" | "high";
   skills?: Skill[];
   tags?: string[];
   toolGroups?: string[];
