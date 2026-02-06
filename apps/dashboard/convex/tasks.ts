@@ -28,6 +28,35 @@ export const byStatus = query({
   },
 });
 
+// Get tasks by project
+export const byProject = query({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("tasks")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .order("desc")
+      .collect();
+  },
+});
+
+// Get all tasks with joined agent info
+export const withAgent = query({
+  args: {},
+  handler: async (ctx) => {
+    const tasks = await ctx.db.query("tasks").order("desc").collect();
+
+    return await Promise.all(
+      tasks.map(async (task) => {
+        const agent = task.assignedAgentId
+          ? await ctx.db.get(task.assignedAgentId)
+          : null;
+        return { ...task, agent };
+      })
+    );
+  },
+});
+
 // Get pending tasks (for dispatch)
 export const pending = query({
   args: {},
