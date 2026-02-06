@@ -12,23 +12,29 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/toast";
 import { useRegisterShortcut } from "@/components/shortcuts-provider";
 
+type Skill = {
+  name: string;
+  category: string;
+  level: "learning" | "proficient" | "expert";
+};
+
 type Agent = {
   _id: Id<"agents">;
   name: string;
   avatar?: string;
   status: string;
+  role?: string;
   soul?: string;
   model?: string;
+  skills?: Skill[];
+  tags?: string[];
   sessionKey?: string;
+  lastSeen: number;
+  tasksCompleted?: number;
+  tasksSuccessRate?: number;
 };
 
 type FilterTab = "all" | "online" | "offline";
-
-const ROLE_OPTIONS = [
-  "Squad Lead", "Product Analyst", "Customer Researcher", "SEO Analyst",
-  "Content Writer", "Social Media Manager", "Designer", "Email Marketing",
-  "Developer", "Documentation",
-];
 
 const MODEL_OPTIONS = [
   { value: "cerebras/zai-glm-4.7", label: "Cerebras" },
@@ -51,7 +57,6 @@ export function AgentList() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const { addToast } = useToast();
 
-  // Register keyboard shortcut for new agent
   const openModal = useCallback(() => setShowModal(true), []);
   useRegisterShortcut("newAgent", openModal);
 
@@ -69,6 +74,7 @@ export function AgentList() {
       await createAgent({
         name: newName.trim(),
         avatar: newAvatar,
+        role: newRole || undefined,
         soul: newRole ? `Role: ${newRole}` : undefined,
         model: newModel,
       });
@@ -78,14 +84,18 @@ export function AgentList() {
       setNewAvatar("🤖");
       setNewModel("cerebras/zai-glm-4.7");
       setShowModal(false);
-    } catch (error) {
+    } catch {
       addToast("Failed to create agent", "error");
     } finally {
       setIsCreating(false);
     }
   };
 
-  const getRole = (soul?: string) => soul?.match(/Role:\s*(.+)/)?.[1];
+  const getRole = (agent: Agent) => {
+    if (agent.role) return agent.role;
+    return agent.soul?.match(/Role:\s*(.+)/)?.[1] ?? null;
+  };
+
   const online = agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0;
 
   return (
@@ -127,29 +137,36 @@ export function AgentList() {
             <div className="p-4 text-[10px] text-mc-text-secondary text-center font-mono-jb">No agents</div>
           ) : (
             filtered?.map((agent) => {
-              const role = getRole(agent.soul);
+              const a = agent as Agent;
+              const role = getRole(a);
+              const topSkills = a.skills?.slice(0, 2) ?? [];
               return (
                 <div
-                  key={agent._id}
-                  onClick={() => setSelectedAgent(agent as Agent)}
+                  key={a._id}
+                  onClick={() => setSelectedAgent(a)}
                   className="flex items-center gap-2 p-2 rounded hover:bg-mc-bg-tertiary transition-colors cursor-pointer"
                 >
-                  <span className="text-xl">{agent.avatar || "🤖"}</span>
+                  <span className="text-xl">{a.avatar || "🤖"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium truncate text-mc-text">{agent.name}</span>
-                      {agent.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
+                      <span className="text-sm font-medium truncate text-mc-text">{a.name}</span>
+                      {a.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
                     </div>
                     <div className="text-[10px] text-mc-text-secondary truncate font-mono-jb">
                       {role || "—"}
-                      {agent.model?.includes("cerebras") && " · ⚡"}
+                      {topSkills.length > 0 && ` · ${topSkills.map((s) => s.name).join(", ")}`}
                     </div>
                   </div>
-                  <span className={cn(
-                    "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                    agent.status === "online" ? "bg-mc-accent-green" :
-                    agent.status === "busy" ? "bg-mc-accent-yellow" : "bg-mc-border"
-                  )} />
+                  <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                    <span className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      a.status === "online" ? "bg-mc-accent-green" :
+                      a.status === "busy" ? "bg-mc-accent-yellow" : "bg-mc-border"
+                    )} />
+                    {a.tasksCompleted != null && a.tasksCompleted > 0 && (
+                      <span className="text-[9px] text-mc-muted font-mono-jb">{a.tasksCompleted}t</span>
+                    )}
+                  </div>
                 </div>
               );
             })
@@ -168,7 +185,7 @@ export function AgentList() {
         </div>
       </div>
 
-      {/* Create Modal */}
+      {/* Quick Create Modal */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title="New Agent" size="sm">
         <form onSubmit={handleCreate} className="p-3 space-y-3">
           <div className="flex gap-1.5 flex-wrap">
@@ -194,14 +211,13 @@ export function AgentList() {
             className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
             autoFocus
           />
-          <select
+          <input
+            type="text"
             value={newRole}
             onChange={(e) => setNewRole(e.target.value)}
+            placeholder="Role (e.g. Researcher, Developer)"
             className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
-          >
-            <option value="">Role...</option>
-            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
+          />
           <select
             value={newModel}
             onChange={(e) => setNewModel(e.target.value)}
