@@ -80,6 +80,7 @@ export default function TasksPage() {
         title: newTitle.trim(),
         description: newDesc.trim() || undefined,
         priority: parseInt(newPriority),
+        projectId: newProjectId ? (newProjectId as Id<"projects">) : undefined,
       });
       addToast("Task created", "success");
       setNewTitle("");

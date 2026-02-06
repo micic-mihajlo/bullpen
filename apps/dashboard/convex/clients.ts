@@ -119,6 +119,17 @@ export const remove = mutation({
     const client = await ctx.db.get(args.id);
     if (!client) throw new Error("Client not found");
 
+    // Prevent orphaned projects
+    const projects = await ctx.db
+      .query("projects")
+      .withIndex("by_client", (q) => q.eq("clientId", args.id))
+      .collect();
+    if (projects.length > 0) {
+      throw new Error(
+        `Cannot delete client with ${projects.length} associated project(s). Delete or reassign projects first.`
+      );
+    }
+
     await ctx.db.delete(args.id);
 
     await ctx.db.insert("events", {

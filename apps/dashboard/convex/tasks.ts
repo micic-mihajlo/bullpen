@@ -91,13 +91,21 @@ export const create = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     priority: v.optional(v.number()),
+    projectId: v.optional(v.id("projects")),
   },
   handler: async (ctx, args) => {
+    // Validate project exists if provided
+    if (args.projectId) {
+      const project = await ctx.db.get(args.projectId);
+      if (!project) throw new Error("Project not found");
+    }
+
     const taskId = await ctx.db.insert("tasks", {
       title: args.title,
       description: args.description,
       status: "pending",
       priority: args.priority ?? 3,
+      projectId: args.projectId,
       createdAt: Date.now(),
     });
 
