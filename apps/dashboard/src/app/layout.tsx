@@ -3,6 +3,7 @@ import { JetBrains_Mono } from "next/font/google";
 import { ConvexClientProvider } from "@/lib/convex";
 import { ToastProvider } from "@/components/toast";
 import { ShortcutsProvider } from "@/components/shortcuts-provider";
+import { DashboardShell } from "@/components/dashboard-shell";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -26,7 +27,9 @@ export default function RootLayout({
       <body className={`${jetbrainsMono.variable} font-mono antialiased`}>
         <ConvexClientProvider>
           <ToastProvider>
-            <ShortcutsProvider>{children}</ShortcutsProvider>
+            <ShortcutsProvider>
+              <DashboardShell>{children}</DashboardShell>
+            </ShortcutsProvider>
           </ToastProvider>
         </ConvexClientProvider>
       </body>
