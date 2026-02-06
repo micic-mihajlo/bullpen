@@ -117,3 +117,24 @@ body {
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.5; }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Slide-in from left */
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.15s ease-out;
+}
