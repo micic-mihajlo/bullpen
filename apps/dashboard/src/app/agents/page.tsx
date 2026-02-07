@@ -476,15 +476,15 @@ export default function AgentsPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-[#e8e5de] bg-white/80 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl tracking-wider text-mc-text uppercase">Agents</h1>
-            <p className="text-[10px] text-mc-muted font-mono-jb uppercase tracking-widest">/// {agents?.length ?? 0} registered · {online} online · {totalSkills} skills</p>
+            <h1 className="text-xl font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Agents</h1>
+            <p className="text-[12px] text-[#9c9590] mt-0.5">{agents?.length ?? 0} registered · {online} online · {totalSkills} skills</p>
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs bg-mc-accent text-white uppercase tracking-wider hover:bg-mc-accent-hover transition-colors font-mono-jb"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs bg-[#c2410c] text-white rounded-lg hover:bg-[#9a3412] transition-colors font-medium"
           >
             <Plus className="w-3.5 h-3.5" />
             New Agent
@@ -577,7 +577,7 @@ export default function AgentsPage() {
                 <div
                   key={a._id}
                   onClick={() => setSelectedAgent(a)}
-                  className="bg-mc-bg-secondary border border-mc-border rounded hover:border-mc-accent/30 cursor-pointer transition-all group overflow-hidden"
+                  className="bg-white border border-[#e8e5de] rounded-lg hover:border-[#c2410c]/20 hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-pointer transition-all group overflow-hidden"
                 >
                   {/* Card header with status bar */}
                   <div className={cn(

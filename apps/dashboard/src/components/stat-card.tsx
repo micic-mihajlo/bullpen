@@ -11,7 +11,7 @@ interface StatCardProps {
 }
 
 const accentColors = {
-  blue: "text-mc-accent",
+  blue: "text-[#c2410c]",
   green: "text-mc-accent-green",
   yellow: "text-mc-accent-yellow",
   red: "text-mc-accent-red",
@@ -21,27 +21,23 @@ const accentColors = {
 export function StatCard({ label, value, icon, trend, accent = "blue", className }: StatCardProps) {
   return (
     <div className={cn(
-      "bg-mc-bg-secondary border border-mc-border rounded overflow-hidden crt-scanlines",
+      "bg-white border border-[#e8e5de] rounded-lg p-4 hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow",
       className
     )}>
-      {/* Dark header bar — terminal readout label */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#1a1a1a]">
-        <span className="text-[10px] text-[#888] uppercase tracking-wider font-mono-jb">{label}</span>
-        {icon && <span className={cn("opacity-80", accentColors[accent])}>{icon}</span>}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[12px] text-[#9c9590] font-medium">{label}</span>
+        {icon && <span className={cn("opacity-60", accentColors[accent])}>{icon}</span>}
       </div>
-      {/* Value readout */}
-      <div className="px-3 py-2.5 relative z-10">
-        <div className="flex items-baseline gap-2">
-          <span className={cn("text-2xl font-mono-jb font-medium", accentColors[accent])}>{value}</span>
-          {trend && (
-            <span className={cn(
-              "text-xs font-mono-jb",
-              trend.positive ? "text-mc-accent-green" : "text-mc-accent-red"
-            )}>
-              {trend.value}
-            </span>
-          )}
-        </div>
+      <div className="flex items-baseline gap-2">
+        <span className={cn("text-2xl font-mono-jb font-medium", accentColors[accent])}>{value}</span>
+        {trend && (
+          <span className={cn(
+            "text-xs font-mono-jb",
+            trend.positive ? "text-mc-accent-green" : "text-mc-accent-red"
+          )}>
+            {trend.value}
+          </span>
+        )}
       </div>
     </div>
   );

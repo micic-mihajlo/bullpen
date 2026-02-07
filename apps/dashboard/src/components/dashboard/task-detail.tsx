@@ -89,8 +89,8 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="terminal-header">
-          <div className="terminal-header-text flex-1 min-w-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0ede6] bg-white">
+          <div className="text-[13px] font-semibold text-[#1a1a1a] flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className={cn("text-[10px] font-semibold uppercase font-mono-jb tracking-wide", status.color)}>{status.label}</span>
               {task.priority && <span className="text-[10px] text-[#666] font-mono-jb">P{task.priority}</span>}

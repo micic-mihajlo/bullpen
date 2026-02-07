@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Sans, JetBrains_Mono, Inter } from "next/font/google";
 import { ConvexClientProvider } from "@/lib/convex";
 import { ToastProvider } from "@/components/toast";
 import { ShortcutsProvider } from "@/components/shortcuts-provider";
 import { DashboardShell } from "@/components/dashboard-shell";
 import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-sans",
@@ -32,8 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${ibmPlexSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
-        <div className="dot-grid" />
+      <body className={`${inter.variable} ${ibmPlexSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <ConvexClientProvider>
           <ToastProvider>
             <ShortcutsProvider>
@@ -41,7 +47,6 @@ export default function RootLayout({
             </ShortcutsProvider>
           </ToastProvider>
         </ConvexClientProvider>
-        <div className="grain" />
       </body>
     </html>
   );

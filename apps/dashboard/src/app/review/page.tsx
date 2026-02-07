@@ -83,11 +83,11 @@ export default function ReviewPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-[#e8e5de] bg-white/80 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl tracking-wider text-mc-text uppercase">Review Queue</h1>
-            <p className="text-[10px] text-mc-muted font-mono-jb uppercase tracking-widest">
+            <h1 className="text-xl font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Review Queue</h1>
+            <p className="text-[12px] text-[#9c9590] mt-0.5">
               /// {pendingReview?.length ?? 0} deliverables awaiting review
             </p>
           </div>

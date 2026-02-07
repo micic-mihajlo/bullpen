@@ -129,7 +129,7 @@ export function SessionDetail({ session, onClose }: SessionDetailProps) {
       {/* Header */}
       <div className="px-4 py-3 border-b border-mc-border bg-mc-bg-secondary">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="font-display text-lg tracking-wider text-mc-text uppercase">{sessionName}</h2>
+          <h2 className="text-lg font-semibold text-[#1a1a1a]">{sessionName}</h2>
           {onClose && (
             <button onClick={onClose} className="p-1 hover:bg-mc-bg-tertiary rounded transition-colors">
               <X className="w-4 h-4 text-mc-text-secondary" />

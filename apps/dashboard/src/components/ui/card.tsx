@@ -12,12 +12,12 @@ export function Card({ children, className, hover = false, glow = "none" }: Card
   return (
     <div
       className={cn(
-        "rounded-lg border border-mc-border bg-mc-bg-secondary",
-        "transition-all duration-200",
-        hover && "hover:border-mc-accent/30 hover:shadow-sm cursor-pointer",
-        glow === "cyan" && "border-cyan-600/20 shadow-[0_0_20px_-5px_rgba(8,145,178,0.1)]",
-        glow === "green" && "border-green-600/20 shadow-[0_0_20px_-5px_rgba(22,163,74,0.1)]",
-        glow === "amber" && "border-amber-600/20 shadow-[0_0_20px_-5px_rgba(202,138,4,0.1)]",
+        "rounded-lg border border-[#e8e5de] bg-white",
+        "transition-all duration-150",
+        hover && "hover:border-[#c2410c]/20 hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-pointer",
+        glow === "cyan" && "border-cyan-600/15",
+        glow === "green" && "border-green-600/15",
+        glow === "amber" && "border-amber-600/15",
         className
       )}
     >
@@ -35,7 +35,7 @@ export function CardHeader({ children, className }: CardHeaderProps) {
   return (
     <div
       className={cn(
-        "px-5 py-4 border-b border-mc-border",
+        "px-5 py-4 border-b border-[#f0ede6]",
         className
       )}
     >
@@ -60,7 +60,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className }: CardTitleProps) {
   return (
-    <h3 className={cn("text-sm font-semibold text-mc-text", className)}>
+    <h3 className={cn("text-sm font-semibold text-[#1a1a1a]", className)}>
       {children}
     </h3>
   );

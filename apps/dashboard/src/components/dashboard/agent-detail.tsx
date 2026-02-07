@@ -351,8 +351,8 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* ─── Header ─── */}
-        <div className="terminal-header">
-          <div className="terminal-header-text flex items-center gap-3 flex-1">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0ede6] bg-white">
+          <div className="text-[13px] font-semibold text-[#1a1a1a] flex items-center gap-3 flex-1">
             <span className="text-2xl">{liveAgent.avatar || "🤖"}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">

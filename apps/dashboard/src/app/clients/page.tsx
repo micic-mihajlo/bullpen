@@ -132,15 +132,15 @@ export default function ClientsPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-mc-border bg-mc-bg-secondary/80 px-6 py-3">
+      <header className="flex-shrink-0 border-b border-[#e8e5de] bg-white/80 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl tracking-wider text-mc-text uppercase">Clients</h1>
-            <p className="text-[10px] text-mc-muted font-mono-jb uppercase tracking-widest">/// {clients?.length ?? 0} total</p>
+            <h1 className="text-xl font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Clients</h1>
+            <p className="text-[12px] text-[#9c9590] mt-0.5">{clients?.length ?? 0} total</p>
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs bg-mc-accent text-white uppercase tracking-wider hover:bg-mc-accent-hover transition-colors font-mono-jb"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs bg-[#c2410c] text-white rounded-lg hover:bg-[#9a3412] transition-colors font-medium"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Client
@@ -231,7 +231,7 @@ export default function ClientsPage() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{selectedClient.avatar || "👤"}</span>
                 <div>
-                  <h2 className="font-display text-xl tracking-wider text-mc-text uppercase">{selectedClient.name}</h2>
+                  <h2 className="text-lg font-semibold text-[#1a1a1a]">{selectedClient.name}</h2>
                   <div className="text-[10px] text-mc-muted font-mono-jb uppercase tracking-wider">
                     {selectedClient.company || "Individual"}
                     <span className="mx-1.5">·</span>
@@ -287,8 +287,8 @@ export default function ClientsPage() {
 
             {/* Projects */}
             <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-              <div className="terminal-header">
-                <span className="terminal-header-text">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0ede6]">
+                <span className="text-[13px] font-semibold text-[#1a1a1a]">
                   Projects ({selectedClient.projects?.length ?? 0})
                 </span>
               </div>

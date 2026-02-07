@@ -8,7 +8,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "bg-mc-bg-tertiary rounded animate-shimmer",
+        "bg-[#f0ede6] rounded animate-shimmer",
         className
       )}
     />
@@ -17,7 +17,7 @@ export function Skeleton({ className }: SkeletonProps) {
 
 export function SkeletonCard() {
   return (
-    <div className="p-4 bg-mc-bg-secondary border border-mc-border rounded-lg space-y-3">
+    <div className="p-4 bg-white border border-[#e8e5de] rounded-lg space-y-3">
       <Skeleton className="h-4 w-3/4" />
       <Skeleton className="h-3 w-1/2" />
       <div className="flex gap-2">
@@ -48,9 +48,9 @@ export function SkeletonStats() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-mc-bg-secondary border border-mc-border rounded overflow-hidden">
-          <div className="px-3 py-1.5 bg-[#1a1a1a]"><Skeleton className="h-2.5 w-16 opacity-30" /></div>
-          <div className="px-3 py-2.5"><Skeleton className="h-7 w-10" /></div>
+        <div key={i} className="bg-white border border-[#e8e5de] rounded-lg p-4">
+          <Skeleton className="h-3 w-16 mb-2" />
+          <Skeleton className="h-7 w-10" />
         </div>
       ))}
     </div>

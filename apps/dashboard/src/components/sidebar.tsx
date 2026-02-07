@@ -30,7 +30,6 @@ export function Sidebar() {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
-  // Stable queries — prevent badge count flicker
   const tasks = useStableData(useQuery(api.tasks.list));
   const pendingReview = useStableData(useQuery(api.deliverables.pendingReview));
 
@@ -51,7 +50,6 @@ export function Sidebar() {
     return pathname.startsWith(href);
   };
 
-  // Keyboard navigation (1-6)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInput =
@@ -75,25 +73,18 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-full flex flex-col bg-[#1a1a1a] border-r border-[#2a2a2a] transition-all duration-200 flex-shrink-0",
+        "h-full flex flex-col bg-[#faf9f6] border-r border-[#e8e5de] transition-all duration-200 flex-shrink-0",
         collapsed ? "w-14" : "w-52"
       )}
     >
-      {/* Logo with terminal dots */}
+      {/* Logo */}
       <div className={cn(
-        "flex items-center gap-2 px-3 py-3 border-b border-[#2a2a2a]",
+        "flex items-center gap-2 px-3 py-3 border-b border-[#e8e5de]",
         collapsed && "justify-center"
       )}>
-        {!collapsed && (
-          <div className="flex items-center gap-1.5 mr-2">
-            <span className="w-2 h-2 rounded-full bg-red-500" />
-            <span className="w-2 h-2 rounded-full bg-yellow-500" />
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-          </div>
-        )}
         <span className="text-lg flex-shrink-0">🐂</span>
         {!collapsed && (
-          <span className="font-display text-xl tracking-widest text-white uppercase">Bullpen</span>
+          <span className="text-base font-semibold tracking-wide text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Bullpen</span>
         )}
       </div>
 
@@ -106,10 +97,10 @@ export function Sidebar() {
               key={item.href}
               onClick={() => router.push(item.href)}
               className={cn(
-                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-mono-jb transition-colors relative",
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors relative",
                 active
-                  ? "bg-[#c2410c]/20 text-[#c2410c] font-medium"
-                  : "text-[#888] hover:text-white hover:bg-[#252525]",
+                  ? "bg-[#c2410c]/8 text-[#c2410c] font-medium"
+                  : "text-[#6b6560] hover:text-[#1a1a1a] hover:bg-[#f0ede6]",
                 collapsed && "justify-center px-0"
               )}
               title={collapsed ? `${item.label} (${item.shortcut})` : undefined}
@@ -120,9 +111,9 @@ export function Sidebar() {
               <span className="flex-shrink-0">{item.icon}</span>
               {!collapsed && (
                 <>
-                  <span className="truncate text-xs">{item.label}</span>
+                  <span className="truncate text-[13px]">{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className="ml-auto text-[10px] bg-[#c2410c]/25 text-[#c2410c] px-1.5 py-0.5 rounded min-w-[20px] text-center font-semibold">
+                    <span className="ml-auto text-[10px] bg-[#c2410c]/10 text-[#c2410c] px-1.5 py-0.5 rounded-full min-w-[20px] text-center font-medium">
                       {item.badge}
                     </span>
                   )}
@@ -137,11 +128,11 @@ export function Sidebar() {
       </nav>
 
       {/* Collapse toggle */}
-      <div className="p-2 border-t border-[#2a2a2a]">
+      <div className="p-2 border-t border-[#e8e5de]">
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            "w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs text-[#888] hover:text-white hover:bg-[#252525] transition-colors font-mono-jb",
+            "w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-[#9c9590] hover:text-[#1a1a1a] hover:bg-[#f0ede6] transition-colors",
             collapsed && "justify-center px-0"
           )}
         >

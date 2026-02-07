@@ -45,8 +45,8 @@ export function Modal({ open, onClose, title, children, className, size = "sm" }
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="terminal-header">
-            <span className="terminal-header-text text-sm font-medium">{title}</span>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0ede6] bg-white">
+            <span className="text-[13px] font-semibold text-[#1a1a1a] text-sm font-medium">{title}</span>
             <button
               onClick={onClose}
               className="ml-auto p-1 hover:bg-white/10 rounded transition-colors"
