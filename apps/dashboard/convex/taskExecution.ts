@@ -63,6 +63,45 @@ export const receiveResult = mutation({
       });
     }
 
+    // Free the agent and update performance metrics
+    if (task.assignedAgentId) {
+      const agent = await ctx.db.get(task.assignedAgentId);
+      if (agent) {
+        const allTasks = await ctx.db
+          .query("tasks")
+          .withIndex("by_agent", (q) => q.eq("assignedAgentId", task.assignedAgentId!))
+          .collect();
+
+        const completed = allTasks.filter(
+          (t) => t.status === "completed" || t._id === args.taskId
+        );
+        const failed = allTasks.filter(
+          (t) => t.status === "failed" && t._id !== args.taskId
+        );
+
+        // If this task failed, count it as failed instead
+        const actualCompleted = args.status === "completed" ? completed : completed.filter((t) => t._id !== args.taskId);
+        const actualFailed = args.status === "failed" ? [...failed, task] : failed;
+        const total = actualCompleted.length + actualFailed.length;
+
+        const durations = actualCompleted
+          .filter((t) => t.startedAt && (t.completedAt || t._id === args.taskId))
+          .map((t) => (t._id === args.taskId ? Date.now() : t.completedAt!) - t.startedAt!);
+        const avgDuration =
+          durations.length > 0
+            ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+            : 0;
+
+        await ctx.db.patch(task.assignedAgentId, {
+          status: "online",
+          currentTaskId: undefined,
+          tasksCompleted: actualCompleted.length,
+          tasksSuccessRate: total > 0 ? Math.round((actualCompleted.length / total) * 100) : 0,
+          avgTaskDurationMs: avgDuration,
+        });
+      }
+    }
+
     await ctx.db.insert("events", {
       agentId: task.assignedAgentId,
       type: args.status === "completed" ? "task_completed" : "task_failed",
