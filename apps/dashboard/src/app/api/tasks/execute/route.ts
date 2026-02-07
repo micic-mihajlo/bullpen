@@ -5,9 +5,9 @@ import { Id } from "../../../../../convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-const OPENCLAW_HTTP_BASE = "http://localhost:18789";
-const OPENCLAW_BEARER_TOKEN =
-  "413c1c90c7b9d0e673b91eb5d118efe041bf031d20fb95ed";
+const OPENCLAW_HTTP_BASE =
+  process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") || "http://localhost:18789";
+const OPENCLAW_BEARER_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
 
 // POST /api/tasks/execute - Send a task to an assigned OpenClaw session
 export async function POST(request: NextRequest) {
