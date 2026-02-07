@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -60,6 +60,12 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
   if (!task) return null;
 
   const status = statusLabel[task.status];
+  const hasTaskError = Boolean(task.error) || task.status === "failed";
+
+  useEffect(() => {
+    setEditingResult(false);
+    setResultText(task.result || "");
+  }, [task._id, task.result]);
 
   const handleSaveResult = async () => {
     setSaving(true);
@@ -183,8 +189,10 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
                 </div>
               </div>
             ) : task.result ? (
-              <pre className="p-3 bg-mc-bg-tertiary rounded text-xs whitespace-pre-wrap break-words overflow-x-auto max-h-64 overflow-y-auto font-mono-jb text-mc-text">
-                {task.result}
+              <pre className="p-3 bg-mc-bg border border-mc-border rounded text-xs whitespace-pre-wrap break-words overflow-x-auto max-h-64 overflow-y-auto font-mono-jb">
+                <code className={cn("block font-mono-jb", hasTaskError ? "text-mc-accent-red" : "text-mc-text")}>
+                  {task.result}
+                </code>
               </pre>
             ) : (
               <div className="p-3 bg-mc-bg-tertiary rounded text-[10px] text-mc-muted italic font-mono-jb">

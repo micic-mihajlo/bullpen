@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { memo, useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -8,14 +8,11 @@ import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/utils";
 import { useStableData } from "@/lib/hooks";
 import { Modal } from "@/components/ui/modal";
-import { EmptyState } from "@/components/empty-state";
-import { StatCard } from "@/components/stat-card";
 import { TaskDetail } from "@/components/dashboard/task-detail";
 import { useToast } from "@/components/toast";
 import { useRegisterShortcut } from "@/components/shortcuts-provider";
 import {
   Plus,
-  CheckSquare,
   Send,
   Clock,
   AlertCircle,
@@ -42,12 +39,188 @@ type Task = {
 
 type TaskStatus = "pending" | "assigned" | "running" | "completed" | "failed";
 
-const columns: { status: TaskStatus; label: string; icon: React.ReactNode; cls: string }[] = [
+type Agent = {
+  _id: Id<"agents">;
+  name: string;
+  avatar?: string;
+  status: string;
+};
+
+type ColumnConfig = { status: Exclude<TaskStatus, "assigned">; label: string; icon: React.ReactNode; cls: string };
+
+const columns: ColumnConfig[] = [
   { status: "pending", label: "Inbox", icon: <Clock className="w-3.5 h-3.5" />, cls: "column-pending" },
   { status: "running", label: "In Progress", icon: <Loader2 className="w-3.5 h-3.5" />, cls: "column-running" },
   { status: "completed", label: "Done", icon: <CheckCircle2 className="w-3.5 h-3.5" />, cls: "column-completed" },
   { status: "failed", label: "Failed", icon: <AlertCircle className="w-3.5 h-3.5" />, cls: "column-failed" },
 ];
+
+interface TaskCardProps {
+  task: Task;
+  assignedAgent?: Agent;
+  onlineAgents: Agent[];
+  isDispatching: boolean;
+  onOpenTask: (taskId: string) => void;
+  onAssign: (taskId: Id<"tasks">, agentId: Id<"agents">) => void;
+  onStart: (taskId: Id<"tasks">) => void;
+  onDispatch: (taskId: Id<"tasks">) => void;
+  onComplete: (taskId: Id<"tasks">) => void;
+}
+
+const TaskCard = memo(function TaskCard({
+  task,
+  assignedAgent,
+  onlineAgents,
+  isDispatching,
+  onOpenTask,
+  onAssign,
+  onStart,
+  onDispatch,
+  onComplete,
+}: TaskCardProps) {
+  return (
+    <div
+      onClick={() => onOpenTask(task._id)}
+      className="p-2.5 rounded bg-mc-bg-secondary border border-mc-border hover:border-mc-accent/30 cursor-pointer group transition-colors"
+    >
+      <div className="flex items-start gap-2 mb-1">
+        {task.priority && task.priority >= 4 && (
+          <span className="text-[10px] text-mc-accent-red font-semibold mt-0.5 font-mono-jb">P{task.priority}</span>
+        )}
+        <p className="text-sm font-medium line-clamp-2 flex-1 text-mc-text">{task.title}</p>
+      </div>
+
+      <div className="flex items-center gap-2 text-[10px] text-mc-muted mb-1 font-mono-jb">
+        <span>{formatTime(task.createdAt)}</span>
+        {task.result && <span className="text-mc-accent-green font-semibold">✓</span>}
+      </div>
+
+      {assignedAgent && (
+        <div className="text-[10px] text-mc-text-secondary flex items-center gap-1 mb-1">
+          <span>{assignedAgent.avatar}</span>
+          {assignedAgent.name}
+        </div>
+      )}
+
+      {(task.status === "pending" || task.status === "assigned") && onlineAgents.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-mc-border opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {onlineAgents.slice(0, 3).map((agent) => (
+              <button
+                key={agent._id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAssign(task._id, agent._id);
+                }}
+                className="px-1.5 py-0.5 text-[10px] bg-mc-bg-tertiary rounded hover:bg-mc-bg-tertiary/80 transition-colors text-mc-text font-mono-jb"
+              >
+                {agent.avatar} {agent.name}
+              </button>
+            ))}
+          </div>
+          {task.status === "assigned" && (
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStart(task._id);
+                }}
+                className="flex-1 px-2 py-1 text-[10px] bg-mc-accent-yellow/15 text-mc-accent-yellow rounded hover:bg-mc-accent-yellow/25 transition-colors font-mono-jb font-semibold uppercase"
+              >
+                Start
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDispatch(task._id);
+                }}
+                disabled={isDispatching}
+                className="flex-1 px-2 py-1 text-[10px] bg-mc-accent/15 text-mc-accent rounded hover:bg-mc-accent/25 flex items-center justify-center gap-1 disabled:opacity-50 transition-colors font-mono-jb font-semibold uppercase"
+              >
+                <Send className="w-3 h-3" />
+                {isDispatching ? "..." : "Dispatch"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {task.status === "running" && (
+        <div className="mt-2 pt-2 border-t border-mc-border opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onComplete(task._id);
+            }}
+            className="w-full px-2 py-1 text-[10px] bg-mc-accent-green/15 text-mc-accent-green rounded hover:bg-mc-accent-green/25 transition-colors font-mono-jb font-semibold uppercase"
+          >
+            Complete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+});
+
+interface TaskColumnProps {
+  column: ColumnConfig;
+  tasks: Task[] | undefined;
+  agentsById: Map<Id<"agents">, Agent>;
+  onlineAgents: Agent[];
+  dispatchingId: string | null;
+  onOpenTask: (taskId: string) => void;
+  onAssign: (taskId: Id<"tasks">, agentId: Id<"agents">) => void;
+  onStart: (taskId: Id<"tasks">) => void;
+  onDispatch: (taskId: Id<"tasks">) => void;
+  onComplete: (taskId: Id<"tasks">) => void;
+}
+
+const TaskColumn = memo(function TaskColumn({
+  column,
+  tasks,
+  agentsById,
+  onlineAgents,
+  dispatchingId,
+  onOpenTask,
+  onAssign,
+  onStart,
+  onDispatch,
+  onComplete,
+}: TaskColumnProps) {
+  return (
+    <div className={cn("flex flex-col rounded bg-mc-bg-secondary/60 overflow-hidden border border-mc-border", column.cls)}>
+      <div className="px-3 py-2 flex items-center justify-between border-b border-mc-border/50 bg-mc-bg-secondary/80">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-mc-text-secondary uppercase font-mono-jb tracking-wide">
+          {column.icon}
+          {column.label}
+        </div>
+        <span className="text-[10px] text-mc-muted font-mono-jb font-semibold">{tasks?.length ?? 0}</span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
+        {!tasks ? (
+          <div className="p-2 text-xs text-mc-text-secondary">Loading...</div>
+        ) : tasks.length === 0 ? (
+          <div className="p-4 text-[10px] text-mc-muted text-center uppercase tracking-wide font-mono-jb">Empty</div>
+        ) : (
+          tasks.map((task) => (
+            <TaskCard
+              key={task._id}
+              task={task}
+              assignedAgent={task.assignedAgentId ? agentsById.get(task.assignedAgentId) : undefined}
+              onlineAgents={onlineAgents}
+              isDispatching={dispatchingId === task._id}
+              onOpenTask={onOpenTask}
+              onAssign={onAssign}
+              onStart={onStart}
+              onDispatch={onDispatch}
+              onComplete={onComplete}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+});
 
 export default function TasksPage() {
   const tasks = useStableData(useQuery(api.tasks.list));
@@ -65,7 +238,7 @@ export default function TasksPage() {
   const [newProjectId, setNewProjectId] = useState("");
   const [newPriority, setNewPriority] = useState("3");
   const [isCreating, setIsCreating] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
   const [filterProject, setFilterProject] = useState<string>("all");
 
@@ -96,8 +269,7 @@ export default function TasksPage() {
     }
   };
 
-  const handleDispatch = async (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDispatch = useCallback(async (taskId: Id<"tasks">) => {
     setDispatchingId(taskId);
     try {
       const res = await fetch(`/api/tasks/${taskId}/dispatch`, { method: "POST" });
@@ -112,21 +284,70 @@ export default function TasksPage() {
     } finally {
       setDispatchingId(null);
     }
-  };
+  }, [addToast]);
 
-  const getByStatus = (status: TaskStatus) => {
-    if (!tasks) return [];
-    let filtered = status === "pending"
-      ? tasks.filter((t) => t.status === "pending" || t.status === "assigned")
-      : tasks.filter((t) => t.status === status);
+  const handleAssign = useCallback((taskId: Id<"tasks">, agentId: Id<"agents">) => {
+    void assignTask({ taskId, agentId });
+  }, [assignTask]);
 
-    if (filterProject !== "all") {
-      filtered = filtered.filter((t) => t.projectId === filterProject);
+  const handleStart = useCallback((taskId: Id<"tasks">) => {
+    void startTask({ id: taskId });
+  }, [startTask]);
+
+  const handleComplete = useCallback((taskId: Id<"tasks">) => {
+    void completeTask({ id: taskId, result: "Completed" });
+  }, [completeTask]);
+
+  const openTask = useCallback((taskId: string) => {
+    setSelectedTaskId(taskId);
+  }, []);
+
+  const agentsById = useMemo(() => {
+    const map = new Map<Id<"agents">, Agent>();
+    for (const agent of agents ?? []) {
+      map.set(agent._id, agent);
     }
-    return filtered;
-  };
+    return map;
+  }, [agents]);
 
-  const onlineAgents = agents?.filter((a) => a.status === "online") ?? [];
+  const onlineAgents = useMemo(
+    () => (agents?.filter((agent) => agent.status === "online") ?? []) as Agent[],
+    [agents],
+  );
+
+  const filteredByColumn = useMemo(() => {
+    if (!tasks) {
+      return {
+        pending: undefined,
+        running: undefined,
+        completed: undefined,
+        failed: undefined,
+      } satisfies Record<ColumnConfig["status"], Task[] | undefined>;
+    }
+
+    const scopedTasks = filterProject === "all"
+      ? tasks
+      : tasks.filter((task) => task.projectId === filterProject);
+
+    return {
+      pending: scopedTasks.filter((task) => task.status === "pending" || task.status === "assigned"),
+      running: scopedTasks.filter((task) => task.status === "running"),
+      completed: scopedTasks.filter((task) => task.status === "completed"),
+      failed: scopedTasks.filter((task) => task.status === "failed"),
+    } satisfies Record<ColumnConfig["status"], Task[]>;
+  }, [tasks, filterProject]);
+
+  const selectedTask = useMemo(
+    () => (selectedTaskId ? (tasks?.find((task) => task._id === selectedTaskId) as Task | undefined) ?? null : null),
+    [selectedTaskId, tasks],
+  );
+
+  const selectedTaskWithAgent = useMemo(() => {
+    if (!selectedTask) return null;
+    if (selectedTask.agent || !selectedTask.assignedAgentId) return selectedTask;
+    const assignedAgent = agentsById.get(selectedTask.assignedAgentId);
+    return assignedAgent ? ({ ...selectedTask, agent: assignedAgent } as Task) : selectedTask;
+  }, [selectedTask, agentsById]);
 
   const stats = useMemo(() => ({
     total: tasks?.length ?? 0,
@@ -203,107 +424,25 @@ export default function TasksPage() {
       <div className="flex-1 overflow-hidden p-3">
         <div className="grid grid-cols-4 gap-3 h-full">
           {columns.map((col) => (
-            <div key={col.status} className={cn("flex flex-col rounded bg-mc-bg-secondary/60 overflow-hidden border border-mc-border", col.cls)}>
-              <div className="px-3 py-2 flex items-center justify-between border-b border-mc-border/50 bg-mc-bg-secondary/80">
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold text-mc-text-secondary uppercase font-mono-jb tracking-wide">
-                  {col.icon}
-                  {col.label}
-                </div>
-                <span className="text-[10px] text-mc-muted font-mono-jb font-semibold">{getByStatus(col.status).length}</span>
-              </div>
-              <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
-                {!tasks ? (
-                  <div className="p-2 text-xs text-mc-text-secondary">Loading...</div>
-                ) : getByStatus(col.status).length === 0 ? (
-                  <div className="p-4 text-[10px] text-mc-muted text-center uppercase tracking-wide font-mono-jb">Empty</div>
-                ) : (
-                  getByStatus(col.status).map((task) => (
-                    <div
-                      key={task._id}
-                      onClick={() => setSelectedTask(task as Task)}
-                      className="p-2.5 rounded bg-mc-bg-secondary border border-mc-border hover:border-mc-accent/30 cursor-pointer group transition-colors"
-                    >
-                      {/* Priority + title */}
-                      <div className="flex items-start gap-2 mb-1">
-                        {task.priority && task.priority >= 4 && (
-                          <span className="text-[10px] text-mc-accent-red font-semibold mt-0.5 font-mono-jb">P{task.priority}</span>
-                        )}
-                        <p className="text-sm font-medium line-clamp-2 flex-1 text-mc-text">{task.title}</p>
-                      </div>
-
-                      {/* Meta */}
-                      <div className="flex items-center gap-2 text-[10px] text-mc-muted mb-1 font-mono-jb">
-                        <span>{formatTime(task.createdAt)}</span>
-                        {task.result && <span className="text-mc-accent-green font-semibold">✓</span>}
-                      </div>
-
-                      {/* Agent assignment */}
-                      {task.assignedAgentId && agents && (
-                        <div className="text-[10px] text-mc-text-secondary flex items-center gap-1 mb-1">
-                          {(() => {
-                            const a = agents.find((ag) => ag._id === task.assignedAgentId);
-                            return a ? <><span>{a.avatar}</span> {a.name}</> : null;
-                          })()}
-                        </div>
-                      )}
-
-                      {/* Actions (pending/assigned) */}
-                      {(task.status === "pending" || task.status === "assigned") && onlineAgents.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-mc-border opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex flex-wrap gap-1 mb-1.5">
-                            {onlineAgents.slice(0, 3).map((a) => (
-                              <button
-                                key={a._id}
-                                onClick={(e) => { e.stopPropagation(); assignTask({ taskId: task._id, agentId: a._id }); }}
-                                className="px-1.5 py-0.5 text-[10px] bg-mc-bg-tertiary rounded hover:bg-mc-bg-tertiary/80 transition-colors text-mc-text font-mono-jb"
-                              >
-                                {a.avatar} {a.name}
-                              </button>
-                            ))}
-                          </div>
-                          {task.status === "assigned" && (
-                            <div className="flex gap-1">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); startTask({ id: task._id }); }}
-                                className="flex-1 px-2 py-1 text-[10px] bg-mc-accent-yellow/15 text-mc-accent-yellow rounded hover:bg-mc-accent-yellow/25 transition-colors font-mono-jb font-semibold uppercase"
-                              >
-                                Start
-                              </button>
-                              <button
-                                onClick={(e) => handleDispatch(task._id, e)}
-                                disabled={dispatchingId === task._id}
-                                className="flex-1 px-2 py-1 text-[10px] bg-mc-accent/15 text-mc-accent rounded hover:bg-mc-accent/25 flex items-center justify-center gap-1 disabled:opacity-50 transition-colors font-mono-jb font-semibold uppercase"
-                              >
-                                <Send className="w-3 h-3" />
-                                {dispatchingId === task._id ? "..." : "Dispatch"}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Complete action for running */}
-                      {task.status === "running" && (
-                        <div className="mt-2 pt-2 border-t border-mc-border opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); completeTask({ id: task._id, result: "Completed" }); }}
-                            className="w-full px-2 py-1 text-[10px] bg-mc-accent-green/15 text-mc-accent-green rounded hover:bg-mc-accent-green/25 transition-colors font-mono-jb font-semibold uppercase"
-                          >
-                            Complete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            <TaskColumn
+              key={col.status}
+              column={col}
+              tasks={filteredByColumn[col.status]}
+              agentsById={agentsById}
+              onlineAgents={onlineAgents}
+              dispatchingId={dispatchingId}
+              onOpenTask={openTask}
+              onAssign={handleAssign}
+              onStart={handleStart}
+              onDispatch={handleDispatch}
+              onComplete={handleComplete}
+            />
           ))}
         </div>
       </div>
 
       {/* Task detail modal */}
-      {selectedTask && <TaskDetail task={selectedTask} onClose={() => setSelectedTask(null)} />}
+      {selectedTaskWithAgent && <TaskDetail task={selectedTaskWithAgent} onClose={() => setSelectedTaskId(null)} />}
 
       {/* Create Modal */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Task" size="sm">
