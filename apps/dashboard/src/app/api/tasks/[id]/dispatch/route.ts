@@ -87,14 +87,30 @@ Use exec to run the curl command. Replace YOUR_RESULT_HERE with your actual deli
 
 Begin working on this task now.`;
 
-    // Spawn an isolated sub-agent session directly
-    const spawnResult = await client.spawnSession({
-      task: taskPrompt,
-      label: `bullpen-task-${taskId}`,
-      model: agent.model || undefined,
-      timeoutSeconds: 300, // 5 min timeout for spawn acknowledgment
-      runTimeoutSeconds: 1800, // 30 min max runtime
-    });
+    // If agent has a linked OpenClaw session, send task there
+    // Otherwise spawn an isolated session
+    let sessionKey: string;
+    let runId: string | undefined;
+    let method: "send" | "spawn";
+
+    if (agent.sessionKey) {
+      // Send to existing agent session
+      await client.sendMessage(agent.sessionKey, taskPrompt);
+      sessionKey = agent.sessionKey;
+      method = "send";
+    } else {
+      // Spawn an isolated sub-agent session
+      const spawnResult = await client.spawnSession({
+        task: taskPrompt,
+        label: `bullpen-task-${taskId}`,
+        model: agent.model || undefined,
+        timeoutSeconds: 300,
+        runTimeoutSeconds: 1800,
+      });
+      sessionKey = spawnResult.sessionKey;
+      runId = spawnResult.runId;
+      method = "spawn";
+    }
 
     // Update task status to running
     await convex.mutation(api.tasks.start, { id: taskId });
@@ -103,20 +119,22 @@ Begin working on this task now.`;
     await convex.mutation(api.events.create, {
       agentId: task.assignedAgentId,
       type: "task_dispatched",
-      message: `Spawned isolated session for "${task.title}"`,
+      message: `${method === "send" ? "Sent to" : "Spawned session for"} "${task.title}"`,
       data: { 
         taskId, 
-        sessionKey: spawnResult.sessionKey,
-        runId: spawnResult.runId,
+        sessionKey,
+        runId,
+        method,
         model: agent.model 
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Task dispatched via sessions_spawn",
-      sessionKey: spawnResult.sessionKey,
-      runId: spawnResult.runId,
+      message: `Task dispatched via ${method}`,
+      sessionKey,
+      runId,
+      method,
       model: agent.model,
     });
   } catch (error) {
