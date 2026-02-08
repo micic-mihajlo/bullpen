@@ -1,19 +1,32 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 // List all clients
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("clients").order("desc").collect();
+    return await ctx.db
+      .query("clients")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
   },
 });
 
-// Get client by ID
+// Get client by ID with joined projects
 export const get = query({
   args: { id: v.id("clients") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const client = await ctx.db.get(args.id);
+    if (!client) return null;
+
+    const projects = await ctx.db
+      .query("projects")
+      .withIndex("by_client", (q) => q.eq("clientId", args.id))
+      .order("desc")
+      .collect();
+
+    return { ...client, projects };
   },
 });
 
@@ -34,9 +47,9 @@ export const create = mutation({
     name: v.string(),
     email: v.string(),
     company: v.optional(v.string()),
-    avatar: v.optional(v.string()),
     plan: v.optional(v.string()),
     channel: v.optional(v.string()),
+    avatar: v.optional(v.string()),
     channelId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -46,7 +59,7 @@ export const create = mutation({
       company: args.company,
       avatar: args.avatar,
       status: "active",
-      plan: args.plan || "starter",
+      plan: args.plan ?? "starter",
       channel: args.channel,
       channelId: args.channelId,
       createdAt: Date.now(),
@@ -71,22 +84,31 @@ export const update = mutation({
     email: v.optional(v.string()),
     company: v.optional(v.string()),
     avatar: v.optional(v.string()),
-    status: v.optional(v.union(
-      v.literal("active"),
-      v.literal("inactive"),
-      v.literal("churned")
-    )),
+    status: v.optional(
+      v.union(v.literal("active"), v.literal("inactive"), v.literal("churned"))
+    ),
     plan: v.optional(v.string()),
     channel: v.optional(v.string()),
     channelId: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Client not found");
+
     const { id, ...updates } = args;
     const filtered = Object.fromEntries(
-      Object.entries(updates).filter(([_, v]) => v !== undefined)
+      Object.entries(updates).filter((entry) => entry[1] !== undefined)
     );
+
     await ctx.db.patch(id, filtered);
+
+    await ctx.db.insert("events", {
+      type: "client_updated",
+      message: `Client updated: ${existing.name}`,
+      data: { clientId: id, fields: Object.keys(filtered) },
+      timestamp: Date.now(),
+    });
   },
 });
 
@@ -97,17 +119,29 @@ export const remove = mutation({
     const client = await ctx.db.get(args.id);
     if (!client) throw new Error("Client not found");
 
+    // Prevent orphaned projects
+    const projects = await ctx.db
+      .query("projects")
+      .withIndex("by_client", (q) => q.eq("clientId", args.id))
+      .collect();
+    if (projects.length > 0) {
+      throw new Error(
+        `Cannot delete client with ${projects.length} associated project(s). Delete or reassign projects first.`
+      );
+    }
+
     await ctx.db.delete(args.id);
 
     await ctx.db.insert("events", {
       type: "client_removed",
       message: `Client removed: ${client.name}`,
+      data: { clientId: args.id },
       timestamp: Date.now(),
     });
   },
 });
 
-// Get client with their projects
+// Backward-compatible alias for previous API name
 export const withProjects = query({
   args: { id: v.id("clients") },
   handler: async (ctx, args) => {
@@ -117,6 +151,7 @@ export const withProjects = query({
     const projects = await ctx.db
       .query("projects")
       .withIndex("by_client", (q) => q.eq("clientId", args.id))
+      .order("desc")
       .collect();
 
     return { ...client, projects };

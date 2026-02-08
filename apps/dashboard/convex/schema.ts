@@ -55,15 +55,57 @@ export default defineSchema({
       v.literal("offline"),
       v.literal("busy")
     ),
-    soul: v.optional(v.string()), // SOUL.md content
-    avatar: v.optional(v.string()), // emoji or image URL
-    model: v.optional(v.string()), // default model for this agent (e.g., "cerebras/zai-glm-4.7")
-    lastSeen: v.number(), // timestamp
+    avatar: v.optional(v.string()),
+    role: v.optional(v.string()), // "Researcher", "Developer", etc.
+
+    // Soul — rich markdown personality (SOUL.md content)
+    soul: v.optional(v.string()),
+
+    // Structured skills
+    skills: v.optional(v.array(v.object({
+      name: v.string(),
+      category: v.string(), // "technical", "creative", "analytical", "communication"
+      level: v.union(
+        v.literal("learning"),
+        v.literal("proficient"),
+        v.literal("expert")
+      ),
+    }))),
+
+    // Tags for smart task routing
+    tags: v.optional(v.array(v.string())),
+
+    // Model configuration
+    model: v.optional(v.string()),
+    modelFallback: v.optional(v.string()),
+    thinkingLevel: v.optional(v.union(
+      v.literal("none"),
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high")
+    )),
+
+    // Tool permissions (OpenClaw tool groups)
+    toolGroups: v.optional(v.array(v.string())),
+
+    // Performance metrics (updated on task completion)
+    tasksCompleted: v.optional(v.number()),
+    tasksSuccessRate: v.optional(v.number()),     // 0-100
+    avgTaskDurationMs: v.optional(v.number()),
+
+    // Timestamps
+    lastSeen: v.number(),
+    createdAt: v.optional(v.number()),
+
+    // Current work
     currentTaskId: v.optional(v.id("tasks")),
-    metadata: v.optional(v.any()), // flexible extra data
+
     // OpenClaw integration
-    sessionKey: v.optional(v.string()), // linked OpenClaw session
-    channel: v.optional(v.string()), // e.g., "discord", "telegram"
+    openclawId: v.optional(v.string()),          // OpenClaw agent ID
+    sessionKey: v.optional(v.string()),
+    channel: v.optional(v.string()),
+
+    metadata: v.optional(v.any()),
   })
     .index("by_status", ["status"])
     .index("by_name", ["name"])

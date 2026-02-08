@@ -61,21 +61,21 @@ function ToastContainer({
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2">
+    <div className="fixed bottom-4 right-4 z-[1001] space-y-2">
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg border text-sm min-w-[200px] max-w-[400px]",
-            toast.type === "success" && "bg-mc-accent-green/10 border-mc-accent-green text-mc-accent-green",
-            toast.type === "error" && "bg-red-500/10 border-red-500 text-red-400",
+            "flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg border text-sm min-w-[200px] max-w-[400px] font-mono-jb",
+            toast.type === "success" && "bg-mc-bg-secondary border-mc-accent-green text-mc-accent-green",
+            toast.type === "error" && "bg-mc-bg-secondary border-mc-accent-red text-mc-accent-red",
             toast.type === "info" && "bg-mc-bg-secondary border-mc-border text-mc-text"
           )}
         >
           <span className="flex-1">{toast.message}</span>
           <button
             onClick={() => removeToast(toast.id)}
-            className="p-0.5 hover:bg-white/10 rounded"
+            className="p-0.5 hover:bg-mc-bg-tertiary rounded"
           >
             <X className="w-3.5 h-3.5" />
           </button>

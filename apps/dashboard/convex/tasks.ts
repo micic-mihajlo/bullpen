@@ -1,11 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-// Get all tasks
+// Get all tasks (bounded)
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("tasks").order("desc").collect();
+    return await ctx.db.query("tasks").order("desc").take(500);
   },
 });
 
@@ -25,6 +25,40 @@ export const byStatus = query({
       .query("tasks")
       .withIndex("by_status", (q) => q.eq("status", args.status))
       .collect();
+  },
+});
+
+// Get tasks by project
+export const byProject = query({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("tasks")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .order("desc")
+      .collect();
+  },
+});
+
+// Get all tasks with joined agent info (bounded, batched agent lookups)
+export const withAgent = query({
+  args: {},
+  handler: async (ctx) => {
+    const tasks = await ctx.db.query("tasks").order("desc").take(200);
+
+    // Batch agent lookups to avoid redundant reads
+    const agentIds = [...new Set(tasks.map((t) => t.assignedAgentId).filter(Boolean))];
+    const agentMap = new Map<string, { _id: typeof agentIds[0]; name: string; avatar?: string; status: string } | null>();
+    await Promise.all(
+      agentIds.map(async (id) => {
+        if (id) agentMap.set(id, await ctx.db.get(id));
+      })
+    );
+
+    return tasks.map((task) => ({
+      ...task,
+      agent: task.assignedAgentId ? agentMap.get(task.assignedAgentId) ?? null : null,
+    }));
   },
 });
 
@@ -62,13 +96,21 @@ export const create = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     priority: v.optional(v.number()),
+    projectId: v.optional(v.id("projects")),
   },
   handler: async (ctx, args) => {
+    // Validate project exists if provided
+    if (args.projectId) {
+      const project = await ctx.db.get(args.projectId);
+      if (!project) throw new Error("Project not found");
+    }
+
     const taskId = await ctx.db.insert("tasks", {
       title: args.title,
       description: args.description,
       status: "pending",
       priority: args.priority ?? 3,
+      projectId: args.projectId,
       createdAt: Date.now(),
     });
 
@@ -154,12 +196,34 @@ export const complete = mutation({
       result: args.result,
     });
 
-    // Free up the agent
+    // Free up the agent and update metrics
     if (task.assignedAgentId) {
-      await ctx.db.patch(task.assignedAgentId, {
-        status: "online",
-        currentTaskId: undefined,
-      });
+      const agent = await ctx.db.get(task.assignedAgentId);
+      if (agent) {
+        // Recompute metrics inline
+        const allTasks = await ctx.db
+          .query("tasks")
+          .withIndex("by_agent", (q) => q.eq("assignedAgentId", task.assignedAgentId!))
+          .collect();
+        // Include this task as completed (it's patched above)
+        const completed = allTasks.filter((t) => t.status === "completed" || t._id === args.id);
+        const failed = allTasks.filter((t) => t.status === "failed" && t._id !== args.id);
+        const total = completed.length + failed.length;
+        const durations = completed
+          .filter((t) => t.startedAt && (t.completedAt || t._id === args.id))
+          .map((t) => (t._id === args.id ? Date.now() : t.completedAt!) - t.startedAt!);
+        const avgDuration = durations.length > 0
+          ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+          : 0;
+
+        await ctx.db.patch(task.assignedAgentId, {
+          status: "online",
+          currentTaskId: undefined,
+          tasksCompleted: completed.length,
+          tasksSuccessRate: total > 0 ? Math.round((completed.length / total) * 100) : 0,
+          avgTaskDurationMs: avgDuration,
+        });
+      }
     }
 
     await ctx.db.insert("events", {
@@ -188,12 +252,25 @@ export const fail = mutation({
       error: args.error,
     });
 
-    // Free up the agent
+    // Free up the agent and update metrics
     if (task.assignedAgentId) {
-      await ctx.db.patch(task.assignedAgentId, {
-        status: "online",
-        currentTaskId: undefined,
-      });
+      const agent = await ctx.db.get(task.assignedAgentId);
+      if (agent) {
+        const allTasks = await ctx.db
+          .query("tasks")
+          .withIndex("by_agent", (q) => q.eq("assignedAgentId", task.assignedAgentId!))
+          .collect();
+        const completed = allTasks.filter((t) => t.status === "completed");
+        const failed = allTasks.filter((t) => t.status === "failed" || t._id === args.id);
+        const total = completed.length + failed.length;
+
+        await ctx.db.patch(task.assignedAgentId, {
+          status: "online",
+          currentTaskId: undefined,
+          tasksCompleted: completed.length,
+          tasksSuccessRate: total > 0 ? Math.round((completed.length / total) * 100) : 0,
+        });
+      }
     }
 
     await ctx.db.insert("events", {

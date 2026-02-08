@@ -87,14 +87,18 @@ Use exec to run the curl command. Replace YOUR_RESULT_HERE with your actual deli
 
 Begin working on this task now.`;
 
-    // Spawn an isolated sub-agent session directly
-    const spawnResult = await client.spawnSession({
-      task: taskPrompt,
-      label: `bullpen-task-${taskId}`,
-      model: agent.model || undefined,
-      timeoutSeconds: 300, // 5 min timeout for spawn acknowledgment
-      runTimeoutSeconds: 1800, // 30 min max runtime
-    });
+    // Agent must have a linked OpenClaw session to receive tasks
+    if (!agent.sessionKey) {
+      return NextResponse.json(
+        { error: `Agent "${agent.name}" has no linked OpenClaw session. Link a session first.` },
+        { status: 400 }
+      );
+    }
+
+    // Send task to the agent's OpenClaw session
+    await client.sendMessage(agent.sessionKey, taskPrompt);
+    const sessionKey = agent.sessionKey;
+    const method = "send" as const;
 
     // Update task status to running
     await convex.mutation(api.tasks.start, { id: taskId });
@@ -103,20 +107,19 @@ Begin working on this task now.`;
     await convex.mutation(api.events.create, {
       agentId: task.assignedAgentId,
       type: "task_dispatched",
-      message: `Spawned isolated session for "${task.title}"`,
+      message: `Sent task "${task.title}" to ${agent.name}`,
       data: { 
         taskId, 
-        sessionKey: spawnResult.sessionKey,
-        runId: spawnResult.runId,
+        sessionKey,
+        method,
         model: agent.model 
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Task dispatched via sessions_spawn",
-      sessionKey: spawnResult.sessionKey,
-      runId: spawnResult.runId,
+      message: `Task dispatched to ${agent.name} via ${method}`,
+      sessionKey,
       model: agent.model,
     });
   } catch (error) {

@@ -1,40 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* ── Warm Professional Design System v2 ── */
+
 :root {
-  --mc-bg: #0a0a0a;
-  --mc-bg-secondary: #111111;
-  --mc-bg-tertiary: #1a1a1a;
-  --mc-border: #262626;
-  --mc-text: #e5e5e5;
-  --mc-text-secondary: #737373;
-  --mc-accent: #3b82f6;
-  --mc-accent-green: #22c55e;
-  --mc-accent-yellow: #eab308;
-  --mc-accent-red: #ef4444;
-  --mc-accent-purple: #a855f7;
-  --mc-accent-pink: #ec4899;
-  --mc-accent-cyan: #06b6d4;
+  --mc-bg: #f5f3ee;
+  --mc-bg-secondary: #ffffff;
+  --mc-bg-tertiary: #faf9f6;
+  --mc-border: #e8e5de;
+  --mc-border-subtle: #f0ede6;
+  --mc-text: #1a1a1a;
+  --mc-text-secondary: #6b6560;
+  --mc-accent: #c2410c;
+  --mc-accent-hover: #9a3412;
+  --mc-accent-green: #16a34a;
+  --mc-accent-yellow: #ca8a04;
+  --mc-accent-red: #dc2626;
+  --mc-accent-purple: #7c3aed;
+  --mc-accent-pink: #db2777;
+  --mc-accent-cyan: #0891b2;
+  --mc-accent-blue: #2563eb;
+  --mc-muted: #9c9590;
+  --mc-bull: #1a1a1a;
 }
 
 @theme inline {
-  --font-sans: var(--font-outfit);
-  --font-mono: var(--font-mono);
-  
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
   --color-mc-bg: var(--mc-bg);
   --color-mc-bg-secondary: var(--mc-bg-secondary);
   --color-mc-bg-tertiary: var(--mc-bg-tertiary);
   --color-mc-border: var(--mc-border);
+  --color-mc-border-subtle: var(--mc-border-subtle);
   --color-mc-text: var(--mc-text);
   --color-mc-text-secondary: var(--mc-text-secondary);
   --color-mc-accent: var(--mc-accent);
+  --color-mc-accent-hover: var(--mc-accent-hover);
   --color-mc-accent-green: var(--mc-accent-green);
   --color-mc-accent-yellow: var(--mc-accent-yellow);
   --color-mc-accent-red: var(--mc-accent-red);
   --color-mc-accent-purple: var(--mc-accent-purple);
   --color-mc-accent-pink: var(--mc-accent-pink);
   --color-mc-accent-cyan: var(--mc-accent-cyan);
+  --color-mc-accent-blue: var(--mc-accent-blue);
+  --color-mc-muted: var(--mc-muted);
+  --color-mc-bull: var(--mc-bull);
 }
 
+/* ── Scrollbar ── */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--mc-border) transparent;
@@ -53,8 +68,9 @@
   border-radius: 2px;
 }
 
+/* ── Base Typography ── */
 html, body {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
@@ -62,19 +78,49 @@ body {
   color: var(--mc-text);
 }
 
+/* ── Font Utility Classes ── */
+.font-display {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-body {
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mono-jb {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ── Selection ── */
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
+  background-color: var(--mc-accent);
+  color: white;
 }
 
-/* Status */
+/* ── Focus States ── */
+*:focus-visible {
+  outline: 2px solid var(--mc-accent);
+  outline-offset: 2px;
+}
+
+/* ── Smooth Transitions ── */
+button, a, input, select, textarea {
+  transition: all 150ms ease;
+}
+
+/* ── Status Classes (soft pill style) ── */
 .status-online {
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--mc-accent-green);
+  background: rgba(22, 163, 74, 0.1);
+  color: #15803d;
+  font-weight: 500;
 }
 
-.status-busy {
-  background: rgba(234, 179, 8, 0.15);
-  color: var(--mc-accent-yellow);
+.status-busy,
+.status-working,
+.status-standby {
+  background: rgba(202, 138, 4, 0.1);
+  color: #a16207;
+  font-weight: 500;
 }
 
 .status-offline {
@@ -82,24 +128,24 @@ body {
   color: var(--mc-text-secondary);
 }
 
-/* Columns */
+/* ── Column Indicators ── */
 .column-pending {
-  border-top: 2px solid var(--mc-text-secondary);
+  border-top: 3px solid var(--mc-text-secondary);
 }
 
 .column-running {
-  border-top: 2px solid var(--mc-accent-yellow);
+  border-top: 3px solid var(--mc-accent-yellow);
 }
 
 .column-completed {
-  border-top: 2px solid var(--mc-accent-green);
+  border-top: 3px solid var(--mc-accent-green);
 }
 
 .column-failed {
-  border-top: 2px solid var(--mc-accent-red);
+  border-top: 3px solid var(--mc-accent-red);
 }
 
-/* Animations - subtle only */
+/* ── Animations ── */
 @keyframes slide-in {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -110,10 +156,58 @@ body {
   to { opacity: 1; }
 }
 
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .animate-slide-in {
   animation: slide-in 0.15s ease-out;
 }
 
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.15s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.blink-cursor {
+  animation: blink-cursor 1.2s step-end infinite;
+}
+
+/* ── Prose overrides for light theme ── */
+.prose-warm {
+  color: var(--mc-text);
+}
+
+.prose-warm pre {
+  background: var(--mc-bg-tertiary);
+  border: 1px solid var(--mc-border);
+  color: var(--mc-text);
 }

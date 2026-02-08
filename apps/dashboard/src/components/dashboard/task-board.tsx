@@ -4,9 +4,11 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useState, useCallback } from "react";
-import { Plus, X, Send } from "lucide-react";
+import { Plus, Send } from "lucide-react";
 import { TaskDetail } from "./task-detail";
 import { Id } from "../../../convex/_generated/dataModel";
+import { useStableData } from "@/lib/hooks";
+import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/toast";
 import { useRegisterShortcut } from "@/components/shortcuts-provider";
 
@@ -44,8 +46,8 @@ function timeAgo(ts: number): string {
 }
 
 export function TaskBoard() {
-  const tasks = useQuery(api.tasks.list);
-  const agents = useQuery(api.agents.list);
+  const tasks = useStableData(useQuery(api.tasks.list));
+  const agents = useStableData(useQuery(api.agents.list));
   const createTask = useMutation(api.tasks.create);
   const assignTask = useMutation(api.tasks.assign);
   const startTask = useMutation(api.tasks.start);
@@ -111,12 +113,12 @@ export function TaskBoard() {
       <div className="h-full flex flex-col bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
         {/* Header */}
         <div className="p-2.5 border-b border-mc-border flex items-center justify-between">
-          <span className="text-xs font-medium text-mc-text-secondary uppercase tracking-wide">
+          <span className="text-[10px] font-semibold text-mc-text-secondary uppercase tracking-wider font-mono-jb">
             Tasks ({tasks?.length ?? 0})
           </span>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90"
+            className="flex items-center gap-1 px-2.5 py-1 text-[10px] bg-mc-accent text-white rounded hover:bg-mc-accent-hover font-mono-jb uppercase tracking-wider transition-colors"
           >
             <Plus className="w-3 h-3" />
             New
@@ -125,24 +127,24 @@ export function TaskBoard() {
 
         {/* Columns */}
         <div className="flex-1 overflow-hidden p-2.5">
-          <div className="grid grid-cols-4 gap-2.5 h-full">
+          <div className="grid grid-cols-4 gap-2 h-full">
             {columns.map((col) => (
-              <div key={col.status} className={cn("flex flex-col rounded-lg bg-mc-bg/50 overflow-hidden", col.cls)}>
+              <div key={col.status} className={cn("flex flex-col rounded bg-mc-bg/50 overflow-hidden", col.cls)}>
                 <div className="px-2.5 py-1.5 flex items-center justify-between">
-                  <span className="text-xs font-medium text-mc-text-secondary uppercase">{col.label}</span>
-                  <span className="text-xs text-mc-text-secondary/60">{getByStatus(col.status).length}</span>
+                  <span className="text-[10px] font-semibold text-mc-text-secondary uppercase tracking-wide font-mono-jb">{col.label}</span>
+                  <span className="text-[10px] text-mc-text-secondary/60 font-mono-jb">{getByStatus(col.status).length}</span>
                 </div>
                 <div className="flex-1 overflow-y-auto px-1.5 pb-1.5 space-y-1.5">
                   {getByStatus(col.status).map((task) => (
                     <div
                       key={task._id}
                       onClick={() => setSelectedTask(task as Task)}
-                      className="p-2.5 rounded bg-mc-bg-secondary border border-mc-border hover:border-mc-border/80 cursor-pointer group"
+                      className="p-2.5 rounded bg-mc-bg-secondary border border-mc-border hover:border-mc-accent/30 cursor-pointer group transition-colors"
                     >
-                      <p className="text-sm font-medium mb-1 line-clamp-2">{task.title}</p>
-                      <div className="flex items-center justify-between text-sm text-mc-text-secondary">
+                      <p className="text-sm font-medium mb-1 line-clamp-2 text-mc-text">{task.title}</p>
+                      <div className="flex items-center justify-between text-[10px] text-mc-text-secondary font-mono-jb">
                         <span>{timeAgo(task.createdAt)}</span>
-                        {task.result && <span className="text-mc-accent-green">✓</span>}
+                        {task.result && <span className="text-mc-accent-green font-semibold">✓</span>}
                       </div>
 
                       {/* Assign dropdown on pending */}
@@ -153,7 +155,7 @@ export function TaskBoard() {
                               <button
                                 key={a._id}
                                 onClick={(e) => { e.stopPropagation(); assignTask({ taskId: task._id, agentId: a._id }); }}
-                                className="px-1.5 py-0.5 text-xs bg-mc-bg rounded hover:bg-mc-bg-tertiary"
+                                className="px-1.5 py-0.5 text-[10px] bg-mc-bg rounded hover:bg-mc-bg-tertiary font-mono-jb transition-colors"
                               >
                                 {a.avatar} {a.name}
                               </button>
@@ -163,14 +165,14 @@ export function TaskBoard() {
                             <div className="flex gap-1">
                               <button
                                 onClick={(e) => { e.stopPropagation(); startTask({ id: task._id }); }}
-                                className="flex-1 px-2 py-1 text-xs bg-mc-accent-yellow/20 text-mc-accent-yellow rounded hover:bg-mc-accent-yellow/30"
+                                className="flex-1 px-2 py-1 text-[10px] bg-mc-accent-yellow/20 text-mc-accent-yellow rounded hover:bg-mc-accent-yellow/30 font-mono-jb font-semibold uppercase tracking-wide transition-colors"
                               >
                                 Start
                               </button>
                               <button
                                 onClick={(e) => handleDispatch(task._id, e)}
                                 disabled={dispatchingId === task._id}
-                                className="flex-1 px-2 py-1 text-xs bg-mc-accent/20 text-mc-accent rounded hover:bg-mc-accent/30 flex items-center justify-center gap-1 disabled:opacity-50"
+                                className="flex-1 px-2 py-1 text-[10px] bg-mc-accent/20 text-mc-accent rounded hover:bg-mc-accent/30 flex items-center justify-center gap-1 disabled:opacity-50 font-mono-jb font-semibold uppercase tracking-wide transition-colors"
                               >
                                 <Send className="w-3 h-3" />
                                 {dispatchingId === task._id ? "..." : "Dispatch"}
@@ -184,7 +186,7 @@ export function TaskBoard() {
                         <div className="mt-2 pt-2 border-t border-mc-border opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => { e.stopPropagation(); completeTask({ id: task._id, result: "Completed" }); }}
-                            className="w-full px-2 py-1 text-xs bg-mc-accent-green/20 text-mc-accent-green rounded hover:bg-mc-accent-green/30"
+                            className="w-full px-2 py-1 text-[10px] bg-mc-accent-green/20 text-mc-accent-green rounded hover:bg-mc-accent-green/30 font-mono-jb font-semibold uppercase tracking-wide transition-colors"
                           >
                             Complete
                           </button>
@@ -193,7 +195,7 @@ export function TaskBoard() {
                     </div>
                   ))}
                   {getByStatus(col.status).length === 0 && (
-                    <div className="p-4 text-xs text-mc-text-secondary/50 text-center">Empty</div>
+                    <div className="p-4 text-[10px] text-mc-text-secondary/50 text-center font-mono-jb">Empty</div>
                   )}
                 </div>
               </div>
@@ -205,43 +207,33 @@ export function TaskBoard() {
       {selectedTask && <TaskDetail task={selectedTask} onClose={() => setSelectedTask(null)} />}
 
       {/* Create Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="p-3 border-b border-mc-border flex items-center justify-between">
-              <span className="text-sm font-medium">New Task</span>
-              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-mc-bg-tertiary rounded">
-                <X className="w-4 h-4 text-mc-text-secondary" />
-              </button>
-            </div>
-            <form onSubmit={handleCreate} className="p-3 space-y-3">
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="What needs to be done?"
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
-                autoFocus
-              />
-              <textarea
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Description (optional)"
-                rows={2}
-                className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent resize-none"
-              />
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-3 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text">
-                  Cancel
-                </button>
-                <button type="submit" disabled={!newTitle.trim() || isCreating} className="px-3 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent/90 disabled:opacity-50">
-                  {isCreating ? "..." : "Create"}
-                </button>
-              </div>
-            </form>
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="New Task" size="sm">
+        <form onSubmit={handleCreate} className="p-3 space-y-3">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="What needs to be done?"
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
+            autoFocus
+          />
+          <textarea
+            value={newDesc}
+            onChange={(e) => setNewDesc(e.target.value)}
+            placeholder="Description (optional)"
+            rows={2}
+            className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent resize-none"
+          />
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setShowModal(false)} className="px-3 py-1.5 text-xs text-mc-text-secondary hover:text-mc-text transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={!newTitle.trim() || isCreating} className="px-4 py-1.5 text-xs bg-mc-accent text-white rounded hover:bg-mc-accent-hover disabled:opacity-50 font-mono-jb uppercase tracking-wider">
+              {isCreating ? "Creating..." : "Create"}
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </>
   );
 }

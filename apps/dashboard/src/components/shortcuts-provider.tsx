@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useCallback, useState, useEffect, ReactNode } from "react";
 
-type ShortcutAction = "newTask" | "newAgent" | "refresh" | "help";
+type ShortcutAction = "newTask" | "newAgent" | "newProject" | "refresh" | "help";
 
 interface ShortcutsContextValue {
   registerAction: (action: ShortcutAction, handler: () => void) => () => void;
@@ -18,10 +18,9 @@ export function useShortcuts() {
   return ctx;
 }
 
-// Hook for components to register their shortcut handlers
 export function useRegisterShortcut(action: ShortcutAction, handler: () => void) {
   const { registerAction } = useShortcuts();
-  
+
   useEffect(() => {
     return registerAction(action, handler);
   }, [registerAction, action, handler]);
@@ -37,7 +36,7 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
       next.set(action, handler);
       return next;
     });
-    
+
     return () => {
       setHandlers((prev) => {
         const next = new Map(prev);
@@ -49,15 +48,13 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in inputs (except escape)
-      const isInput = 
+      const isInput =
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement;
 
       if (isInput && e.key !== "Escape") return;
 
-      // Handle shortcuts
       switch (e.key.toLowerCase()) {
         case "n":
           if (!e.ctrlKey && !e.metaKey) {
@@ -69,6 +66,12 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
           if (!e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             handlers.get("newAgent")?.();
+          }
+          break;
+        case "p":
+          if (!e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            handlers.get("newProject")?.();
           }
           break;
         case "r":
@@ -99,43 +102,51 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const shortcuts = [
+  { label: "New task", key: "N" },
+  { label: "New project", key: "P" },
+  { label: "New agent", key: "A" },
+  { label: "Refresh", key: "R" },
+  { label: "Show help", key: "?" },
+  { label: "Close", key: "Esc" },
+  { separator: true, label: "Navigation" },
+  { label: "Overview", key: "1" },
+  { label: "Projects", key: "2" },
+  { label: "Agents", key: "3" },
+  { label: "Tasks", key: "4" },
+  { label: "Review", key: "5" },
+  { label: "Clients", key: "6" },
+];
+
 function ShortcutsHelp({ onClose }: { onClose: () => void }) {
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
-      <div 
-        className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-xs"
+      <div
+        className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-xs animate-slide-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-3 border-b border-mc-border">
           <span className="text-sm font-medium">Keyboard Shortcuts</span>
         </div>
         <div className="p-3 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-mc-text-secondary">New task</span>
-            <kbd className="px-1.5 py-0.5 bg-mc-bg rounded text-xs font-mono">N</kbd>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-mc-text-secondary">New agent</span>
-            <kbd className="px-1.5 py-0.5 bg-mc-bg rounded text-xs font-mono">A</kbd>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-mc-text-secondary">Refresh</span>
-            <kbd className="px-1.5 py-0.5 bg-mc-bg rounded text-xs font-mono">R</kbd>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-mc-text-secondary">Show help</span>
-            <kbd className="px-1.5 py-0.5 bg-mc-bg rounded text-xs font-mono">?</kbd>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-mc-text-secondary">Close</span>
-            <kbd className="px-1.5 py-0.5 bg-mc-bg rounded text-xs font-mono">Esc</kbd>
-          </div>
+          {shortcuts.map((s, i) => (
+            "separator" in s ? (
+              <div key={i} className="text-xs text-mc-text-secondary uppercase tracking-wide pt-2 pb-1 border-t border-mc-border mt-2">
+                {s.label}
+              </div>
+            ) : (
+              <div key={i} className="flex justify-between">
+                <span className="text-mc-text-secondary">{s.label}</span>
+                <kbd className="px-1.5 py-0.5 bg-mc-bg rounded text-xs font-mono">{s.key}</kbd>
+              </div>
+            )
+          ))}
         </div>
         <div className="p-2 border-t border-mc-border text-center">
-          <span className="text-xs text-mc-text-secondary">Press any key to close</span>
+          <span className="text-xs text-mc-text-secondary">Press Esc to close</span>
         </div>
       </div>
     </div>

@@ -1,29 +1,62 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+
+type EventData = {
+  projectId?: Id<"projects">;
+  taskId?: Id<"tasks">;
+  deliverableId?: Id<"deliverables">;
+};
 
 // Get recent events (live feed)
 export const recent = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const limit = args.limit ?? 50;
+    const limit = args.limit ?? 20;
     const events = await ctx.db
       .query("events")
       .withIndex("by_timestamp")
       .order("desc")
       .take(limit);
 
-    // Enrich with agent info
-    const enriched = await Promise.all(
+    return await Promise.all(
       events.map(async (event) => {
-        let agent = null;
-        if (event.agentId) {
-          agent = await ctx.db.get(event.agentId);
-        }
+        const agent = event.agentId ? await ctx.db.get(event.agentId) : null;
         return { ...event, agent };
       })
     );
+  },
+});
 
-    return enriched;
+// Get events for a specific project (via project task IDs)
+export const byProject = query({
+  args: {
+    projectId: v.id("projects"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const [project, tasks, allEvents] = await Promise.all([
+      ctx.db.get(args.projectId),
+      ctx.db
+        .query("tasks")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .collect(),
+      ctx.db.query("events").withIndex("by_timestamp").order("desc").collect(),
+    ]);
+
+    if (!project) return [];
+
+    const taskIds = new Set<Id<"tasks">>(tasks.map((task) => task._id));
+    const limit = args.limit ?? 50;
+    const matchingEvents = allEvents.filter((event) => {
+      const data = event.data as EventData | undefined;
+      return (
+        data?.projectId === args.projectId ||
+        (data?.taskId !== undefined && taskIds.has(data.taskId))
+      );
+    });
+
+    return matchingEvents.slice(0, limit);
   },
 });
 
@@ -78,11 +111,12 @@ export const create = mutation({
   },
 });
 
-// Clear old events (cleanup)
+// Delete events older than 30 days
 export const cleanup = mutation({
-  args: { olderThanMs: v.number() },
-  handler: async (ctx, args) => {
-    const cutoff = Date.now() - args.olderThanMs;
+  args: {},
+  handler: async (ctx) => {
+    const retentionMs = 30 * 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - retentionMs;
     const oldEvents = await ctx.db
       .query("events")
       .withIndex("by_timestamp")
@@ -93,6 +127,6 @@ export const cleanup = mutation({
       await ctx.db.delete(event._id);
     }
 
-    return oldEvents.length;
+    return { deleted: oldEvents.length, cutoff };
   },
 });

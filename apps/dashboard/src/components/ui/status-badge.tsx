@@ -4,16 +4,16 @@ import { cn } from "@/lib/utils";
 
 type Status = "online" | "offline" | "busy" | "standby" | "pending" | "assigned" | "running" | "completed" | "failed";
 
-const statusConfig: Record<Status, { class: string; pulse?: boolean }> = {
-  online: { class: "status-online", pulse: true },
-  standby: { class: "status-standby" },
-  offline: { class: "status-offline" },
-  busy: { class: "status-working", pulse: true },
-  pending: { class: "status-standby" },
-  assigned: { class: "status-working" },
-  running: { class: "status-working", pulse: true },
-  completed: { class: "status-online" },
-  failed: { class: "status-offline" },
+const statusConfig: Record<Status, { bg: string; text: string; pulse?: boolean }> = {
+  online: { bg: "bg-green-50", text: "text-green-700", pulse: true },
+  standby: { bg: "bg-amber-50", text: "text-amber-700" },
+  offline: { bg: "bg-gray-100", text: "text-gray-500" },
+  busy: { bg: "bg-amber-50", text: "text-amber-700", pulse: true },
+  pending: { bg: "bg-gray-100", text: "text-gray-600" },
+  assigned: { bg: "bg-blue-50", text: "text-blue-700" },
+  running: { bg: "bg-amber-50", text: "text-amber-700", pulse: true },
+  completed: { bg: "bg-green-50", text: "text-green-700" },
+  failed: { bg: "bg-red-50", text: "text-red-700" },
 };
 
 interface StatusBadgeProps {
@@ -28,8 +28,9 @@ export function StatusBadge({ status, showLabel = true, className }: StatusBadge
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs uppercase font-medium",
-        config.class,
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium capitalize",
+        config.bg,
+        config.text,
         config.pulse && "animate-pulse-soft",
         className
       )}
@@ -46,15 +47,15 @@ interface StatusDotProps {
 
 export function StatusDot({ status, className }: StatusDotProps) {
   const colors: Record<Status, string> = {
-    online: "bg-mc-accent-green",
-    standby: "bg-mc-text-secondary",
-    offline: "bg-mc-accent-red",
-    busy: "bg-mc-accent-yellow",
-    pending: "bg-mc-text-secondary",
-    assigned: "bg-mc-accent-yellow",
-    running: "bg-mc-accent-yellow",
-    completed: "bg-mc-accent-green",
-    failed: "bg-mc-accent-red",
+    online: "bg-green-500",
+    standby: "bg-gray-400",
+    offline: "bg-red-400",
+    busy: "bg-amber-500",
+    pending: "bg-gray-400",
+    assigned: "bg-blue-500",
+    running: "bg-amber-500",
+    completed: "bg-green-500",
+    failed: "bg-red-500",
   };
 
   const isPulsing = ["online", "busy", "running"].includes(status);
