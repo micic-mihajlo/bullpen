@@ -47,71 +47,44 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_created", ["createdAt"]),
 
-  // Agents - the AI workers
-  agents: defineTable({
-    name: v.string(),
-    status: v.union(
-      v.literal("online"),
-      v.literal("offline"),
-      v.literal("busy")
-    ),
-    avatar: v.optional(v.string()),
-    role: v.optional(v.string()), // "Researcher", "Developer", etc.
-
-    // Soul — rich markdown personality (SOUL.md content)
-    soul: v.optional(v.string()),
-
-    // Structured skills
-    skills: v.optional(v.array(v.object({
-      name: v.string(),
-      category: v.string(), // "technical", "creative", "analytical", "communication"
-      level: v.union(
-        v.literal("learning"),
-        v.literal("proficient"),
-        v.literal("expert")
-      ),
-    }))),
-
-    // Tags for smart task routing
-    tags: v.optional(v.array(v.string())),
-
-    // Model configuration
-    model: v.optional(v.string()),
-    modelFallback: v.optional(v.string()),
-    thinkingLevel: v.optional(v.union(
-      v.literal("none"),
-      v.literal("low"),
-      v.literal("medium"),
-      v.literal("high")
-    )),
-
-    // Tool permissions (OpenClaw tool groups)
-    toolGroups: v.optional(v.array(v.string())),
-
-    // Performance metrics (updated on task completion)
-    tasksCompleted: v.optional(v.number()),
-    tasksSuccessRate: v.optional(v.number()),     // 0-100
-    avgTaskDurationMs: v.optional(v.number()),
-
-    // Timestamps
-    lastSeen: v.number(),
-    createdAt: v.optional(v.number()),
-
-    // Current work
-    currentTaskId: v.optional(v.id("tasks")),
-
-    // OpenClaw integration
-    openclawId: v.optional(v.string()),          // OpenClaw agent ID
-    sessionKey: v.optional(v.string()),
-    channel: v.optional(v.string()),
-
-    metadata: v.optional(v.any()),
+  // Worker Templates - pre-configured worker types (replaces agents)
+  workerTemplates: defineTable({
+    name: v.string(), // e.g. "frontend-builder"
+    displayName: v.string(), // e.g. "Frontend Builder"
+    role: v.string(), // description of what they do
+    taskTypes: v.array(v.string()), // which task types they handle
+    model: v.string(), // e.g. "claude-sonnet-4"
+    tools: v.array(v.string()),
+    skills: v.array(v.string()), // skill file names
+    systemPrompt: v.string(),
+    reviewEvery: v.number(),
+    maxParallel: v.number(),
+    status: v.union(v.literal("active"), v.literal("draft")),
   })
     .index("by_status", ["status"])
-    .index("by_name", ["name"])
-    .index("by_session", ["sessionKey"]),
+    .index("by_name", ["name"]),
 
-  // Tasks - work items for agents
+  // Workers - runtime instances of worker templates
+  workers: defineTable({
+    templateId: v.id("workerTemplates"),
+    taskId: v.id("tasks"),
+    sessionKey: v.string(),
+    status: v.union(
+      v.literal("spawning"),
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    model: v.string(),
+    spawnedAt: v.number(),
+    lastActivityAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_task", ["taskId"])
+    .index("by_status", ["status"]),
+
+  // Tasks - work items
   tasks: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
@@ -119,6 +92,7 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("assigned"),
       v.literal("running"),
+      v.literal("review"),
       v.literal("completed"),
       v.literal("failed")
     ),
@@ -132,9 +106,37 @@ export default defineSchema({
     )),
     liveContext: v.optional(v.any()),
     agentThread: v.optional(v.string()),
-    projectId: v.optional(v.id("projects")), // link to project (and thus client)
-    assignedAgentId: v.optional(v.id("agents")),
-    priority: v.optional(v.number()), // 1-5, higher = more urgent
+    projectId: v.optional(v.id("projects")),
+    assignedAgentId: v.optional(v.string()), // legacy — kept as string for compat
+    priority: v.optional(v.number()), // legacy numeric priority (1-5)
+
+    // New Phase 1 fields
+    workerType: v.optional(v.string()),
+    workerId: v.optional(v.id("workers")),
+    steps: v.optional(v.array(v.object({
+      name: v.string(),
+      description: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("in_progress"),
+        v.literal("review"),
+        v.literal("approved"),
+        v.literal("rejected")
+      ),
+      agentOutput: v.optional(v.string()),
+      reviewNote: v.optional(v.string()),
+      startedAt: v.optional(v.number()),
+      completedAt: v.optional(v.number()),
+    }))),
+    currentStep: v.optional(v.number()),
+    dependsOn: v.optional(v.array(v.id("tasks"))),
+    priorityLevel: v.optional(v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent")
+    )),
+
     createdAt: v.number(),
     startedAt: v.optional(v.number()),
     completedAt: v.optional(v.number()),
@@ -143,16 +145,15 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_project", ["projectId"])
-    .index("by_agent", ["assignedAgentId"])
     .index("by_created", ["createdAt"]),
 
   // Deliverables - polished outputs for clients
   deliverables: defineTable({
     projectId: v.id("projects"),
-    taskId: v.optional(v.id("tasks")), // source task, if any
+    taskId: v.optional(v.id("tasks")),
     title: v.string(),
-    content: v.string(), // the actual deliverable content
-    format: v.string(), // "markdown", "pdf", "code", "figma", "url"
+    content: v.string(),
+    format: v.string(),
     status: v.union(
       v.literal("draft"),
       v.literal("review"),
@@ -160,7 +161,7 @@ export default defineSchema({
       v.literal("delivered"),
       v.literal("rejected")
     ),
-    reviewedBy: v.optional(v.string()), // who approved it
+    reviewedBy: v.optional(v.string()),
     reviewNotes: v.optional(v.string()),
     createdAt: v.number(),
     deliveredAt: v.optional(v.number()),
@@ -171,13 +172,12 @@ export default defineSchema({
 
   // Events - live feed of what's happening
   events: defineTable({
-    agentId: v.optional(v.id("agents")),
-    type: v.string(), // task_started, task_completed, message, error, heartbeat, etc.
+    agentId: v.optional(v.string()), // legacy — kept as string for compat
+    type: v.string(),
     message: v.string(),
     data: v.optional(v.any()),
     timestamp: v.number(),
   })
-    .index("by_agent", ["agentId"])
     .index("by_type", ["type"])
     .index("by_timestamp", ["timestamp"]),
 
@@ -185,23 +185,25 @@ export default defineSchema({
   agentMessages: defineTable({
     taskId: v.id("tasks"),
     fromAgent: v.string(),
-    toAgent: v.string(), // agent name, "orchestrator", or "all"
+    toAgent: v.string(),
     message: v.string(),
     messageType: v.union(
       v.literal("update"),
       v.literal("question"),
       v.literal("decision"),
       v.literal("handoff"),
-      v.literal("steering")
+      v.literal("steering"),
+      v.literal("step_review")
     ),
+    stepIndex: v.optional(v.number()),
     timestamp: v.number(),
   })
     .index("by_task", ["taskId", "timestamp"]),
 
-  // Messages - agent-to-agent communication
+  // Messages - agent-to-agent communication (legacy)
   messages: defineTable({
-    fromAgentId: v.id("agents"),
-    toAgentId: v.optional(v.id("agents")), // null = broadcast
+    fromAgentId: v.string(),
+    toAgentId: v.optional(v.string()),
     content: v.string(),
     timestamp: v.number(),
     read: v.boolean(),

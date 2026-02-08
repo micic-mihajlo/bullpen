@@ -4,37 +4,29 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
-import { Plus, Link2 } from "lucide-react";
-import { AgentDetail } from "./agent-detail";
+import { Plus } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useStableData } from "@/lib/hooks";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/toast";
 import { useRegisterShortcut } from "@/components/shortcuts-provider";
 
-type Skill = {
+type WorkerTemplate = {
+  _id: string;
   name: string;
-  category: string;
-  level: "learning" | "proficient" | "expert";
+  displayName: string;
+  role: string;
+  status: "active" | "draft";
+  taskTypes: string[];
+  model: string;
+  tools: string[];
+  skills: string[];
+  systemPrompt: string;
+  reviewEvery: number;
+  maxParallel: number;
 };
 
-type Agent = {
-  _id: Id<"agents">;
-  name: string;
-  avatar?: string;
-  status: "online" | "offline" | "busy";
-  role?: string;
-  soul?: string;
-  model?: string;
-  skills?: Skill[];
-  tags?: string[];
-  sessionKey?: string;
-  lastSeen: number;
-  tasksCompleted?: number;
-  tasksSuccessRate?: number;
-};
-
-type FilterTab = "all" | "online" | "offline";
+type FilterTab = "all" | "active" | "draft";
 
 const MODEL_OPTIONS = [
   { value: "cerebras/zai-glm-4.7", label: "Cerebras" },
@@ -45,8 +37,8 @@ const MODEL_OPTIONS = [
 const AVATARS = ["🤖", "🦾", "🧠", "👾", "🎯", "⚡", "🔮", "🦊", "🐙", "🌟"];
 
 export function AgentList() {
-  const agents = useStableData(useQuery(api.agents.list));
-  const createAgent = useMutation(api.agents.create);
+  const agents = useStableData(useQuery(api.workerTemplates.list));
+  const createTemplate = useMutation(api.workerTemplates.create);
   const [filter, setFilter] = useState<FilterTab>("all");
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
@@ -54,7 +46,7 @@ export function AgentList() {
   const [newAvatar, setNewAvatar] = useState("🤖");
   const [newModel, setNewModel] = useState("cerebras/zai-glm-4.7");
   const [isCreating, setIsCreating] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<WorkerTemplate | null>(null);
   const { addToast } = useToast();
 
   const openModal = useCallback(() => setShowModal(true), []);
@@ -62,8 +54,8 @@ export function AgentList() {
 
   const filtered = agents?.filter((a) => {
     if (filter === "all") return true;
-    if (filter === "online") return a.status === "online" || a.status === "busy";
-    return a.status === "offline";
+    if (filter === "active") return a.status === "active";
+    return a.status === "draft";
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -71,14 +63,19 @@ export function AgentList() {
     if (!newName.trim()) return;
     setIsCreating(true);
     try {
-      await createAgent({
-        name: newName.trim(),
-        avatar: newAvatar,
-        role: newRole || undefined,
-        soul: newRole ? `Role: ${newRole}` : undefined,
+      await createTemplate({
+        name: newName.trim().toLowerCase().replace(/\s+/g, "-"),
+        displayName: newName.trim(),
+        role: newRole || "General purpose worker",
+        taskTypes: ["general"],
         model: newModel,
+        tools: ["exec"],
+        skills: [],
+        systemPrompt: newRole ? `# ${newName.trim()}\n\n${newRole}` : `# ${newName.trim()}`,
+        reviewEvery: 3,
+        maxParallel: 2,
       });
-      addToast(`Agent ${newName.trim()} created`, "success");
+      addToast(`Template ${newName.trim()} created`, "success");
       setNewName("");
       setNewRole("");
       setNewAvatar("🤖");
@@ -91,12 +88,11 @@ export function AgentList() {
     }
   };
 
-  const getRole = (agent: Agent) => {
-    if (agent.role) return agent.role;
-    return agent.soul?.match(/Role:\s*(.+)/)?.[1] ?? null;
+  const getRole = (template: WorkerTemplate) => {
+    return template.role;
   };
 
-  const online = agents?.filter((a) => a.status === "online" || a.status === "busy").length ?? 0;
+  const activeCount = agents?.filter((a) => a.status === "active").length ?? 0;
 
   return (
     <>
@@ -107,12 +103,12 @@ export function AgentList() {
             <span className="text-[10px] font-semibold text-mc-text-secondary uppercase tracking-wider font-mono-jb">
               Agents ({agents?.length ?? 0})
             </span>
-            {online > 0 && (
-              <span className="text-[10px] text-mc-accent-green font-mono-jb font-semibold">{online} online</span>
+            {activeCount > 0 && (
+              <span className="text-[10px] text-mc-accent-green font-mono-jb font-semibold">{activeCount} active</span>
             )}
           </div>
           <div className="flex gap-0.5">
-            {(["all", "online", "offline"] as FilterTab[]).map((tab) => (
+            {(["all", "active", "draft"] as FilterTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
@@ -137,35 +133,28 @@ export function AgentList() {
             <div className="p-4 text-[10px] text-mc-text-secondary text-center font-mono-jb">No agents</div>
           ) : (
             filtered?.map((agent) => {
-              const a = agent as Agent;
-              const role = getRole(a);
-              const topSkills = a.skills?.slice(0, 2) ?? [];
+              const t = agent as WorkerTemplate;
               return (
                 <div
-                  key={a._id}
-                  onClick={() => setSelectedAgent(a)}
+                  key={t._id}
+                  onClick={() => setSelectedAgent(t)}
                   className="flex items-center gap-2 p-2 rounded hover:bg-mc-bg-tertiary transition-colors cursor-pointer"
                 >
-                  <span className="text-xl">{a.avatar || "🤖"}</span>
+                  <span className="text-xl">🤖</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium truncate text-mc-text">{a.name}</span>
-                      {a.sessionKey && <Link2 className="w-3 h-3 text-mc-accent flex-shrink-0" />}
+                      <span className="text-sm font-medium truncate text-mc-text">{t.displayName}</span>
                     </div>
                     <div className="text-[10px] text-mc-text-secondary truncate font-mono-jb">
-                      {role || "—"}
-                      {topSkills.length > 0 && ` · ${topSkills.map((s) => s.name).join(", ")}`}
+                      {t.role}
+                      {t.skills.length > 0 && ` · ${t.skills.slice(0, 2).join(", ")}`}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                     <span className={cn(
                       "w-1.5 h-1.5 rounded-full",
-                      a.status === "online" ? "bg-mc-accent-green" :
-                      a.status === "busy" ? "bg-mc-accent-yellow" : "bg-mc-border"
+                      t.status === "active" ? "bg-mc-accent-green" : "bg-mc-border"
                     )} />
-                    {a.tasksCompleted != null && a.tasksCompleted > 0 && (
-                      <span className="text-[9px] text-mc-muted font-mono-jb">{a.tasksCompleted}t</span>
-                    )}
                   </div>
                 </div>
               );
@@ -240,10 +229,7 @@ export function AgentList() {
         </form>
       </Modal>
 
-      {/* Agent Detail Modal */}
-      {selectedAgent && (
-        <AgentDetail agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
-      )}
+      {/* TODO: Worker template detail modal */}
     </>
   );
 }

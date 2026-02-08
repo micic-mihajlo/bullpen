@@ -19,12 +19,7 @@ export const recent = query({
       .order("desc")
       .take(limit);
 
-    return await Promise.all(
-      events.map(async (event) => {
-        const agent = event.agentId ? await ctx.db.get(event.agentId) : null;
-        return { ...event, agent };
-      })
-    );
+    return events;
   },
 });
 
@@ -60,22 +55,6 @@ export const byProject = query({
   },
 });
 
-// Get events for a specific agent
-export const byAgent = query({
-  args: {
-    agentId: v.id("agents"),
-    limit: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const limit = args.limit ?? 50;
-    return await ctx.db
-      .query("events")
-      .withIndex("by_agent", (q) => q.eq("agentId", args.agentId))
-      .order("desc")
-      .take(limit);
-  },
-});
-
 // Get events by type
 export const byType = query({
   args: {
@@ -95,7 +74,7 @@ export const byType = query({
 // Create a custom event
 export const create = mutation({
   args: {
-    agentId: v.optional(v.id("agents")),
+    agentId: v.optional(v.string()),
     type: v.string(),
     message: v.string(),
     data: v.optional(v.any()),

@@ -6,7 +6,7 @@ import { Id } from "../../../../../../convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// POST /api/tasks/[id]/dispatch - Dispatch task to agent via OpenClaw sessions_spawn
+// POST /api/tasks/[id]/dispatch - Dispatch task via OpenClaw
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,23 +15,9 @@ export async function POST(
     const { id } = await params;
     const taskId = id as Id<"tasks">;
 
-    // Get the task
     const task = await convex.query(api.tasks.get, { id: taskId });
     if (!task) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
-    }
-
-    if (!task.assignedAgentId) {
-      return NextResponse.json(
-        { error: "Task not assigned to an agent" },
-        { status: 400 }
-      );
-    }
-
-    // Get the agent
-    const agent = await convex.query(api.agents.get, { id: task.assignedAgentId });
-    if (!agent) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
     // Connect to OpenClaw
@@ -48,79 +34,37 @@ export async function POST(
       }
     }
 
-    // Extract role from soul
-    const role = agent.soul?.match(/Role:\s*(.+)/)?.[1] || "Assistant";
-    
-    // Webhook URL for reporting results
     const webhookUrl = process.env.BULLPEN_WEBHOOK_URL || "http://localhost:3001/api/webhooks/task-result";
-    
-    // Build the task prompt for the spawned agent
-    const taskPrompt = `You are ${agent.name}, a ${role}.
 
-## Task: ${task.title}
+    const taskPrompt = `## Task: ${task.title}
 ${task.description ? `\n${task.description}\n` : ""}
-Priority: ${task.priority || 3}/5
 Task ID: ${taskId}
 
 ## Instructions
 1. Complete this task thoroughly
 2. When done, report your result via the webhook below
-3. Your result should be a clear, useful deliverable
 
 ## Reporting Results
-When finished, call the webhook to report completion:
-
 \`\`\`bash
 curl -X POST ${webhookUrl} \\
   -H "Content-Type: application/json" \\
-  -d '{"taskId": "${taskId}", "status": "completed", "result": "YOUR_RESULT_HERE", "agentName": "${agent.name}"}'
+  -d '{"taskId": "${taskId}", "status": "completed", "result": "YOUR_RESULT_HERE"}'
 \`\`\`
-
-If the task fails, report the error:
-\`\`\`bash
-curl -X POST ${webhookUrl} \\
-  -H "Content-Type: application/json" \\
-  -d '{"taskId": "${taskId}", "status": "failed", "error": "ERROR_DESCRIPTION", "agentName": "${agent.name}"}'
-\`\`\`
-
-Use exec to run the curl command. Replace YOUR_RESULT_HERE with your actual deliverable (escaped for JSON).
 
 Begin working on this task now.`;
-
-    // Agent must have a linked OpenClaw session to receive tasks
-    if (!agent.sessionKey) {
-      return NextResponse.json(
-        { error: `Agent "${agent.name}" has no linked OpenClaw session. Link a session first.` },
-        { status: 400 }
-      );
-    }
-
-    // Send task to the agent's OpenClaw session
-    await client.sendMessage(agent.sessionKey, taskPrompt);
-    const sessionKey = agent.sessionKey;
-    const method = "send" as const;
 
     // Update task status to running
     await convex.mutation(api.tasks.start, { id: taskId });
 
-    // Log the dispatch event
     await convex.mutation(api.events.create, {
-      agentId: task.assignedAgentId,
       type: "task_dispatched",
-      message: `Sent task "${task.title}" to ${agent.name}`,
-      data: { 
-        taskId, 
-        sessionKey,
-        method,
-        model: agent.model 
-      },
+      message: `Dispatched task "${task.title}"`,
+      data: { taskId },
     });
 
     return NextResponse.json({
       success: true,
-      message: `Task dispatched to ${agent.name} via ${method}`,
-      sessionKey,
-      model: agent.model,
+      message: `Task dispatched`,
     });
   } catch (error) {
     console.error("[API] Failed to dispatch task:", error);

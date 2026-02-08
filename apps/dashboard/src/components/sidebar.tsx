@@ -9,7 +9,7 @@ import { useStableData } from "@/lib/hooks";
 import {
   Command,
   FolderKanban,
-  Bot,
+  Wrench,
   PanelLeftClose,
   PanelLeft,
 } from "lucide-react";
@@ -28,15 +28,15 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const tasks = useStableData(useQuery(api.tasks.list));
-  const agents = useStableData(useQuery(api.agents.list));
+  const templates = useStableData(useQuery(api.workerTemplates.list));
 
   const runningTasks = tasks?.filter((t) => t.status === "running").length ?? 0;
-  const busyAgents = agents?.filter((a) => a.status === "busy").length ?? 0;
+  const templateCount = templates?.length ?? 0;
 
   const navItems: NavItem[] = [
     { label: "Command Center", href: "/", icon: <Command className="w-4 h-4" />, badge: runningTasks || undefined, shortcut: "1" },
     { label: "Projects", href: "/projects", icon: <FolderKanban className="w-4 h-4" />, shortcut: "2" },
-    { label: "Agents", href: "/agents", icon: <Bot className="w-4 h-4" />, badge: busyAgents || undefined, shortcut: "3" },
+    { label: "Workers", href: "/agents", icon: <Wrench className="w-4 h-4" />, badge: templateCount || undefined, shortcut: "3" },
   ];
 
   const isActive = (href: string) => {

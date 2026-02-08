@@ -8,8 +8,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { useShortcuts, useRegisterShortcut } from "@/components/shortcuts-provider";
 import { useToast } from "@/components/toast";
 import { useStableData } from "@/lib/hooks";
-import { SkeletonStats, SkeletonList } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/empty-state";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { TaskDetailPanel } from "@/components/task-detail-panel";
 import { formatTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -24,7 +23,6 @@ import {
   Palette,
   FileCheck2,
   Zap,
-  Activity,
   CheckCircle2,
   BarChart3,
   TrendingUp,
@@ -67,9 +65,28 @@ const eventIcons: Record<string, string> = {
   client_created: "\u{1F465}",
 };
 
+const eventTimelineColor: Record<string, string> = {
+  task_completed: "bg-green-400",
+  deliverable_approved: "bg-green-400",
+  task_started: "bg-amber-400",
+  task_dispatched: "bg-amber-400",
+  task_assigned: "bg-amber-400",
+  task_failed: "bg-red-400",
+  deliverable_rejected: "bg-red-400",
+  task_created: "bg-blue-400",
+  project_created: "bg-blue-400",
+  agent_created: "bg-purple-400",
+  status_change: "bg-[#9c9590]",
+  session_linked: "bg-cyan-400",
+  deliverable_created: "bg-blue-400",
+  deliverable_submitted: "bg-amber-400",
+  project_status_changed: "bg-blue-400",
+  client_created: "bg-purple-400",
+};
+
 export default function CommandCenterPage() {
   const router = useRouter();
-  const agents = useStableData(useQuery(api.agents.list));
+  const agents = useStableData(useQuery(api.workerTemplates.list));
   const tasks = useStableData(useQuery(api.tasks.withAgent));
   const projects = useStableData(useQuery(api.projects.list));
   const pendingReview = useStableData(useQuery(api.deliverables.pendingReview));
@@ -124,29 +141,29 @@ export default function CommandCenterPage() {
   const completedToday = tasks?.filter(
     (t) => t.status === "completed" && t.completedAt && t.completedAt >= today.getTime()
   ).length ?? 0;
-  const busyAgents = agents?.filter((a) => a.status === "busy").length ?? 0;
-  const totalAgents = agents?.length ?? 0;
-  const utilization = totalAgents > 0 ? Math.round((busyAgents / totalAgents) * 100) : 0;
+  const activeWorkerCount = activeTasks.length;
+  const totalTemplates = agents?.length ?? 0;
+  const utilization = totalTemplates > 0 ? Math.round((activeWorkerCount / totalTemplates) * 100) : 0;
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-[#e8e5de] bg-white/80 backdrop-blur-sm px-6 py-4">
+      <header className="flex-shrink-0 bg-white/90 backdrop-blur-sm px-6 py-4" style={{ borderBottom: '1px solid #e8e5de', boxShadow: '0 1px 8px 0 rgba(0,0,0,0.03)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Command Center</h1>
-            <p className="text-[12px] text-[#9c9590] mt-0.5">Real-time operations view</p>
+            <h1 className="text-[22px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Command Center</h1>
+            <p className="text-[13px] text-[#9c9590] mt-0.5">Real-time operations view</p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowHelp(true)}
-              className="p-1.5 text-[#9c9590] hover:text-[#1a1a1a] rounded-lg hover:bg-[#f0ede6] transition-colors"
+              className="p-2 text-[#9c9590] hover:text-[#1a1a1a] rounded-lg hover:bg-[#f0ede6] transition-colors"
               title="Keyboard shortcuts (?)"
             >
               <Keyboard className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-1.5 text-xs text-[#6b6560]">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <div className="flex items-center gap-1.5 text-[13px] text-[#6b6560]">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               Connected
             </div>
           </div>
@@ -154,8 +171,8 @@ export default function CommandCenterPage() {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {/* Agent Status Strip */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Worker Templates Strip */}
         {isLoading ? (
           <div className="flex gap-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -163,29 +180,23 @@ export default function CommandCenterPage() {
             ))}
           </div>
         ) : agents && agents.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {agents.map((agent) => {
-              const currentTask = activeTasks.find((t) => t.assignedAgentId === agent._id);
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+            {agents.map((template) => {
               return (
                 <button
-                  key={agent._id}
+                  key={template._id}
                   onClick={() => router.push(`/agents`)}
-                  className="flex items-center gap-2 px-3 py-2 bg-white border border-[#e8e5de] rounded-lg hover:border-[#c2410c]/30 transition-colors flex-shrink-0"
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all flex-shrink-0 card-elevated bg-white border-[#e8e5de] hover:border-[#c2410c]/30"
                 >
-                  <span className={cn(
-                    "w-2 h-2 rounded-full flex-shrink-0",
-                    agent.status === "busy" ? "bg-green-500 animate-pulse" :
-                    agent.status === "online" ? "bg-amber-400" :
-                    "bg-red-400"
-                  )} />
-                  <span className="text-xs font-medium text-[#1a1a1a] truncate max-w-[80px]">
-                    {agent.name}
-                  </span>
-                  {currentTask && (
-                    <span className="text-[10px] text-[#9c9590] truncate max-w-[100px] font-mono">
-                      {currentTask.title}
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 ring-2 bg-amber-400 ring-amber-100" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-[13px] font-medium text-[#1a1a1a] truncate max-w-[100px]">
+                      {template.displayName}
                     </span>
-                  )}
+                    <span className="text-[10px] text-[#9c9590] leading-tight">
+                      {template.model}
+                    </span>
+                  </div>
                 </button>
               );
             })}
@@ -193,15 +204,15 @@ export default function CommandCenterPage() {
         ) : null}
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* Left: Active Work (60%) */}
-          <div className="lg:col-span-3 space-y-3">
-            <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
+          <div className="lg:col-span-3 space-y-4">
+            <div className="bg-white border border-[#e8e5de] rounded-xl overflow-hidden card-elevated">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0ede6]">
-                <span className="text-[13px] font-semibold text-[#1a1a1a]">
+                <span className="text-sm font-semibold text-[#1a1a1a]">
                   Active Work
                   {activeTasks.length > 0 && (
-                    <span className="ml-1.5 text-[#9c9590] font-normal">({activeTasks.length})</span>
+                    <span className="ml-2 text-[11px] text-white bg-[#c2410c] px-2 py-0.5 rounded-full font-medium">{activeTasks.length}</span>
                   )}
                 </span>
               </div>
@@ -209,11 +220,28 @@ export default function CommandCenterPage() {
               {isLoading ? (
                 <SkeletonList count={3} />
               ) : activeTasks.length === 0 ? (
-                <EmptyState
-                  icon={<Activity className="w-8 h-8" />}
-                  title="No active tasks"
-                  description="All agents are idle — dispatch a task to get started"
-                />
+                <div className="flex flex-col items-center justify-center py-12 px-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    {(agents ?? []).slice(0, 5).map((agent, i) => (
+                      <div
+                        key={agent._id}
+                        className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f0ede6] to-[#e8e5de] flex items-center justify-center border border-[#e8e5de]"
+                        style={{ animationDelay: `${i * 0.1}s` }}
+                      >
+                        <Bot className="w-3.5 h-3.5 text-[#9c9590]" />
+                      </div>
+                    ))}
+                    {(agents?.length ?? 0) > 5 && (
+                      <span className="text-xs text-[#9c9590] font-mono ml-1">+{agents!.length - 5}</span>
+                    )}
+                  </div>
+                  <p className="text-[15px] font-medium text-[#1a1a1a] mb-1">All workers standing by</p>
+                  <p className="text-[13px] text-[#6b6560] text-center">Ready to deploy — dispatch a task to put them to work</p>
+                  <div className="mt-4 w-full max-w-[280px] border-2 border-dashed border-[#e8e5de] rounded-xl py-3 flex items-center justify-center gap-2 text-[#9c9590]">
+                    <Zap className="w-3.5 h-3.5" />
+                    <span className="text-xs font-medium">Awaiting dispatch</span>
+                  </div>
+                </div>
               ) : (
                 <div className="divide-y divide-[#f0ede6]">
                   {Array.from(tasksByProject.entries()).map(([key, group]) => (
@@ -239,7 +267,7 @@ export default function CommandCenterPage() {
                             <span className={cn("flex-shrink-0", ttConf.color.split(" ")[0])}>{ttConf.icon}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-[#1a1a1a] truncate">{task.title}</span>
+                                <span className="text-[14px] font-medium text-[#1a1a1a] truncate">{task.title}</span>
                                 <span className={cn(
                                   "inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0",
                                   ttConf.color
@@ -281,14 +309,14 @@ export default function CommandCenterPage() {
           </div>
 
           {/* Right: Action Queue + Feed (40%) */}
-          <div className="lg:col-span-2 space-y-3">
+          <div className="lg:col-span-2 space-y-4">
             {/* Needs Attention */}
             {(stuckTasks.length > 0 || reviewItems.length > 0) && (
-              <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
-                <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#f0ede6]">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-[13px] font-semibold text-[#1a1a1a]">Needs Attention</span>
-                  <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full font-medium ml-auto">
+              <div className="bg-white border border-amber-200/60 rounded-xl overflow-hidden card-elevated-md">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-amber-100 bg-gradient-to-r from-amber-50/60 to-transparent">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-semibold text-[#1a1a1a]">Needs Attention</span>
+                  <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-semibold ml-auto">
                     {stuckTasks.length + reviewItems.length}
                   </span>
                 </div>
@@ -325,30 +353,43 @@ export default function CommandCenterPage() {
             )}
 
             {/* Activity Feed */}
-            <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
+            <div className="bg-white border border-[#e8e5de] rounded-xl overflow-hidden card-elevated">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0ede6]">
-                <span className="text-[13px] font-semibold text-[#1a1a1a]">Activity Feed</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <span className="text-sm font-semibold text-[#1a1a1a]">Activity Feed</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] text-[#9c9590]">live</span>
+                </div>
               </div>
-              <div className="divide-y divide-[#f0ede6] max-h-[360px] overflow-y-auto">
+              <div className="max-h-[360px] overflow-y-auto">
                 {!events ? (
                   <SkeletonList count={5} />
                 ) : events.length === 0 ? (
-                  <div className="p-4 text-xs text-[#9c9590] text-center">No activity yet</div>
+                  <div className="p-6 text-[13px] text-[#9c9590] text-center">No activity yet</div>
                 ) : (
-                  events.map((event) => (
-                    <div key={event._id} className="px-3 py-2 hover:bg-[#faf9f6] transition-colors">
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 text-center flex-shrink-0 text-xs mt-0.5">
-                          {eventIcons[event.type] || "\u2022"}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-[#1a1a1a] leading-relaxed truncate">{event.message}</p>
-                          <span className="text-[10px] text-[#9c9590] font-mono">{formatTime(event.timestamp)}</span>
+                  <div className="relative">
+                    {events.map((event, i) => {
+                      const color = eventTimelineColor[event.type] ?? "bg-[#9c9590]";
+                      const isLast = i === events.length - 1;
+                      return (
+                        <div key={event._id} className="flex hover:bg-[#faf9f6] transition-colors">
+                          {/* Timeline line + dot */}
+                          <div className="relative flex flex-col items-center w-8 flex-shrink-0">
+                            {i === 0 && <div className="w-px h-2 bg-transparent" />}
+                            {i > 0 && <div className="w-px flex-1 bg-[#e8e5de]" />}
+                            <div className={cn("w-2 h-2 rounded-full flex-shrink-0 my-0.5", color)} />
+                            {!isLast && <div className="w-px flex-1 bg-[#e8e5de]" />}
+                            {isLast && <div className="w-px h-2 bg-transparent" />}
+                          </div>
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 py-2 pr-3">
+                            <p className="text-[13px] text-[#1a1a1a] leading-relaxed truncate">{event.message}</p>
+                            <span className="text-[10px] text-[#9c9590] font-mono">{formatTime(event.timestamp)}</span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </div>
@@ -357,27 +398,48 @@ export default function CommandCenterPage() {
 
         {/* Bottom Metrics Strip */}
         {!isLoading && (
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white border border-[#e8e5de] rounded-lg px-4 py-3 flex items-center gap-3">
-              <BarChart3 className="w-4 h-4 text-[#c2410c] opacity-60" />
-              <div>
-                <span className="text-[10px] text-[#9c9590] block">Agent Utilization</span>
-                <span className="text-lg font-mono font-medium text-[#1a1a1a]">{utilization}%</span>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white border border-[#e8e5de] rounded-xl px-5 py-4 card-elevated-md">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-[#c2410c]/10">
+                  <BarChart3 className="w-4 h-4 text-[#c2410c]" />
+                </div>
+                <span className="text-[11px] font-medium text-[#6b6560] uppercase tracking-wide">Utilization</span>
               </div>
+              <span className="text-2xl font-mono font-semibold text-[#c2410c]">{utilization}%</span>
+              <div className="mt-2 w-full h-1.5 bg-[#f0ede6] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${utilization}%`,
+                    backgroundColor: utilization > 75 ? '#16a34a' : utilization > 40 ? '#c2410c' : '#9c9590',
+                  }}
+                />
+              </div>
+              <span className="text-[10px] text-[#9c9590] mt-1 block">{activeWorkerCount}/{totalTemplates} workers active</span>
             </div>
-            <div className="bg-white border border-[#e8e5de] rounded-lg px-4 py-3 flex items-center gap-3">
-              <CheckCircle2 className="w-4 h-4 text-green-600 opacity-60" />
-              <div>
-                <span className="text-[10px] text-[#9c9590] block">Completed Today</span>
-                <span className="text-lg font-mono font-medium text-[#1a1a1a]">{completedToday}</span>
+            <div className="bg-white border border-[#e8e5de] rounded-xl px-5 py-4 card-elevated-md">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-green-500/10">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                </div>
+                <span className="text-[11px] font-medium text-[#6b6560] uppercase tracking-wide">Completed Today</span>
               </div>
+              <span className="text-2xl font-mono font-semibold text-[#1a1a1a]">{completedToday}</span>
+              <span className="text-[10px] text-[#9c9590] mt-1 block">tasks finished</span>
             </div>
-            <div className="bg-white border border-[#e8e5de] rounded-lg px-4 py-3 flex items-center gap-3">
-              <TrendingUp className="w-4 h-4 text-blue-600 opacity-60" />
-              <div>
-                <span className="text-[10px] text-[#9c9590] block">Active Tasks</span>
-                <span className="text-lg font-mono font-medium text-[#1a1a1a]">{activeTasks.length}</span>
+            <div className="bg-white border border-[#e8e5de] rounded-xl px-5 py-4 card-elevated-md">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/10">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                </div>
+                <span className="text-[11px] font-medium text-[#6b6560] uppercase tracking-wide">Active Now</span>
               </div>
+              <span className={cn(
+                "text-2xl font-mono font-semibold",
+                activeTasks.length > 0 ? "text-[#c2410c]" : "text-[#1a1a1a]"
+              )}>{activeTasks.length}</span>
+              <span className="text-[10px] text-[#9c9590] mt-1 block">tasks in progress</span>
             </div>
           </div>
         )}

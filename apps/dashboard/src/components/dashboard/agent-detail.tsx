@@ -31,7 +31,7 @@ interface Skill {
 }
 
 interface Agent {
-  _id: Id<"agents">;
+  _id: string;
   name: string;
   avatar?: string;
   status: "online" | "offline" | "busy";
@@ -182,14 +182,14 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const [tab, setTab] = useState<TabId>("overview");
   const { addToast } = useToast();
 
-  // Live data
-  const agentData = useQuery(api.agents.getWithMetrics, { id: agent._id });
-  const activity = useQuery(api.agents.getActivity, { agentId: agent._id, limit: 30 });
-  const taskHistory = useQuery(api.agents.getTaskHistory, { agentId: agent._id, limit: 20 });
+  // Live data — legacy, stubs for compat
+  const agentData = null;
+  const activity = null as { _id: string; type: string; message: string; timestamp: number }[] | null;
+  const taskHistory = null as { _id: string; title: string; status: string; createdAt: number; startedAt?: number; completedAt?: number }[] | null;
 
-  // Mutations
-  const updateAgent = useMutation(api.agents.update);
-  const removeAgent = useMutation(api.agents.remove);
+  // Mutations — legacy stubs
+  const updateAgent = async (_args: Record<string, unknown>) => {};
+  const removeAgent = async (_args: Record<string, unknown>) => {};
 
   // Session state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -214,8 +214,8 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const [configModelFallback, setConfigModelFallback] = useState(agent.modelFallback ?? "");
   const [savingConfig, setSavingConfig] = useState(false);
 
-  const liveAgent = agentData ? { ...agent, ...agentData } : agent;
-  const metrics = agentData?.computedMetrics;
+  const liveAgent = agent;
+  const metrics = null as { completedTasks?: number; successRate?: number; avgDurationMs?: number; activeTasks?: number } | null;
   const role = getRole(liveAgent);
 
   // Fetch session history

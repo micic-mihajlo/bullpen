@@ -1,16 +1,12 @@
 import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 
-// Dispatch task for agent execution
+// Dispatch task for execution
 export const dispatchTask = mutation({
   args: { taskId: v.id("tasks") },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId);
     if (!task) throw new Error("Task not found");
-    if (!task.assignedAgentId) throw new Error("Task not assigned to an agent");
-
-    const agent = await ctx.db.get(task.assignedAgentId);
-    if (!agent) throw new Error("Assigned agent not found");
 
     await ctx.db.patch(args.taskId, {
       status: "running",
@@ -18,14 +14,13 @@ export const dispatchTask = mutation({
     });
 
     await ctx.db.insert("events", {
-      agentId: task.assignedAgentId,
       type: "task_dispatched",
       message: `Dispatched: "${task.title}"`,
-      data: { taskId: args.taskId, agentId: task.assignedAgentId },
+      data: { taskId: args.taskId },
       timestamp: Date.now(),
     });
 
-    return { taskId: args.taskId, agentSessionKey: agent.sessionKey };
+    return { taskId: args.taskId };
   },
 });
 
@@ -63,47 +58,19 @@ export const receiveResult = mutation({
       });
     }
 
-    // Free the agent and update performance metrics
-    if (task.assignedAgentId) {
-      const agent = await ctx.db.get(task.assignedAgentId);
-      if (agent) {
-        const allTasks = await ctx.db
-          .query("tasks")
-          .withIndex("by_agent", (q) => q.eq("assignedAgentId", task.assignedAgentId!))
-          .collect();
-
-        const completed = allTasks.filter(
-          (t) => t.status === "completed" || t._id === args.taskId
-        );
-        const failed = allTasks.filter(
-          (t) => t.status === "failed" && t._id !== args.taskId
-        );
-
-        // If this task failed, count it as failed instead
-        const actualCompleted = args.status === "completed" ? completed : completed.filter((t) => t._id !== args.taskId);
-        const actualFailed = args.status === "failed" ? [...failed, task] : failed;
-        const total = actualCompleted.length + actualFailed.length;
-
-        const durations = actualCompleted
-          .filter((t) => t.startedAt && (t.completedAt || t._id === args.taskId))
-          .map((t) => (t._id === args.taskId ? Date.now() : t.completedAt!) - t.startedAt!);
-        const avgDuration =
-          durations.length > 0
-            ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
-            : 0;
-
-        await ctx.db.patch(task.assignedAgentId, {
-          status: "online",
-          currentTaskId: undefined,
-          tasksCompleted: actualCompleted.length,
-          tasksSuccessRate: total > 0 ? Math.round((actualCompleted.length / total) * 100) : 0,
-          avgTaskDurationMs: avgDuration,
+    // If there's a worker, update its status
+    if (task.workerId) {
+      const worker = await ctx.db.get(task.workerId);
+      if (worker) {
+        await ctx.db.patch(task.workerId, {
+          status: args.status === "completed" ? "completed" : "failed",
+          completedAt: Date.now(),
+          lastActivityAt: Date.now(),
         });
       }
     }
 
     await ctx.db.insert("events", {
-      agentId: task.assignedAgentId,
       type: args.status === "completed" ? "task_completed" : "task_failed",
       message:
         args.status === "completed"

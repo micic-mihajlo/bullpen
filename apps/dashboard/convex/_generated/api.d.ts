@@ -15,8 +15,11 @@ import type * as deliverables from "../deliverables.js";
 import type * as events from "../events.js";
 import type * as messages from "../messages.js";
 import type * as projects from "../projects.js";
+import type * as seed from "../seed.js";
 import type * as taskExecution from "../taskExecution.js";
 import type * as tasks from "../tasks.js";
+import type * as workerTemplates from "../workerTemplates.js";
+import type * as workers from "../workers.js";
 
 import type {
   ApiFromModules,
@@ -32,8 +35,11 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   messages: typeof messages;
   projects: typeof projects;
+  seed: typeof seed;
   taskExecution: typeof taskExecution;
   tasks: typeof tasks;
+  workerTemplates: typeof workerTemplates;
+  workers: typeof workers;
 }>;
 
 /**

@@ -9,38 +9,23 @@ const OPENCLAW_HTTP_BASE =
   process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") || "http://localhost:18789";
 const OPENCLAW_BEARER_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
 
-// POST /api/tasks/execute - Send a task to an assigned OpenClaw session
+// POST /api/tasks/execute - Send a task to an OpenClaw session
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { taskId, agentId, description, projectContext } = body ?? {};
+    const { taskId, sessionKey, description, projectContext } = body ?? {};
 
     if (!taskId || typeof taskId !== "string") {
       return NextResponse.json({ error: "taskId is required" }, { status: 400 });
     }
 
-    if (!agentId || typeof agentId !== "string") {
-      return NextResponse.json({ error: "agentId is required" }, { status: 400 });
+    if (!sessionKey || typeof sessionKey !== "string") {
+      return NextResponse.json({ error: "sessionKey is required" }, { status: 400 });
     }
 
     if (!description || typeof description !== "string") {
       return NextResponse.json(
         { error: "description is required" },
-        { status: 400 }
-      );
-    }
-
-    const agent = await convex.query(api.agents.get, {
-      id: agentId as Id<"agents">,
-    });
-
-    if (!agent) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
-    }
-
-    if (!agent.sessionKey) {
-      return NextResponse.json(
-        { error: "Assigned agent does not have a sessionKey" },
         { status: 400 }
       );
     }
@@ -62,7 +47,7 @@ export async function POST(request: NextRequest) {
     ].join("\n");
 
     const sendResponse = await fetch(
-      `${OPENCLAW_HTTP_BASE}/api/sessions/${encodeURIComponent(agent.sessionKey)}/send`,
+      `${OPENCLAW_HTTP_BASE}/api/sessions/${encodeURIComponent(sessionKey)}/send`,
       {
         method: "POST",
         headers: {
@@ -85,7 +70,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, sessionKey: agent.sessionKey });
+    return NextResponse.json({ success: true, sessionKey });
   } catch (error) {
     console.error("[API] Failed to execute task:", error);
     return NextResponse.json(

@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 
 interface Agent {
-  _id: Id<"agents">;
+  _id: string;
   name: string;
   avatar?: string;
   status: string;
@@ -16,7 +16,7 @@ interface Task {
   _id: Id<"tasks">;
   title: string;
   description?: string;
-  status: "pending" | "assigned" | "running" | "completed" | "failed";
+  status: "pending" | "assigned" | "running" | "review" | "completed" | "failed";
   priority?: number;
   createdAt: number;
   startedAt?: number;

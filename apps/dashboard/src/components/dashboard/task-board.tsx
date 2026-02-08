@@ -16,14 +16,14 @@ type Task = {
   _id: Id<"tasks">;
   title: string;
   description?: string;
-  status: "pending" | "assigned" | "running" | "completed" | "failed";
+  status: "pending" | "assigned" | "running" | "review" | "completed" | "failed";
   priority?: number;
   createdAt: number;
   startedAt?: number;
   completedAt?: number;
   result?: string;
   error?: string;
-  agent?: { _id: Id<"agents">; name: string; avatar?: string; status: string };
+  agent?: { _id: string; name: string; avatar?: string; status: string };
 };
 
 type TaskStatus = "pending" | "assigned" | "running" | "completed" | "failed";
@@ -47,7 +47,7 @@ function timeAgo(ts: number): string {
 
 export function TaskBoard() {
   const tasks = useStableData(useQuery(api.tasks.list));
-  const agents = useStableData(useQuery(api.agents.list));
+  const agents = useStableData(useQuery(api.workerTemplates.list));
   const createTask = useMutation(api.tasks.create);
   const assignTask = useMutation(api.tasks.assign);
   const startTask = useMutation(api.tasks.start);
@@ -106,7 +106,7 @@ export function TaskBoard() {
     return tasks.filter((t) => t.status === status);
   };
 
-  const onlineAgents = agents?.filter((a) => a.status === "online") ?? [];
+  const onlineAgents = agents?.filter((a) => a.status === "active") ?? [];
 
   return (
     <>
@@ -157,7 +157,7 @@ export function TaskBoard() {
                                 onClick={(e) => { e.stopPropagation(); assignTask({ taskId: task._id, agentId: a._id }); }}
                                 className="px-1.5 py-0.5 text-[10px] bg-mc-bg rounded hover:bg-mc-bg-tertiary font-mono-jb transition-colors"
                               >
-                                {a.avatar} {a.name}
+                                {a.displayName}
                               </button>
                             ))}
                           </div>

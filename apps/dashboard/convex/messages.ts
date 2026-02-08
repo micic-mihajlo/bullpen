@@ -1,17 +1,16 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-// Get conversation between two agents (or all messages for an agent)
+// Get conversation between two agents (legacy — uses string IDs)
 export const conversation = query({
   args: {
-    agentId: v.id("agents"),
-    withAgentId: v.optional(v.id("agents")),
+    agentId: v.string(),
+    withAgentId: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
 
-    // Get all messages involving this agent
     const sent = await ctx.db
       .query("messages")
       .withIndex("by_from", (q) => q.eq("fromAgentId", args.agentId))
@@ -26,7 +25,6 @@ export const conversation = query({
 
     let messages = [...sent, ...received];
 
-    // Filter by conversation partner if specified
     if (args.withAgentId) {
       messages = messages.filter(
         (m) =>
@@ -35,7 +33,6 @@ export const conversation = query({
       );
     }
 
-    // Sort by timestamp and dedupe
     const seen = new Set();
     messages = messages
       .filter((m) => {
@@ -46,18 +43,7 @@ export const conversation = query({
       .sort((a, b) => a.timestamp - b.timestamp)
       .slice(-limit);
 
-    // Enrich with agent info
-    const enriched = await Promise.all(
-      messages.map(async (msg) => {
-        const fromAgent = await ctx.db.get(msg.fromAgentId);
-        const toAgent = msg.toAgentId
-          ? await ctx.db.get(msg.toAgentId)
-          : null;
-        return { ...msg, fromAgent, toAgent };
-      })
-    );
-
-    return enriched;
+    return messages;
   },
 });
 
@@ -72,33 +58,18 @@ export const broadcasts = query({
       .order("desc")
       .take(limit);
 
-    const enriched = await Promise.all(
-      messages.map(async (msg) => {
-        const fromAgent = await ctx.db.get(msg.fromAgentId);
-        return { ...msg, fromAgent };
-      })
-    );
-
-    return enriched.reverse();
+    return messages.reverse();
   },
 });
 
 // Send a message
 export const send = mutation({
   args: {
-    fromAgentId: v.id("agents"),
-    toAgentId: v.optional(v.id("agents")),
+    fromAgentId: v.string(),
+    toAgentId: v.optional(v.string()),
     content: v.string(),
   },
   handler: async (ctx, args) => {
-    const fromAgent = await ctx.db.get(args.fromAgentId);
-    if (!fromAgent) throw new Error("Sender agent not found");
-
-    if (args.toAgentId) {
-      const toAgent = await ctx.db.get(args.toAgentId);
-      if (!toAgent) throw new Error("Recipient agent not found");
-    }
-
     const messageId = await ctx.db.insert("messages", {
       fromAgentId: args.fromAgentId,
       toAgentId: args.toAgentId,
@@ -107,15 +78,9 @@ export const send = mutation({
       read: false,
     });
 
-    // Log as event
-    const recipient = args.toAgentId
-      ? (await ctx.db.get(args.toAgentId))?.name ?? "unknown"
-      : "everyone";
-
     await ctx.db.insert("events", {
-      agentId: args.fromAgentId,
       type: "message_sent",
-      message: `${fromAgent.name} → ${recipient}: "${args.content.slice(0, 50)}${args.content.length > 50 ? "..." : ""}"`,
+      message: `Message sent: "${args.content.slice(0, 50)}${args.content.length > 50 ? "..." : ""}"`,
       data: { messageId, toAgentId: args.toAgentId },
       timestamp: Date.now(),
     });
@@ -134,7 +99,7 @@ export const markRead = mutation({
 
 // Get unread count for an agent
 export const unreadCount = query({
-  args: { agentId: v.id("agents") },
+  args: { agentId: v.string() },
   handler: async (ctx, args) => {
     const messages = await ctx.db
       .query("messages")
