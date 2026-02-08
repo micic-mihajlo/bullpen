@@ -1,0 +1,1 @@
+/home/mihbot/.openclaw/skills/n8n-validation-expert/SKILL.md
