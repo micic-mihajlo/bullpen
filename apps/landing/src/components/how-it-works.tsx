@@ -2,159 +2,132 @@
 
 import { motion } from "framer-motion";
 
-const ease = [0.25, 0.1, 0.25, 1] as const;
-
 const steps = [
   {
     number: "01",
-    title: "Brief",
-    description: "Tell us what you need. Landing page, research report, MVP — be as detailed or high-level as you want.",
+    title: "You describe, we scope",
+    description:
+      "Tell us what you need in plain English. A human reviews your request and creates a project plan within 24 hours — tasks, timeline, cost. You approve before any work starts.",
+    metric: "< 24h",
+    metricLabel: "Response time",
   },
   {
     number: "02",
-    title: "Assemble",
-    description: "We spin up the right agents for your project. Research, code, design — whatever it takes.",
+    title: "AI builds, humans review",
+    description:
+      "AI agents start writing code, running tests, and building your project in parallel. Every deliverable is reviewed by a human before it's marked complete. Nothing ships without human eyes on it.",
+    metric: "100%",
+    metricLabel: "Human reviewed",
   },
   {
     number: "03",
-    title: "Execute",
-    description: "Track progress in real-time. See what agents are working on. Give feedback anytime.",
-  },
-  {
-    number: "04",
-    title: "Deliver",
-    description: "Human-reviewed, polished, ready to use. Code deployed, research actionable, designs production-ready.",
+    title: "You watch, we ship",
+    description:
+      "Track every task, every commit, every dollar through your live dashboard. When it's ready, we deploy it. You own the code, the docs, everything.",
+    metric: "Real-time",
+    metricLabel: "Transparency",
   },
 ];
 
-const stepVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.15,
-      duration: 0.3,
-      ease,
-    },
-  }),
-};
-
-const dotVariants = {
-  hidden: { scale: 0 },
-  visible: (i: number) => ({
-    scale: 1,
-    transition: {
-      delay: i * 0.15 + 0.1,
-      duration: 0.3,
-      ease,
-    },
-  }),
-};
-
-const lineVariants = {
-  hidden: { scaleX: 0, scaleY: 0 },
-  visible: (i: number) => ({
-    scaleX: 1,
-    scaleY: 1,
-    transition: {
-      delay: i * 0.15,
-      duration: 0.4,
-      ease,
-    },
-  }),
-};
-
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-28 px-4 sm:px-6">
-      <div className="max-w-7xl mx-auto">
+    <section id="how-it-works" className="py-28 px-4 sm:px-6 bg-surface relative overflow-hidden">
+      {/* Subtle background grid pattern */}
+      <div className="absolute inset-0 opacity-[0.02]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(28, 25, 23, 1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(28, 25, 23, 1) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
+
+      <div className="max-w-7xl mx-auto relative">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.3, ease }}
-          className="mb-20"
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-20"
         >
           <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-3">
-            Process
-          </p>
-          <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
             How It Works
+          </p>
+          <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text mb-4">
+            AI builds fast.
+            <br />
+            Humans build right.
           </h2>
         </motion.div>
 
         {/* Steps */}
-        <div className="grid md:grid-cols-4 gap-0">
-          {steps.map((step, index) => (
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-12 max-w-6xl mx-auto">
+          {steps.map((step, i) => (
             <motion.div
               key={step.number}
-              custom={index}
-              variants={stepVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-60px" }}
-              className="relative group pb-10 md:pb-0 md:pr-8"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.15 }}
+              className="relative group"
             >
-              {/* Timeline line */}
-              <motion.div
-                custom={index}
-                variants={lineVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-60px" }}
-                className="absolute left-0 top-0 w-[2px] h-full md:w-full md:h-[2px] bg-border origin-top md:origin-left"
-              />
+              {/* Card with subtle hover effect */}
+              <div className="relative bg-bg border border-border rounded-lg p-8 h-full transition-all duration-300 hover:border-accent/30 hover:shadow-lg">
+                {/* Step number badge - refined, not playful */}
+                <div className="inline-flex items-center gap-3 mb-6">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10 border border-accent/20">
+                    <span className="font-mono text-sm font-bold text-accent tracking-tight">
+                      {step.number}
+                    </span>
+                  </div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
+                </div>
 
-              {/* Active dot on timeline */}
-              <motion.div
-                custom={index}
-                variants={dotVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-60px" }}
-                whileHover={{ scale: 1.5, backgroundColor: "var(--color-accent)" }}
-                transition={{ duration: 0.3, ease }}
-                className="absolute left-[-5px] top-[-5px] md:left-0 md:top-[-5px] w-3 h-3 bg-border group-hover:bg-accent transition-colors duration-300 ease-out z-10"
-              />
-
-              <div className="space-y-4 pl-8 md:pl-0 md:pt-8">
-                <span className="font-mono text-xs text-accent tracking-[0.2em] uppercase">
-                  Step {step.number}
-                </span>
-                <h3 className="font-display text-4xl md:text-5xl text-text uppercase tracking-tight group-hover:text-accent transition-colors duration-300 ease-out">
+                {/* Title */}
+                <h3 className="font-display text-2xl font-bold text-text mb-4 leading-tight">
                   {step.title}
                 </h3>
-                <p className="text-sm text-text-secondary leading-relaxed">
+
+                {/* Description */}
+                <p className="text-text-secondary leading-relaxed mb-6">
                   {step.description}
                 </p>
+
+                {/* Data-driven metric - replaces emoji with professional stat */}
+                <div className="mt-auto pt-6 border-t border-border">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-mono text-2xl font-bold text-accent">
+                      {step.metric}
+                    </span>
+                    <span className="text-xs text-muted font-mono uppercase tracking-wider">
+                      {step.metricLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Subtle accent corner */}
+                <div className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-accent/5 to-transparent rounded-tr-lg" />
+                </div>
               </div>
+
+              {/* Connector line (desktop only) - more refined */}
+              {i < steps.length - 1 && (
+                <div className="hidden md:block absolute top-14 left-full w-full h-[1px] pointer-events-none">
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.5 + i * 0.2 }}
+                    className="w-1/2 h-full bg-gradient-to-r from-accent/30 to-accent/10 origin-left"
+                  />
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
-
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.3, ease }}
-          className="mt-20 pt-8 border-t-2 border-text flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        >
-          <p className="text-text-secondary">
-            From brief to deliverable in days, not weeks.
-          </p>
-          <motion.a
-            href="#get-started"
-            whileHover={{ x: 4 }}
-            transition={{ duration: 0.3, ease }}
-            className="inline-flex items-center gap-2 font-mono text-sm text-accent hover:text-accent-hover uppercase tracking-[0.15em] transition-colors duration-300 ease-out"
-          >
-            Start Your Project
-            <span className="inline-block">→</span>
-          </motion.a>
-        </motion.div>
       </div>
     </section>
   );
