@@ -122,6 +122,16 @@ export default defineSchema({
       v.literal("completed"),
       v.literal("failed")
     ),
+    taskType: v.optional(v.union(
+      v.literal("coding"),
+      v.literal("automation"),
+      v.literal("research"),
+      v.literal("design"),
+      v.literal("review"),
+      v.literal("general")
+    )),
+    liveContext: v.optional(v.any()),
+    agentThread: v.optional(v.string()),
     projectId: v.optional(v.id("projects")), // link to project (and thus client)
     assignedAgentId: v.optional(v.id("agents")),
     priority: v.optional(v.number()), // 1-5, higher = more urgent
@@ -170,6 +180,23 @@ export default defineSchema({
     .index("by_agent", ["agentId"])
     .index("by_type", ["type"])
     .index("by_timestamp", ["timestamp"]),
+
+  // Agent Messages - task-scoped agent communication
+  agentMessages: defineTable({
+    taskId: v.id("tasks"),
+    fromAgent: v.string(),
+    toAgent: v.string(), // agent name, "orchestrator", or "all"
+    message: v.string(),
+    messageType: v.union(
+      v.literal("update"),
+      v.literal("question"),
+      v.literal("decision"),
+      v.literal("handoff"),
+      v.literal("steering")
+    ),
+    timestamp: v.number(),
+  })
+    .index("by_task", ["taskId", "timestamp"]),
 
   // Messages - agent-to-agent communication
   messages: defineTable({

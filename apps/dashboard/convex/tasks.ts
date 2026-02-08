@@ -97,6 +97,14 @@ export const create = mutation({
     description: v.optional(v.string()),
     priority: v.optional(v.number()),
     projectId: v.optional(v.id("projects")),
+    taskType: v.optional(v.union(
+      v.literal("coding"),
+      v.literal("automation"),
+      v.literal("research"),
+      v.literal("design"),
+      v.literal("review"),
+      v.literal("general")
+    )),
   },
   handler: async (ctx, args) => {
     // Validate project exists if provided
@@ -111,6 +119,7 @@ export const create = mutation({
       status: "pending",
       priority: args.priority ?? 3,
       projectId: args.projectId,
+      taskType: args.taskType ?? "general",
       createdAt: Date.now(),
     });
 

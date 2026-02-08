@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/empty-state";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { useToast } from "@/components/toast";
 import { useRegisterShortcut } from "@/components/shortcuts-provider";
+import { TaskDetailPanel } from "@/components/task-detail-panel";
 import {
   Plus,
   FolderKanban,
@@ -19,7 +20,23 @@ import {
   ArrowRight,
   X,
   ChevronDown,
+  Code2,
+  Cog,
+  Search,
+  Palette,
+  FileCheck2,
+  FileText,
+  Bot,
 } from "lucide-react";
+
+const taskTypeIcons: Record<string, React.ReactNode> = {
+  coding: <Code2 className="w-3 h-3" />,
+  automation: <Cog className="w-3 h-3" />,
+  research: <Search className="w-3 h-3" />,
+  design: <Palette className="w-3 h-3" />,
+  review: <FileCheck2 className="w-3 h-3" />,
+  general: <FileText className="w-3 h-3" />,
+};
 
 type ProjectStatus = "intake" | "active" | "review" | "delivered" | "archived";
 
@@ -317,6 +334,7 @@ function ProjectDetail({
 }) {
   const project = useQuery(api.projects.withDetails, { id: projectId });
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
 
   if (!project) {
     return (
@@ -413,11 +431,20 @@ function ProjectDetail({
               <div className="p-4 text-xs text-mc-text-secondary text-center">No tasks yet</div>
             ) : (
               project.tasks?.map((task) => (
-                <div key={task._id} className="px-4 py-2 hover:bg-mc-bg-tertiary/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm truncate text-mc-text">{task.title}</span>
+                <button
+                  key={task._id}
+                  onClick={() => setSelectedTaskId(task._id)}
+                  className="w-full px-4 py-2 hover:bg-mc-bg-tertiary/50 transition-colors text-left"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-mc-text-secondary flex-shrink-0">
+                        {taskTypeIcons[task.taskType ?? "general"] ?? taskTypeIcons.general}
+                      </span>
+                      <span className="text-sm truncate text-mc-text">{task.title}</span>
+                    </div>
                     <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded capitalize font-mono-jb font-semibold",
+                      "text-[10px] px-1.5 py-0.5 rounded capitalize font-mono-jb font-semibold flex-shrink-0",
                       task.status === "completed" ? "bg-mc-accent-green/12 text-mc-accent-green" :
                       task.status === "running" ? "bg-mc-accent-yellow/12 text-mc-accent-yellow" :
                       task.status === "failed" ? "bg-mc-accent-red/12 text-mc-accent-red" :
@@ -426,7 +453,7 @@ function ProjectDetail({
                       {task.status}
                     </span>
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>
@@ -467,6 +494,14 @@ function ProjectDetail({
           </div>
         </div>
       </div>
+
+      {/* Task Detail Slide-over */}
+      {selectedTaskId && (
+        <TaskDetailPanel
+          taskId={selectedTaskId}
+          onClose={() => setSelectedTaskId(null)}
+        />
+      )}
     </div>
   );
 }
