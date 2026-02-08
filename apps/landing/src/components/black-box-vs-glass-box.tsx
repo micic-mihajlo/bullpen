@@ -4,19 +4,19 @@ import { motion } from "framer-motion";
 import { X, Check } from "lucide-react";
 
 const blackBoxItems = [
-  "$15K–$150K upfront before any work starts",
-  "8–12 week timelines with no visibility",
-  "Hidden costs surface after the contract is signed",
-  "'We'll get back to you' is the status update",
+  "Pay $15K–$150K upfront, hope for the best",
+  "Wait 8–12 weeks with zero visibility",
+  "Hidden costs appear after signing",
+  "Vague updates: 'We'll get back to you'",
   "Final invoice is always a surprise",
 ];
 
 const glassBoxItems = [
-  "Software, automations, integrations — whatever grows your business",
-  "Projects start at $2K. See the full cost before starting",
-  "Delivered in days, not months. Watch progress live",
-  "Every task, every commit, every dollar — visible in real-time",
-  "No surprises. Ever.",
+  "Fixed quotes starting at $2K. Know your cost upfront",
+  "Delivered in days, not months",
+  "Software, automations, integrations — whatever you need",
+  "Watch progress happen. No mystery, no waiting",
+  "Zero surprises. Ever.",
 ];
 
 export function BlackBoxVsGlassBox() {
@@ -31,10 +31,10 @@ export function BlackBoxVsGlassBox() {
           className="text-center mb-16"
         >
           <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text mb-4 font-bold tracking-tight">
-            Black box vs. glass box
+            Know what you're paying for
           </h2>
           <p className="text-xl text-text-secondary max-w-2xl mx-auto">
-            Traditional agencies keep you in the dark. We show you everything.
+            Most agencies hide costs and timelines. Bullpen shows you everything upfront.
           </p>
         </motion.div>
 
