@@ -19,24 +19,24 @@ import {
   AlertTriangle,
   Clock,
   Code2,
-  Cog,
+  GitBranch,
   Search,
   Palette,
   FileCheck2,
-  FileText,
+  Zap,
   Activity,
   CheckCircle2,
   BarChart3,
   TrendingUp,
 } from "lucide-react";
 
-const taskTypeIcons: Record<string, React.ReactNode> = {
-  coding: <Code2 className="w-3 h-3" />,
-  automation: <Cog className="w-3 h-3" />,
-  research: <Search className="w-3 h-3" />,
-  design: <Palette className="w-3 h-3" />,
-  review: <FileCheck2 className="w-3 h-3" />,
-  general: <FileText className="w-3 h-3" />,
+const taskTypeConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+  coding: { icon: <Code2 className="w-3 h-3" />, label: "Coding", color: "text-blue-600 bg-blue-50" },
+  automation: { icon: <GitBranch className="w-3 h-3" />, label: "Automation", color: "text-purple-600 bg-purple-50" },
+  research: { icon: <Search className="w-3 h-3" />, label: "Research", color: "text-emerald-600 bg-emerald-50" },
+  design: { icon: <Palette className="w-3 h-3" />, label: "Design", color: "text-pink-600 bg-pink-50" },
+  review: { icon: <FileCheck2 className="w-3 h-3" />, label: "Review", color: "text-amber-600 bg-amber-50" },
+  general: { icon: <Zap className="w-3 h-3" />, label: "General", color: "text-[#6b6560] bg-[#f0ede6]" },
 };
 
 const taskTypeMini: Record<string, (ctx?: Record<string, unknown>) => string> = {
@@ -225,6 +225,7 @@ export default function CommandCenterPage() {
                       </div>
                       {group.tasks.map((task) => {
                         const taskType = task.taskType ?? "general";
+                        const ttConf = taskTypeConfig[taskType] ?? taskTypeConfig.general;
                         const miniPreview = taskTypeMini[taskType]?.(
                           task.liveContext as Record<string, unknown> | undefined
                         ) ?? taskType;
@@ -235,12 +236,19 @@ export default function CommandCenterPage() {
                             onClick={() => setSelectedTaskId(task._id)}
                             className="w-full px-4 py-3 hover:bg-[#faf9f6] transition-colors flex items-center gap-3 text-left"
                           >
-                            <span className="text-[#9c9590]">{taskTypeIcons[taskType]}</span>
+                            <span className={cn("flex-shrink-0", ttConf.color.split(" ")[0])}>{ttConf.icon}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium text-[#1a1a1a] truncate">{task.title}</span>
                                 <span className={cn(
-                                  "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                                  "inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0",
+                                  ttConf.color
+                                )}>
+                                  {ttConf.icon}
+                                  {ttConf.label}
+                                </span>
+                                <span className={cn(
+                                  "text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0",
                                   task.status === "running" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"
                                 )}>
                                   {task.status}
