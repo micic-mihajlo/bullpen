@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, DollarSign, FileText, Shield, Code, BarChart3 } from "lucide-react";
+import { Eye, DollarSign, FileText, Shield, Code, BarChart3, Zap, Workflow } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
@@ -11,33 +11,33 @@ const features = [
     number: "01",
   },
   {
-    icon: DollarSign,
-    title: "Cost Transparency",
-    description: "Know exactly what you're paying for. AI compute, human review, infrastructure — all itemized.",
+    icon: Zap,
+    title: "Rapid Integrations",
+    description: "Connect your tools fast. APIs, webhooks, email agents, automations — integrated in days, not months.",
     number: "02",
   },
   {
-    icon: FileText,
-    title: "Full Audit Logs",
-    description: "Every decision, every change, timestamped and searchable. Nothing hidden, ever.",
+    icon: Workflow,
+    title: "Business Automations",
+    description: "Automate workflows that grow your business. From email sequences to data pipelines.",
     number: "03",
+  },
+  {
+    icon: DollarSign,
+    title: "Cost Transparency",
+    description: "Know exactly what you're paying for. AI compute, human review, infrastructure — all itemized.",
+    number: "04",
   },
   {
     icon: Shield,
     title: "Human Oversight",
     description: "Expert review on every deliverable. AI speed with human judgment.",
-    number: "04",
-  },
-  {
-    icon: Code,
-    title: "Source Access",
-    description: "All code, all prompts, all reasoning. You own everything we build.",
     number: "05",
   },
   {
-    icon: BarChart3,
-    title: "Performance Metrics",
-    description: "See speed, quality, and efficiency data. No guessing how your project is doing.",
+    icon: Code,
+    title: "Full Source Access",
+    description: "All code, all prompts, all reasoning. You own everything we build.",
     number: "06",
   },
 ];

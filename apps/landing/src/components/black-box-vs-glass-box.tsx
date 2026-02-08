@@ -12,10 +12,10 @@ const blackBoxItems = [
 ];
 
 const glassBoxItems = [
-  "Projects start at $2K. You see the full cost before starting",
+  "Software, automations, integrations — whatever grows your business",
+  "Projects start at $2K. See the full cost before starting",
   "Delivered in days, not months. Watch progress live",
   "Every task, every commit, every dollar — visible in real-time",
-  "Human review on every deliverable before you see it",
   "No surprises. Ever.",
 ];
 

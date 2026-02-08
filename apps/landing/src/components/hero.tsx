@@ -41,7 +41,7 @@ export function Hero() {
 
             {/* Subheadline */}
             <p className="text-xl text-text-secondary max-w-lg leading-relaxed">
-              Bullpen is the first software agency where you can watch your project being built in real-time. AI agents do the work. Humans ensure quality. You see everything.
+              Software, automations, integrations — built fast to grow your business. AI agents do the work. Humans ensure quality. You watch everything happen in real-time.
             </p>
 
             {/* CTAs */}

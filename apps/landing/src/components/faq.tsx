@@ -8,6 +8,10 @@ const ease = [0.25, 0.1, 0.25, 1] as const;
 
 const faqs = [
   {
+    question: "What can you build?",
+    answer: "Anything that grows your business: web apps, mobile apps, dashboards, automations, API integrations, email agents, data pipelines, internal tools. If it can be built with code, we can build it fast and show you every step.",
+  },
+  {
     question: "What do you mean by 'glass box'?",
     answer: "Unlike traditional agencies that operate as 'black boxes' where you have no visibility, Bullpen is a 'glass box' — you can see through it. Your live dashboard shows every task, every agent working, every dollar spent, in real-time. Nothing is hidden.",
   },
