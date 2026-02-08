@@ -2,6 +2,7 @@
 
 import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/hero";
+import { BlackBoxVsGlassBox } from "@/components/black-box-vs-glass-box";
 import { LogoCloud } from "@/components/logo-cloud";
 import { Features } from "@/components/features";
 import { HowItWorks } from "@/components/how-it-works";
@@ -15,6 +16,7 @@ export default function Home() {
     <main className="min-h-screen">
       <Navbar />
       <Hero />
+      <BlackBoxVsGlassBox />
       <LogoCloud />
       <Features />
       <HowItWorks />

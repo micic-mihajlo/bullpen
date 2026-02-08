@@ -1,114 +1,75 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
-import { AsciiBull } from "./ascii-bull";
+import { GlassBoxDashboard } from "./glass-box-dashboard";
+import { motion } from "framer-motion";
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen pt-20 hero-divider">
-      {/* Grid background */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(var(--color-border) 1px, transparent 1px),
-            linear-gradient(90deg, var(--color-border) 1px, transparent 1px)
-          `,
-          backgroundSize: '60px 60px',
-        }}
-      />
+    <section className="relative min-h-screen pt-32 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left: Messaging */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="space-y-8"
+          >
+            {/* "Building live now" badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-success/20 bg-success/5">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-2 h-2 rounded-full bg-success"
+              />
+              <span className="font-mono text-xs text-success uppercase tracking-wider">
+                Building live now
+              </span>
+            </div>
 
-      {/* Oversized background text for brutalist effect */}
-      <div
-        className="absolute top-1/4 -right-8 font-display text-[20vw] leading-none text-text/[0.02] uppercase pointer-events-none select-none hidden lg:block"
-        aria-hidden="true"
-      >
-        BULL
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-4 items-end">
-          {/* Main headline - takes 7 cols, slight rotation for asymmetry */}
-          <div className="lg:col-span-7 space-y-8 lg:-rotate-1 lg:origin-bottom-left">
-            <div className="space-y-2">
-              <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase">
-                AI-Powered Agency
-              </p>
-              <h1 className="font-display text-[clamp(4rem,12vw,10rem)] leading-[0.85] tracking-tight text-text uppercase">
-                Your AI
+            {/* Main headline */}
+            <div className="space-y-4">
+              <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl leading-[0.95] text-text font-bold tracking-tight">
+                Your software,
                 <br />
-                <span className="text-accent">Workforce</span>
+                built by AI.
+                <br />
+                <span className="text-accent">Watched by you.</span>
               </h1>
             </div>
 
-            {/* Horizontal rule accent with offset */}
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-[3px] bg-accent" />
-              <div className="w-8 h-[3px] bg-text/20" />
-            </div>
-
-            <p className="text-lg sm:text-xl text-text-secondary max-w-md leading-relaxed">
-              Ship products 10x faster with specialized AI agents.
-              Research, code, design — delivered.
+            {/* Subheadline */}
+            <p className="text-xl text-text-secondary max-w-lg leading-relaxed">
+              Bullpen is the first software agency where you can watch your project being built in real-time. AI agents do the work. Humans ensure quality. You see everything.
             </p>
 
+            {/* CTAs */}
             <div className="flex flex-wrap gap-4 pt-4">
               <a
                 href="#get-started"
-                className="group inline-flex items-center gap-3 px-6 py-4 bg-text text-bg font-medium uppercase tracking-wider text-sm hover:bg-accent transition-colors"
+                className="group inline-flex items-center gap-3 px-8 py-4 bg-accent text-white font-sans font-medium rounded hover:bg-accent-hover transition-all shadow-lg hover:shadow-xl"
               >
-                Start Project
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Start your project
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </a>
               <a
-                href="#how-it-works"
-                className="inline-flex items-center gap-3 px-6 py-4 border-2 border-text text-text font-medium uppercase tracking-wider text-sm hover:bg-text hover:text-bg transition-colors"
+                href="#demo"
+                className="inline-flex items-center gap-3 px-8 py-4 border border-border text-text font-sans font-medium rounded hover:bg-surface transition-colors"
               >
-                How It Works
+                Watch a live build
               </a>
             </div>
-          </div>
 
-          {/* ASCII Bull - takes 5 cols, offset upward */}
-          <div className="lg:col-span-5 lg:-mb-16">
-            <div className="relative">
-              {/* Terminal header */}
-              <div className="terminal-header">
-                <div className="terminal-dot terminal-dot--red" />
-                <div className="terminal-dot terminal-dot--yellow" />
-                <div className="terminal-dot terminal-dot--green" />
-                <span className="ml-3 flex items-center gap-2">
-                  bullpen_agent.exe
-                  <span className="blink-cursor text-accent">_</span>
-                </span>
-              </div>
+            {/* Small trust indicator */}
+            <p className="text-sm text-text-secondary font-mono">
+              Projects start at $2K · Delivered in days, not months
+            </p>
+          </motion.div>
 
-              {/* Bull container with CRT effect */}
-              <div className="bg-surface border-2 border-t-0 border-text p-8 sm:p-12 crt-scanlines">
-                <AsciiBull />
-              </div>
-
-              {/* Corner accent */}
-              <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-accent -z-10" />
-            </div>
-          </div>
-        </div>
-
-        {/* Stats bar */}
-        <div className="mt-20 pt-8 border-t-2 border-text">
-          <div className="grid grid-cols-3 gap-8">
-            <div>
-              <div className="font-display text-4xl sm:text-5xl stat-number">50+</div>
-              <div className="font-mono text-xs text-muted uppercase tracking-wider mt-1">Projects Shipped</div>
-            </div>
-            <div className="border-l-2 border-border pl-8">
-              <div className="font-display text-4xl sm:text-5xl stat-number">10X</div>
-              <div className="font-mono text-xs text-muted uppercase tracking-wider mt-1">Faster Delivery</div>
-            </div>
-            <div className="border-l-2 border-border pl-8">
-              <div className="font-display text-4xl sm:text-5xl stat-number">24/7</div>
-              <div className="font-mono text-xs text-muted uppercase tracking-wider mt-1">Agent Uptime</div>
-            </div>
+          {/* Right: Glass Box Dashboard */}
+          <div className="lg:pl-8">
+            <GlassBoxDashboard />
           </div>
         </div>
       </div>
