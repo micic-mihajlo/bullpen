@@ -71,6 +71,21 @@ export const create = mutation({
     content: v.string(),
     format: v.string(),
     taskId: v.optional(v.id("tasks")),
+    artifactType: v.optional(v.union(
+      v.literal("repo"),
+      v.literal("workflow"),
+      v.literal("document"),
+      v.literal("files"),
+      v.literal("preview")
+    )),
+    artifactUrl: v.optional(v.string()),
+    artifactFiles: v.optional(v.array(v.object({
+      name: v.string(),
+      path: v.optional(v.string()),
+      url: v.optional(v.string()),
+      type: v.string(),
+    }))),
+    setupInstructions: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const project = await ctx.db.get(args.projectId);
@@ -91,6 +106,10 @@ export const create = mutation({
       content: args.content,
       format: args.format,
       status: "draft",
+      artifactType: args.artifactType,
+      artifactUrl: args.artifactUrl,
+      artifactFiles: args.artifactFiles,
+      setupInstructions: args.setupInstructions,
       createdAt: Date.now(),
     });
 

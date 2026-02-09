@@ -182,19 +182,22 @@ Work completed:
 ${workSummary}
 
 IMPORTANT: The deliverable must be the ACTUAL OUTPUT, not a description of what was done.
-- For code projects: reference the actual code/repo/files that were built, include deploy instructions
-- For automation projects: the workflow JSON or deploy link
-- For research projects: the actual report with findings and sources
-- For design projects: screenshots, component specs, style guide
+- For code projects: artifactType="repo", artifactUrl=github repo link, setupInstructions=how to clone/install/deploy
+- For automation projects: artifactType="workflow", artifactFiles=[{workflow JSON}], setupInstructions=how to import into n8n
+- For research projects: artifactType="document", content=the full report with sources
+- For design projects: artifactType="files", artifactFiles=[screenshots, specs]
 
-Create the deliverable via POST http://localhost:3001/api/webhooks/task-result with:
+Create the deliverable via POST http://localhost:3001/api/projects/${task.projectId}/deliverable with:
 {
-  "taskId": "${taskId}",
-  "status": "completed",
-  "result": "<the actual deliverable content>"
+  "title": "descriptive title",
+  "content": "summary of what was built for dashboard display",
+  "artifactType": "repo"|"workflow"|"document"|"files"|"preview",
+  "artifactUrl": "primary URL (github repo, preview link, etc.)",
+  "artifactFiles": [{"name": "filename", "url": "link", "type": "json|md|html"}],
+  "setupInstructions": "how to use/deploy this deliverable"
 }
 
-Then the project will be marked for human review.`,
+The deliverable will auto-submit for human review.`,
                     }),
                   });
                 } catch (notifyErr) {

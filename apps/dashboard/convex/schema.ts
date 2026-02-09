@@ -152,8 +152,8 @@ export default defineSchema({
     projectId: v.id("projects"),
     taskId: v.optional(v.id("tasks")),
     title: v.string(),
-    content: v.string(),
-    format: v.string(),
+    content: v.string(), // summary/description for display
+    format: v.string(), // "markdown", "repo", "workflow", "document", "files"
     status: v.union(
       v.literal("draft"),
       v.literal("review"),
@@ -161,6 +161,22 @@ export default defineSchema({
       v.literal("delivered"),
       v.literal("rejected")
     ),
+    // Artifact references — the actual deliverable
+    artifactType: v.optional(v.union(
+      v.literal("repo"),       // GitHub repository
+      v.literal("workflow"),   // n8n workflow JSON
+      v.literal("document"),   // Markdown/PDF report
+      v.literal("files"),      // Collection of files
+      v.literal("preview")     // Live preview URL
+    )),
+    artifactUrl: v.optional(v.string()),       // primary URL (repo, preview, etc.)
+    artifactFiles: v.optional(v.array(v.object({
+      name: v.string(),
+      path: v.optional(v.string()),
+      url: v.optional(v.string()),
+      type: v.string(), // "json", "md", "html", etc.
+    }))),
+    setupInstructions: v.optional(v.string()), // how to use/deploy the deliverable
     reviewedBy: v.optional(v.string()),
     reviewNotes: v.optional(v.string()),
     createdAt: v.number(),
