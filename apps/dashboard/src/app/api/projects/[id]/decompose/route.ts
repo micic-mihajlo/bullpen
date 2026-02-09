@@ -189,10 +189,21 @@ export async function POST(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // 2. Get task definitions based on project type
+    // 2. Check if project already has tasks (prevent duplicate decomposition)
+    const existingTasks = await convex.query(api.tasks.byProject, {
+      projectId: projectId as Id<"projects">,
+    });
+    if (existingTasks.length > 0) {
+      return NextResponse.json(
+        { error: "Project already has tasks. Delete existing tasks before re-decomposing." },
+        { status: 409 }
+      );
+    }
+
+    // 3. Get task definitions based on project type
     const taskDefs = getTasksForType(project.type);
 
-    // 3. Create each task in Convex
+    // 4. Create each task in Convex
     const taskIds: string[] = [];
     for (const def of taskDefs) {
       const taskId = await convex.mutation(api.tasks.create, {
@@ -204,7 +215,7 @@ export async function POST(
       taskIds.push(taskId);
     }
 
-    // 4. Log event
+    // 5. Log event
     await convex.mutation(api.events.create, {
       type: "project_decomposed",
       message: `Decomposed "${project.name}" into ${taskIds.length} tasks`,
