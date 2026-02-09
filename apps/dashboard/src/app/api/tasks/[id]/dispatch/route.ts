@@ -153,38 +153,39 @@ curl -X POST "${webhookUrl}" \\
 - Be thorough but concise in your output reports
 `;
 
-    // 5. Spawn the sub-agent via OpenClaw gateway RPC
-    const spawnResponse = await fetch(`${OPENCLAW_HTTP_BASE}/api/rpc`, {
+    // 5. Spawn the sub-agent via OpenClaw /v1/chat/completions (fire-and-forget)
+    // We use streaming mode so the request starts immediately and we don't block
+    const sessionKey = `bullpen-worker-${taskId}-${Date.now()}`;
+
+    // Fire and forget — don't await. The agent will report back via webhooks.
+    fetch(`${OPENCLAW_HTTP_BASE}/v1/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${OPENCLAW_BEARER_TOKEN}`,
       },
       body: JSON.stringify({
-        method: "sessions.spawn",
-        params: {
-          task: agentPrompt,
-          label: `bullpen-worker-${taskId}`,
-          model: template.model === "claude-opus-4-6"
-            ? "anthropic/claude-opus-4-6"
-            : template.model === "claude-sonnet-4.5"
-            ? "anthropic/claude-sonnet-4-5-20250514"
-            : undefined,
-        },
+        model: template.model === "claude-opus-4-6"
+          ? "anthropic/claude-opus-4-6"
+          : template.model === "claude-sonnet-4.5"
+          ? "anthropic/claude-sonnet-4-5-20250514"
+          : "anthropic/claude-sonnet-4-5-20250514",
+        messages: [
+          {
+            role: "system",
+            content: template.systemPrompt,
+          },
+          {
+            role: "user",
+            content: agentPrompt,
+          },
+        ],
+        stream: true,
+        user: sessionKey,
       }),
+    }).catch((err) => {
+      console.error("[Dispatch] Background spawn failed:", err);
     });
-
-    if (!spawnResponse.ok) {
-      const errText = await spawnResponse.text();
-      console.error("[Dispatch] Failed to spawn agent:", spawnResponse.status, errText);
-      return NextResponse.json(
-        { error: "Failed to spawn worker agent", details: errText },
-        { status: 502 }
-      );
-    }
-
-    const spawnResult = await spawnResponse.json();
-    const sessionKey = spawnResult?.result?.sessionKey || spawnResult?.sessionKey || `spawned-${Date.now()}`;
 
     // 6. Create worker record in Convex
     const workerId = await convex.mutation(api.workers.spawn, {
