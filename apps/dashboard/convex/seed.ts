@@ -6,7 +6,7 @@ const WORKER_TEMPLATES = [
     displayName: "Frontend Builder",
     role: "Build React/Next.js components, pages, styling",
     taskTypes: ["coding"],
-    model: "claude-sonnet-4",
+    model: "claude-sonnet-4-5",
     tools: ["exec", "browser", "web_fetch"],
     skills: ["frontend-design", "coding-agent"],
     systemPrompt: `# Frontend Builder
@@ -32,7 +32,7 @@ You are a skilled frontend engineer who builds beautiful, functional React/Next.
     displayName: "Backend Engineer",
     role: "APIs, database schemas, server logic, integrations",
     taskTypes: ["coding"],
-    model: "claude-sonnet-4",
+    model: "claude-sonnet-4-5",
     tools: ["exec", "web_fetch"],
     skills: ["convex-skill", "coding-agent"],
     systemPrompt: `# Backend Engineer
@@ -58,7 +58,7 @@ You are a pragmatic backend engineer who builds reliable, well-structured server
     displayName: "Automation Builder",
     role: "n8n workflows, integrations, webhooks, scheduled jobs",
     taskTypes: ["automation"],
-    model: "claude-sonnet-4",
+    model: "claude-sonnet-4-5",
     tools: ["exec", "web_fetch"],
     skills: ["n8n-workflow-patterns", "n8n-code-javascript", "n8n-node-configuration"],
     systemPrompt: `# Automation Builder
@@ -138,7 +138,7 @@ You are a design-focused reviewer with strong visual taste and UX instincts.
     displayName: "QA Tester",
     role: "Test built software, find bugs, verify requirements",
     taskTypes: ["review"],
-    model: "claude-sonnet-4",
+    model: "claude-sonnet-4-5",
     tools: ["exec", "browser"],
     skills: ["coding-agent"],
     systemPrompt: `# QA Tester

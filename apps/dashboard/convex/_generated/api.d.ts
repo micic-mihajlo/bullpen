@@ -14,6 +14,7 @@ import type * as cleanup from "../cleanup.js";
 import type * as clients from "../clients.js";
 import type * as deliverables from "../deliverables.js";
 import type * as events from "../events.js";
+import type * as fixModels from "../fixModels.js";
 import type * as messages from "../messages.js";
 import type * as projects from "../projects.js";
 import type * as seed from "../seed.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   clients: typeof clients;
   deliverables: typeof deliverables;
   events: typeof events;
+  fixModels: typeof fixModels;
   messages: typeof messages;
   projects: typeof projects;
   seed: typeof seed;
