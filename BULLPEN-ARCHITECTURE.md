@@ -368,6 +368,79 @@ Skills are symlinked from:
 
 ---
 
+## Orchestrator Review Process
+
+When a worker reports a step complete, the orchestrator doesn't just rubber-stamp it. The review process:
+
+1. **Receive step output** via webhook
+2. **Evaluate against step requirements:**
+   - Does the output match what the step description asked for?
+   - Is it complete or partial?
+   - Any obvious quality issues or red flags?
+   - Does it break anything from previous steps?
+3. **Decision:**
+   - **Approve** — output meets requirements, move to next step
+   - **Approve with note** — acceptable but flag something for later
+   - **Reject with guidance** — specific instructions on what to fix and how
+   - **Escalate** — flag for human review if unsure
+4. **What makes a step "done":**
+   - Worker reports completion with output evidence
+   - Orchestrator verifies output matches step requirements
+   - For coding steps: code exists, builds, no obvious errors
+   - For research steps: sources cited, claims supported
+   - For review steps: checklist items addressed
+
+## Deliverable Format
+
+Deliverables are NOT raw step outputs concatenated. They are compiled, formatted documents ready for client review.
+
+### Structure:
+```
+# Project Deliverable: [Project Name]
+
+## Executive Summary
+Brief overview of what was built, key decisions, and current status.
+
+## What Was Built
+Organized by feature/component, not by internal task structure.
+Links to live preview, repo, deployed URL where applicable.
+
+## Technical Details
+Architecture decisions, tech stack used, any notable patterns.
+
+## Testing & Quality
+What was tested, test results, known limitations.
+
+## Next Steps
+Recommendations, maintenance notes, future improvements.
+
+## Artifacts
+- Repository: [link]
+- Live preview: [link]  
+- Documentation: [link]
+```
+
+### Human Review Actions:
+- **Approve** — deliverable is sent to client as-is
+- **Approve with edits** — reviewer makes changes, then sends
+- **Request changes** — send back to orchestrator with specific feedback
+- **Add notes** — attach internal notes before sending
+
+## Agent Skills Format
+
+Skills must be loadable by OpenClaw sub-agents. Two approaches:
+
+### Approach A: Injected via task prompt (current)
+The worker's SOUL.md and relevant skill content is included in the sessions_spawn task message. Simple but limited context window.
+
+### Approach B: Workspace skills (preferred, future)
+Sub-agents are spawned with a workspace that has the skill files pre-loaded. The agent's AGENTS.md references the skills, and it reads them as needed. Requires sub-agent workspace setup.
+
+### Skill file requirements:
+- SKILL.md with clear instructions, examples, and constraints
+- Referenced tools/scripts must be accessible to the sub-agent
+- Skills should be self-contained (no dependencies on other skills)
+
 ## Open Questions
 - Do workers need persistent memory between tasks, or fresh each time?
 - Should workers be able to request help from other worker types?
