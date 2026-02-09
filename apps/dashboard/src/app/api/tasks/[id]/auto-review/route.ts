@@ -118,6 +118,42 @@ export async function POST(
             format: "markdown",
             taskId: taskId as Id<"tasks">,
           });
+
+          // Auto-dispatch next pending task in the same project
+          try {
+            const projectTasks = await convex.query(api.tasks.byProject, {
+              projectId: task.projectId as Id<"projects">,
+            });
+            const nextPending = projectTasks.find((t) => t.status === "pending");
+            if (nextPending) {
+              // Dispatch via our own API
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+              await fetch(`${baseUrl}/api/tasks/${nextPending._id}/dispatch`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+              });
+
+              await convex.mutation(api.events.create, {
+                type: "task_auto_dispatched",
+                message: `Auto-dispatched next task: "${nextPending.title}"`,
+                data: { taskId: nextPending._id, projectId: task.projectId },
+              });
+            } else {
+              // All tasks in project are done — check if project is complete
+              const allDone = projectTasks.every(
+                (t) => t._id === (taskId as Id<"tasks">) || t.status === "completed"
+              );
+              if (allDone) {
+                await convex.mutation(api.events.create, {
+                  type: "project_completed",
+                  message: `All tasks completed for project`,
+                  data: { projectId: task.projectId },
+                });
+              }
+            }
+          } catch (dispatchErr) {
+            console.error("[AutoReview] Failed to auto-dispatch next task:", dispatchErr);
+          }
         }
       }
     } else {

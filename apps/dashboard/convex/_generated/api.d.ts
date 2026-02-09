@@ -10,6 +10,7 @@
 
 import type * as agentMessages from "../agentMessages.js";
 import type * as agents from "../agents.js";
+import type * as cleanup from "../cleanup.js";
 import type * as clients from "../clients.js";
 import type * as deliverables from "../deliverables.js";
 import type * as events from "../events.js";
@@ -30,6 +31,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   agentMessages: typeof agentMessages;
   agents: typeof agents;
+  cleanup: typeof cleanup;
   clients: typeof clients;
   deliverables: typeof deliverables;
   events: typeof events;
