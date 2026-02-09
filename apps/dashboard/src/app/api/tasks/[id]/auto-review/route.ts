@@ -128,31 +128,76 @@ export async function POST(
                 data: { taskId: nextPending._id, projectId: task.projectId },
               });
             } else {
-              // All tasks done — create ONE project-level deliverable for human review
+              // All tasks done — notify orchestrator to compile final deliverable
               const allDone = projectTasks.every(
                 (t) => t._id === (taskId as Id<"tasks">) || t.status === "completed"
               );
               if (allDone) {
-                // Compile all task outputs into a single deliverable
+                // Get all task details for the deliverable
                 const allTasksWithSteps = await Promise.all(
                   projectTasks.map((t) => convex.query(api.tasks.get, { id: t._id }))
                 );
-                const content = allTasksWithSteps
+
+                // Get project details
+                const project = await convex.query(api.projects.get, {
+                  id: task.projectId as Id<"projects">,
+                });
+                const projectName = project?.name ?? "Unknown Project";
+                const projectBrief = project?.brief ?? "";
+                const projectType = project?.type ?? "general";
+
+                // Build a summary of all work done
+                const workSummary = allTasksWithSteps
                   .filter(Boolean)
                   .map((t) => {
-                    const stepOutputs = (t!.steps || [])
-                      .map((s, i) => `### Step ${i + 1}: ${s.name}\n${s.agentOutput || "Completed"}`)
-                      .join("\n\n");
-                    return `## ${t!.title}\n\n${stepOutputs}`;
+                    const outputs = (t!.steps || [])
+                      .filter((s) => s.agentOutput)
+                      .map((s) => s.agentOutput)
+                      .join("\n");
+                    return `### ${t!.title}\n${outputs || "Completed"}`;
                   })
-                  .join("\n\n---\n\n");
+                  .join("\n\n");
 
-                await convex.mutation(api.deliverables.create, {
-                  projectId: task.projectId as Id<"projects">,
-                  title: `Project Deliverable — Ready for Review`,
-                  content,
-                  format: "markdown",
-                });
+                // Notify orchestrator to compile a proper deliverable
+                const OPENCLAW_BASE = process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") || "http://localhost:18789";
+                const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
+
+                try {
+                  await fetch(`${OPENCLAW_BASE}/api/sessions/main/send`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${OPENCLAW_TOKEN}`,
+                    },
+                    body: JSON.stringify({
+                      message: `[SYSTEM: PROJECT-COMPLETE]
+All tasks for "${projectName}" are done. Compile the final deliverable.
+
+Project type: ${projectType}
+Project brief: ${projectBrief}
+
+Work completed:
+${workSummary}
+
+IMPORTANT: The deliverable must be the ACTUAL OUTPUT, not a description of what was done.
+- For code projects: reference the actual code/repo/files that were built, include deploy instructions
+- For automation projects: the workflow JSON or deploy link
+- For research projects: the actual report with findings and sources
+- For design projects: screenshots, component specs, style guide
+
+Create the deliverable via POST http://localhost:3001/api/webhooks/task-result with:
+{
+  "taskId": "${taskId}",
+  "status": "completed",
+  "result": "<the actual deliverable content>"
+}
+
+Then the project will be marked for human review.`,
+                    }),
+                  });
+                } catch (notifyErr) {
+                  console.error("[AutoReview] Failed to notify orchestrator for deliverable:", notifyErr);
+                }
 
                 // Update project status to review
                 await convex.mutation(api.projects.updateStatus, {
@@ -162,7 +207,7 @@ export async function POST(
 
                 await convex.mutation(api.events.create, {
                   type: "project_completed",
-                  message: `All tasks completed. Deliverable ready for client review.`,
+                  message: `All tasks completed for "${projectName}". Compiling deliverable.`,
                   data: { projectId: task.projectId },
                 });
               }

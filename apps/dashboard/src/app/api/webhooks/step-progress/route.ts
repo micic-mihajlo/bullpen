@@ -91,7 +91,24 @@ export async function POST(request: NextRequest) {
           Authorization: `Bearer ${OPENCLAW_TOKEN}`,
         },
         body: JSON.stringify({
-          message: `[SYSTEM: STEP-COMPLETE] Task "${task.title}" (${taskId}) — Step ${stepIndex + 1} completed. Output: ${output?.slice(0, 500) || "No output"}. Review this step and call POST http://localhost:3001/api/tasks/${taskId}/auto-review with { "stepIndex": ${stepIndex}, "decision": "approved" } if acceptable, or "rejected" with a note if not.`,
+          message: `[SYSTEM: STEP-REVIEW-NEEDED]
+Task: "${task.title}" (ID: ${taskId})
+Step ${stepIndex + 1}/${task.steps.length}: "${stepName}"
+Step Description: ${task.steps[stepIndex]?.description || "No description"}
+
+Worker Output:
+${output || "No output provided"}
+
+REVIEW THIS STEP. Evaluate whether the output:
+1. Matches what the step description asked for
+2. Is complete (not partial or placeholder)
+3. Is quality work (no obvious errors, follows best practices)
+4. Doesn't break anything from previous steps
+
+Then call: POST http://localhost:3001/api/tasks/${taskId}/auto-review
+Body: { "stepIndex": ${stepIndex}, "decision": "approved"|"rejected", "note": "your specific assessment" }
+
+If rejecting, explain WHAT is wrong and HOW to fix it. Don't rubber-stamp — actually review the work.`,
         }),
       });
     } catch (notifyErr) {
