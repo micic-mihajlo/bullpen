@@ -12,9 +12,7 @@ import { TaskDetailPanel } from "@/components/task-detail-panel";
 import { formatTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
-  Bot,
   Keyboard,
-  AlertTriangle,
   Clock,
   Code2,
   GitBranch,
@@ -22,6 +20,14 @@ import {
   Palette,
   FileCheck2,
   Zap,
+  CheckCircle,
+  Circle,
+  AlertCircle,
+  ArrowRight,
+  MessageSquare,
+  ChevronRight,
+  Eye,
+  Loader2,
 } from "lucide-react";
 
 const typeIcon: Record<string, React.ReactNode> = {
@@ -33,13 +39,20 @@ const typeIcon: Record<string, React.ReactNode> = {
   general: <Zap className="w-3.5 h-3.5" />,
 };
 
+const stepStatusIcon: Record<string, React.ReactNode> = {
+  pending: <Circle className="w-3 h-3 text-[#d4d0ca]" />,
+  in_progress: <Loader2 className="w-3 h-3 text-[#c2410c] animate-spin" />,
+  review: <Eye className="w-3 h-3 text-[#c2410c]" />,
+  approved: <CheckCircle className="w-3 h-3 text-green-600" />,
+  rejected: <AlertCircle className="w-3 h-3 text-red-500" />,
+};
+
 export default function CommandCenterPage() {
   const router = useRouter();
   const templates = useStableData(useQuery(api.workerTemplates.list));
   const tasks = useStableData(useQuery(api.tasks.withAgent));
   const projects = useStableData(useQuery(api.projects.list));
-  const pendingReview = useStableData(useQuery(api.deliverables.pendingReview));
-  const events = useStableData(useQuery(api.events.recent, { limit: 20 }));
+  const events = useStableData(useQuery(api.events.recent, { limit: 15 }));
 
   const { setShowHelp } = useShortcuts();
   const { addToast } = useToast();
@@ -56,50 +69,53 @@ export default function CommandCenterPage() {
   useRegisterShortcut("refresh", handleSync);
 
   const isLoading = !templates || !tasks || !projects;
-  const activeTasks = tasks?.filter((t) => t.status === "running" || t.status === "assigned") ?? [];
-  const stuckTasks = tasks?.filter(
-    (t) => t.status === "running" && t.startedAt && Date.now() - t.startedAt > 2 * 60 * 60 * 1000
-  ) ?? [];
-  const reviewItems = pendingReview ?? [];
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const completedToday = tasks?.filter(
-    (t) => t.status === "completed" && t.completedAt && t.completedAt >= today.getTime()
-  ).length ?? 0;
-  const totalTemplates = templates?.length ?? 0;
-  const hasWork = activeTasks.length > 0;
+  const allTasks = tasks ?? [];
+  const activeTasks = allTasks.filter((t) => t.status === "running" || t.status === "assigned");
+  const completedTasks = allTasks.filter((t) => t.status === "completed");
 
-  // Group active tasks by project
-  const tasksByProject = new Map<string, { projectName: string; tasks: typeof activeTasks }>();
-  for (const task of activeTasks) {
-    const key = task.projectId ?? "unassigned";
-    const projectName = task.projectId
-      ? projects?.find((p) => p._id === task.projectId)?.name ?? "Unknown"
-      : "Unassigned";
-    if (!tasksByProject.has(key)) tasksByProject.set(key, { projectName, tasks: [] });
-    tasksByProject.get(key)!.tasks.push(task);
+  // Steps awaiting review across all tasks
+  const reviewQueue: { task: (typeof allTasks)[0]; stepIndex: number; step: { name: string; status: string; description: string } }[] = [];
+  for (const task of allTasks) {
+    const steps = (task as Record<string, unknown>).steps as Array<{ name: string; status: string; description: string }> | undefined;
+    if (steps) {
+      steps.forEach((step, i) => {
+        if (step.status === "review") {
+          reviewQueue.push({ task, stepIndex: i, step });
+        }
+      });
+    }
   }
+
+  // Tasks grouped by status for the pipeline view
+  const pendingTasks = allTasks.filter((t) => t.status === "pending");
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const completedToday = completedTasks.filter(
+    (t) => t.completedAt && t.completedAt >= today.getTime()
+  ).length;
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#faf9f6]">
-      {/* Tight header */}
+      {/* Header */}
       <header className="flex-shrink-0 bg-white px-6 py-3 border-b border-[#e8e5de]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>
               Command Center
             </h1>
-            <div className="flex items-center gap-4 text-[12px] text-[#9c9590] border-l border-[#e8e5de] pl-4"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-              <span>{activeTasks.length} active</span>
-              <span>{completedToday} done today</span>
-              <span>{totalTemplates} workers</span>
-            </div>
+            {!isLoading && (
+              <div className="flex items-center gap-3 text-[12px] border-l border-[#e8e5de] pl-4"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                {reviewQueue.length > 0 && (
+                  <span className="text-[#c2410c] font-medium">{reviewQueue.length} awaiting review</span>
+                )}
+                <span className="text-[#9c9590]">{activeTasks.length} active</span>
+                <span className="text-[#9c9590]">{completedToday} done today</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowHelp(true)}
-              className="p-1.5 text-[#9c9590] hover:text-[#1a1a1a] rounded hover:bg-[#f0ede6]"
-            >
+            <button onClick={() => setShowHelp(true)} className="p-1.5 text-[#9c9590] hover:text-[#1a1a1a] rounded hover:bg-[#f0ede6]">
               <Keyboard className="w-4 h-4" />
             </button>
             <span className="w-2 h-2 rounded-full bg-green-500" />
@@ -107,132 +123,305 @@ export default function CommandCenterPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+
         {isLoading ? (
-          <div className="p-6 space-y-3">
+          <div className="space-y-3">
             {[1, 2, 3].map(i => <div key={i} className="h-16 bg-[#f0ede6] rounded-lg animate-shimmer" />)}
           </div>
-        ) : hasWork ? (
-          /* ═══ ACTIVE STATE: work is happening ═══ */
-          <div className="flex h-full">
-            {/* Main: task list */}
-            <div className="flex-1 overflow-y-auto border-r border-[#e8e5de]">
-              {/* Attention bar */}
-              {(stuckTasks.length > 0 || reviewItems.length > 0) && (
-                <div className="px-5 py-2.5 bg-[#c2410c]/5 border-b border-[#c2410c]/10 flex items-center gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 text-[#c2410c]" />
-                  <span className="text-[12px] font-medium text-[#c2410c]">
-                    {stuckTasks.length + reviewItems.length} item{stuckTasks.length + reviewItems.length > 1 ? "s" : ""} need attention
-                  </span>
+        ) : (
+          <>
+            {/* ═══ SECTION 1: Review Queue (primary action) ═══ */}
+            {reviewQueue.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-[#c2410c] animate-pulse" />
+                  <h2 className="text-sm font-semibold text-[#1a1a1a]">Needs Your Review</h2>
                 </div>
-              )}
-              {Array.from(tasksByProject.entries()).map(([key, group]) => (
-                <div key={key}>
-                  <div className="px-5 py-2 bg-[#f5f3ee] border-b border-[#e8e5de] sticky top-0 z-10">
-                    <span className="text-[11px] font-semibold text-[#6b6560] uppercase tracking-wider">
-                      {group.projectName}
-                    </span>
-                  </div>
-                  {group.tasks.map((task) => {
+                <div className="space-y-2">
+                  {reviewQueue.map(({ task, stepIndex, step }) => (
+                    <button
+                      key={`${task._id}-${stepIndex}`}
+                      onClick={() => setSelectedTaskId(task._id)}
+                      className="w-full bg-white border border-[#c2410c]/20 rounded-lg px-5 py-3.5 flex items-center gap-4 hover:border-[#c2410c]/40 transition-colors text-left"
+                    >
+                      <Eye className="w-4 h-4 text-[#c2410c] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] font-medium text-[#1a1a1a]">{task.title}</span>
+                          <ChevronRight className="w-3 h-3 text-[#9c9590]" />
+                          <span className="text-[13px] text-[#6b6560]">Step {stepIndex + 1}: {step.name}</span>
+                        </div>
+                        <span className="text-[11px] text-[#9c9590] mt-0.5 block">{step.description}</span>
+                      </div>
+                      <span className="text-[11px] font-medium text-[#c2410c] bg-[#c2410c]/5 px-2.5 py-1 rounded flex-shrink-0">
+                        Review
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ═══ SECTION 2: Active Workers — what's running right now ═══ */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-[#1a1a1a]">
+                  {activeTasks.length > 0 ? "Active Workers" : "Workers Standing By"}
+                </h2>
+                <button
+                  onClick={() => router.push("/agents")}
+                  className="text-[11px] text-[#c2410c] font-medium hover:underline"
+                >
+                  All templates →
+                </button>
+              </div>
+
+              {activeTasks.length > 0 ? (
+                <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
+                  {activeTasks.map((task, i) => {
+                    const steps = (task as Record<string, unknown>).steps as Array<{ name: string; status: string }> | undefined;
+                    const currentStep = (task as Record<string, unknown>).currentStep as number | undefined;
+                    const totalSteps = steps?.length ?? 0;
+                    const completedSteps = steps?.filter(s => s.status === "approved").length ?? 0;
                     const elapsed = task.startedAt ? Date.now() - task.startedAt : 0;
+
                     return (
                       <button
                         key={task._id}
                         onClick={() => setSelectedTaskId(task._id)}
-                        className="w-full px-5 py-3.5 border-b border-[#f0ede6] hover:bg-white transition-colors flex items-center gap-3 text-left"
-                      >
-                        <span className="text-[#9c9590]">{typeIcon[task.taskType ?? "general"]}</span>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[14px] font-medium text-[#1a1a1a] truncate block">{task.title}</span>
-                          <div className="flex items-center gap-3 mt-0.5 text-[11px] text-[#9c9590]"
-                            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                            {task.agent && <span>{task.agent.name}</span>}
-                            <span>{task.taskType ?? "general"}</span>
-                            {elapsed > 0 && <span>{formatElapsed(elapsed)}</span>}
-                          </div>
-                        </div>
-                        {task.status === "running" && (
-                          <span className="w-2 h-2 rounded-full bg-[#c2410c] animate-pulse flex-shrink-0" />
+                        className={cn(
+                          "w-full px-5 py-4 flex items-start gap-4 hover:bg-[#faf9f6] transition-colors text-left",
+                          i > 0 && "border-t border-[#f0ede6]"
                         )}
+                      >
+                        {/* Type icon + status */}
+                        <div className="flex flex-col items-center gap-1 pt-0.5">
+                          <span className="text-[#6b6560]">{typeIcon[task.taskType ?? "general"]}</span>
+                          {task.status === "running" && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#c2410c] animate-pulse" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          {/* Task title + agent */}
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[14px] font-medium text-[#1a1a1a] truncate">{task.title}</span>
+                            {task.agent && (
+                              <span className="text-[10px] text-[#9c9590] bg-[#f5f3ee] px-1.5 py-0.5 rounded flex-shrink-0"
+                                style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                {task.agent.name}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Step progress */}
+                          {totalSteps > 0 ? (
+                            <div className="space-y-1.5">
+                              {/* Progress bar */}
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1 bg-[#f0ede6] rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-[#c2410c] rounded-full transition-all duration-500"
+                                    style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] text-[#9c9590] flex-shrink-0"
+                                  style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                  {completedSteps}/{totalSteps}
+                                </span>
+                              </div>
+                              {/* Current step */}
+                              {currentStep !== undefined && steps && steps[currentStep] && (
+                                <div className="flex items-center gap-1.5">
+                                  {stepStatusIcon[steps[currentStep].status] ?? stepStatusIcon.pending}
+                                  <span className="text-[11px] text-[#6b6560]">
+                                    Step {currentStep + 1}: {steps[currentStep].name}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-[11px] text-[#9c9590]"
+                              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                              <span>{task.taskType ?? "general"}</span>
+                              {elapsed > 0 && (
+                                <>
+                                  <span>·</span>
+                                  <span>{formatElapsed(elapsed)}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Chat indicator */}
+                        <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
+                          <MessageSquare className="w-3.5 h-3.5 text-[#d4d0ca]" />
+                        </div>
                       </button>
                     );
                   })}
                 </div>
-              ))}
-            </div>
-
-            {/* Side: activity feed */}
-            <div className="w-72 flex-shrink-0 overflow-y-auto bg-white">
-              <div className="px-4 py-2.5 border-b border-[#e8e5de] sticky top-0 bg-white z-10">
-                <span className="text-[11px] font-semibold text-[#6b6560] uppercase tracking-wider">Activity</span>
-              </div>
-              {events?.map((event) => (
-                <div key={event._id} className="px-4 py-2 border-b border-[#f0ede6]">
-                  <p className="text-[12px] text-[#1a1a1a] leading-snug">{event.message}</p>
-                  <span className="text-[10px] text-[#9c9590]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {formatTime(event.timestamp)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          /* ═══ IDLE STATE: system ready, nothing running ═══ */
-          <div className="p-6 space-y-6">
-            {/* System status — the "readiness" view */}
-            <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#f0ede6]">
-                <span className="text-sm font-semibold text-[#1a1a1a]">System Status</span>
-              </div>
-              <div className="divide-y divide-[#f0ede6]">
-                {(templates ?? []).map((template) => (
-                  <div key={template._id} className="px-5 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#9c9590]">{typeIcon[template.taskTypes[0]] ?? <Zap className="w-3.5 h-3.5" />}</span>
-                      <div>
-                        <span className="text-[13px] font-medium text-[#1a1a1a] block">{template.displayName}</span>
-                        <span className="text-[11px] text-[#9c9590]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                          {template.model} · {template.skills.length} skills · ×{template.maxParallel}
-                        </span>
+              ) : (
+                /* Idle state — show templates as ready roster */
+                <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
+                  {(templates ?? []).map((template, i) => (
+                    <div
+                      key={template._id}
+                      className={cn(
+                        "px-5 py-3 flex items-center justify-between",
+                        i > 0 && "border-t border-[#f0ede6]"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-[#9c9590]">{typeIcon[template.taskTypes[0]] ?? <Zap className="w-3.5 h-3.5" />}</span>
+                        <div>
+                          <span className="text-[13px] font-medium text-[#1a1a1a]">{template.displayName}</span>
+                          <div className="flex items-center gap-2 text-[10px] text-[#9c9590]"
+                            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                            <span>{template.model}</span>
+                            <span>·</span>
+                            <span>{template.skills.length} skills</span>
+                            <span>·</span>
+                            <span>×{template.maxParallel}</span>
+                          </div>
+                        </div>
                       </div>
+                      <span className="text-[10px] font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded">
+                        Ready
+                      </span>
                     </div>
-                    <span className="text-[11px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded">Ready</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
-            {/* Projects overview */}
+            {/* ═══ SECTION 3: Pipeline — pending → active → done ═══ */}
+            {(pendingTasks.length > 0 || completedToday > 0) && (
+              <section>
+                <h2 className="text-sm font-semibold text-[#1a1a1a] mb-3">Pipeline</h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Pending */}
+                  <div className="bg-white border border-[#e8e5de] rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-semibold text-[#9c9590] uppercase tracking-wider">Queue</span>
+                      <span className="text-[11px] text-[#9c9590]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                        {pendingTasks.length}
+                      </span>
+                    </div>
+                    {pendingTasks.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {pendingTasks.slice(0, 4).map((task) => (
+                          <button
+                            key={task._id}
+                            onClick={() => setSelectedTaskId(task._id)}
+                            className="w-full flex items-center gap-2 text-left hover:bg-[#faf9f6] rounded px-1.5 py-1 -mx-1.5 transition-colors"
+                          >
+                            <Circle className="w-2.5 h-2.5 text-[#d4d0ca] flex-shrink-0" />
+                            <span className="text-[12px] text-[#1a1a1a] truncate">{task.title}</span>
+                          </button>
+                        ))}
+                        {pendingTasks.length > 4 && (
+                          <span className="text-[10px] text-[#9c9590] pl-5">+{pendingTasks.length - 4} more</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-[#9c9590]">Empty</span>
+                    )}
+                  </div>
+
+                  {/* Active */}
+                  <div className="bg-white border border-[#e8e5de] rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-semibold text-[#9c9590] uppercase tracking-wider">Working</span>
+                      <span className="text-[11px] text-[#c2410c]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                        {activeTasks.length}
+                      </span>
+                    </div>
+                    {activeTasks.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {activeTasks.slice(0, 4).map((task) => (
+                          <button
+                            key={task._id}
+                            onClick={() => setSelectedTaskId(task._id)}
+                            className="w-full flex items-center gap-2 text-left hover:bg-[#faf9f6] rounded px-1.5 py-1 -mx-1.5 transition-colors"
+                          >
+                            <Loader2 className="w-2.5 h-2.5 text-[#c2410c] animate-spin flex-shrink-0" />
+                            <span className="text-[12px] text-[#1a1a1a] truncate">{task.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-[#9c9590]">None</span>
+                    )}
+                  </div>
+
+                  {/* Done today */}
+                  <div className="bg-white border border-[#e8e5de] rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-semibold text-[#9c9590] uppercase tracking-wider">Done Today</span>
+                      <span className="text-[11px] text-green-600" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                        {completedToday}
+                      </span>
+                    </div>
+                    {completedToday > 0 ? (
+                      <div className="space-y-1.5">
+                        {completedTasks.filter(t => t.completedAt && t.completedAt >= today.getTime()).slice(0, 4).map((task) => (
+                          <button
+                            key={task._id}
+                            onClick={() => setSelectedTaskId(task._id)}
+                            className="w-full flex items-center gap-2 text-left hover:bg-[#faf9f6] rounded px-1.5 py-1 -mx-1.5 transition-colors"
+                          >
+                            <CheckCircle className="w-2.5 h-2.5 text-green-600 flex-shrink-0" />
+                            <span className="text-[12px] text-[#1a1a1a] truncate">{task.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-[#9c9590]">None yet</span>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* ═══ SECTION 4: Projects ═══ */}
             {projects && projects.length > 0 && (
-              <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
-                <div className="px-5 py-3 border-b border-[#f0ede6] flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#1a1a1a]">Projects</span>
-                  <button
-                    onClick={() => router.push("/projects")}
-                    className="text-[11px] text-[#c2410c] font-medium hover:underline"
-                  >
-                    View all
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-[#1a1a1a]">Projects</h2>
+                  <button onClick={() => router.push("/projects")} className="text-[11px] text-[#c2410c] font-medium hover:underline">
+                    View all →
                   </button>
                 </div>
-                <div className="divide-y divide-[#f0ede6]">
-                  {projects.slice(0, 5).map((project) => {
-                    const projectTasks = tasks?.filter((t) => t.projectId === project._id) ?? [];
+                <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
+                  {projects.slice(0, 5).map((project, i) => {
+                    const projectTasks = allTasks.filter((t) => t.projectId === project._id);
                     const done = projectTasks.filter((t) => t.status === "completed").length;
                     const total = projectTasks.length;
+                    const active = projectTasks.filter((t) => t.status === "running").length;
                     return (
                       <button
                         key={project._id}
                         onClick={() => router.push("/projects")}
-                        className="w-full px-5 py-3 flex items-center justify-between hover:bg-[#faf9f6] transition-colors text-left"
+                        className={cn(
+                          "w-full px-5 py-3 flex items-center justify-between hover:bg-[#faf9f6] transition-colors text-left",
+                          i > 0 && "border-t border-[#f0ede6]"
+                        )}
                       >
                         <div>
-                          <span className="text-[13px] font-medium text-[#1a1a1a] block">{project.name}</span>
-                          <span className="text-[11px] text-[#9c9590]">{project.status}</span>
+                          <span className="text-[13px] font-medium text-[#1a1a1a]">{project.name}</span>
+                          <div className="flex items-center gap-2 text-[10px] text-[#9c9590] mt-0.5"
+                            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                            <span>{project.status}</span>
+                            {active > 0 && <span className="text-[#c2410c]">{active} active</span>}
+                          </div>
                         </div>
                         {total > 0 && (
                           <div className="flex items-center gap-2">
-                            <div className="w-16 h-1 bg-[#f0ede6] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#c2410c] rounded-full" style={{ width: `${(done / total) * 100}%` }} />
+                            <div className="w-20 h-1 bg-[#f0ede6] rounded-full overflow-hidden">
+                              <div className="h-full bg-[#1a1a1a] rounded-full" style={{ width: `${(done / total) * 100}%` }} />
                             </div>
                             <span className="text-[10px] text-[#9c9590]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                               {done}/{total}
@@ -243,32 +432,32 @@ export default function CommandCenterPage() {
                     );
                   })}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Activity feed — full width when idle */}
-            <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden">
-              <div className="px-5 py-3 border-b border-[#f0ede6] flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#1a1a1a]">Recent Activity</span>
+            {/* ═══ SECTION 5: Activity ═══ */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-[#1a1a1a]">Activity</h2>
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                   <span className="text-[10px] text-[#9c9590]">live</span>
                 </div>
               </div>
-              <div className="divide-y divide-[#f0ede6] max-h-[320px] overflow-y-auto">
-                {events && events.length > 0 ? events.map((event) => (
-                  <div key={event._id} className="px-5 py-2.5">
-                    <p className="text-[13px] text-[#1a1a1a]">{event.message}</p>
+              <div className="bg-white border border-[#e8e5de] rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
+                {events && events.length > 0 ? events.map((event, i) => (
+                  <div key={event._id} className={cn("px-5 py-2.5", i > 0 && "border-t border-[#f0ede6]")}>
+                    <p className="text-[12px] text-[#1a1a1a]">{event.message}</p>
                     <span className="text-[10px] text-[#9c9590]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                       {formatTime(event.timestamp)}
                     </span>
                   </div>
                 )) : (
-                  <div className="p-6 text-center text-[13px] text-[#9c9590]">No activity yet</div>
+                  <div className="p-6 text-center text-[12px] text-[#9c9590]">No activity yet</div>
                 )}
               </div>
-            </div>
-          </div>
+            </section>
+          </>
         )}
       </div>
 
