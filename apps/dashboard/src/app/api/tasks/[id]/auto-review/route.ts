@@ -107,26 +107,15 @@ export async function POST(
           messageType: "decision",
         });
 
-        // Create deliverable if task has a projectId
+        // Auto-dispatch next pending task or finalize project
         if (task.projectId) {
-          await convex.mutation(api.deliverables.create, {
-            projectId: task.projectId as Id<"projects">,
-            title: `Deliverable: ${task.title}`,
-            content: task.steps
-              .map((s, i) => `## Step ${i + 1}: ${s.name}\n${s.agentOutput || "Completed"}`)
-              .join("\n\n"),
-            format: "markdown",
-            taskId: taskId as Id<"tasks">,
-          });
-
-          // Auto-dispatch next pending task in the same project
           try {
             const projectTasks = await convex.query(api.tasks.byProject, {
               projectId: task.projectId as Id<"projects">,
             });
             const nextPending = projectTasks.find((t) => t.status === "pending");
             if (nextPending) {
-              // Dispatch via our own API
+              // More tasks to do — dispatch the next one
               const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
               await fetch(`${baseUrl}/api/tasks/${nextPending._id}/dispatch`, {
                 method: "POST",
@@ -139,14 +128,41 @@ export async function POST(
                 data: { taskId: nextPending._id, projectId: task.projectId },
               });
             } else {
-              // All tasks in project are done — check if project is complete
+              // All tasks done — create ONE project-level deliverable for human review
               const allDone = projectTasks.every(
                 (t) => t._id === (taskId as Id<"tasks">) || t.status === "completed"
               );
               if (allDone) {
+                // Compile all task outputs into a single deliverable
+                const allTasksWithSteps = await Promise.all(
+                  projectTasks.map((t) => convex.query(api.tasks.get, { id: t._id }))
+                );
+                const content = allTasksWithSteps
+                  .filter(Boolean)
+                  .map((t) => {
+                    const stepOutputs = (t!.steps || [])
+                      .map((s, i) => `### Step ${i + 1}: ${s.name}\n${s.agentOutput || "Completed"}`)
+                      .join("\n\n");
+                    return `## ${t!.title}\n\n${stepOutputs}`;
+                  })
+                  .join("\n\n---\n\n");
+
+                await convex.mutation(api.deliverables.create, {
+                  projectId: task.projectId as Id<"projects">,
+                  title: `Project Deliverable — Ready for Review`,
+                  content,
+                  format: "markdown",
+                });
+
+                // Update project status to review
+                await convex.mutation(api.projects.updateStatus, {
+                  id: task.projectId as Id<"projects">,
+                  status: "review",
+                });
+
                 await convex.mutation(api.events.create, {
                   type: "project_completed",
-                  message: `All tasks completed for project`,
+                  message: `All tasks completed. Deliverable ready for client review.`,
                   data: { projectId: task.projectId },
                 });
               }
