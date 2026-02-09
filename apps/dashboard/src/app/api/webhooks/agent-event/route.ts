@@ -24,11 +24,9 @@ export async function POST(request: NextRequest) {
     // Filter out noisy events — only log meaningful ones
     const key = `${type}:${action}`;
     
-    // Skip bootstrap spam and other noise
+    // Skip bootstrap spam only — keep session_new, session_reset, gateway_startup
     const SKIP_EVENTS = new Set([
       "agent:bootstrap",
-      "command:new",    // session starts are noise unless we need them
-      "command:reset",
     ]);
 
     if (SKIP_EVENTS.has(key)) {
@@ -39,6 +37,14 @@ export async function POST(request: NextRequest) {
     let message: string;
 
     switch (key) {
+      case "command:new":
+        eventType = "session_new";
+        message = `New session${sessionKey ? ` (${sessionKey})` : ""}`;
+        break;
+      case "command:reset":
+        eventType = "session_reset";
+        message = `Session reset${sessionKey ? ` (${sessionKey})` : ""}`;
+        break;
       case "command:stop":
         eventType = "session_stop";
         message = `Session stopped${sessionKey ? ` (${sessionKey})` : ""}`;

@@ -333,8 +333,27 @@ function ProjectDetail({
   onStatusChange: (id: Id<"projects">, status: ProjectStatus) => void;
 }) {
   const project = useQuery(api.projects.withDetails, { id: projectId });
+  const { addToast } = useToast();
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
+  const [decomposing, setDecomposing] = useState(false);
+
+  const handleDecompose = async () => {
+    setDecomposing(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/decompose`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        addToast(`Created ${data.taskIds.length} tasks`, "success");
+      } else {
+        addToast(data.error || "Failed to decompose", "error");
+      }
+    } catch {
+      addToast("Failed to decompose project", "error");
+    } finally {
+      setDecomposing(false);
+    }
+  };
 
   if (!project) {
     return (
@@ -425,6 +444,18 @@ function ProjectDetail({
             <span className="text-[13px] font-semibold text-[#1a1a1a]">
               Tasks ({project.tasks?.length ?? 0})
             </span>
+            <button
+              onClick={handleDecompose}
+              disabled={decomposing}
+              className="flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded text-mc-accent hover:bg-mc-accent/10 disabled:opacity-50 transition-colors"
+            >
+              {decomposing ? (
+                <Cog className="w-3 h-3 animate-spin" />
+              ) : (
+                <Bot className="w-3 h-3" />
+              )}
+              {decomposing ? "Decomposing..." : "Decompose"}
+            </button>
           </div>
           <div className="divide-y divide-mc-border max-h-[400px] overflow-y-auto">
             {project.tasks?.length === 0 ? (

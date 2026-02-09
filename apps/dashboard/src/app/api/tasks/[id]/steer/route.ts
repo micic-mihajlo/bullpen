@@ -13,13 +13,8 @@ const OPENCLAW_BEARER_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
  * POST /api/tasks/[id]/steer
  *
  * Send a steering message to a running worker agent.
- * Used by the orchestrator to course-correct workers mid-task.
  *
- * Body:
- * {
- *   message: string,         // The steering instruction
- *   stepIndex?: number,      // Which step this relates to (optional)
- * }
+ * Body: { message: string, stepIndex?: number }
  */
 export async function POST(
   request: NextRequest,
@@ -37,7 +32,7 @@ export async function POST(
       );
     }
 
-    // Get the task
+    // 1. Get the task
     const task = await convex.query(api.tasks.get, {
       id: taskId as Id<"tasks">,
     });
@@ -45,54 +40,7 @@ export async function POST(
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    // Get the worker to find the session key
-    let sessionKey: string | null = null;
-    if (task.workerId) {
-      const workers = await convex.query(api.workers.getByTask, {
-        taskId: taskId as Id<"tasks">,
-      });
-      const activeWorker = workers.find(
-        (w) => w.status === "active" || w.status === "spawning"
-      );
-      if (activeWorker) {
-        sessionKey = activeWorker.sessionKey;
-      }
-    }
-
-    if (!sessionKey) {
-      return NextResponse.json(
-        { error: "No active worker session found for this task" },
-        { status: 400 }
-      );
-    }
-
-    // Send steering message to the worker via OpenClaw
-    const steerMessage = stepIndex !== undefined
-      ? `[ORCHESTRATOR STEERING — Step ${stepIndex + 1}]\n\n${message}`
-      : `[ORCHESTRATOR STEERING]\n\n${message}`;
-
-    const sendResponse = await fetch(
-      `${OPENCLAW_HTTP_BASE}/api/sessions/${encodeURIComponent(sessionKey)}/send`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENCLAW_BEARER_TOKEN}`,
-        },
-        body: JSON.stringify({ message: steerMessage }),
-      }
-    );
-
-    if (!sendResponse.ok) {
-      const errText = await sendResponse.text();
-      console.error("[Steer] Failed to send to worker:", sendResponse.status, errText);
-      return NextResponse.json(
-        { error: "Failed to send steering message", details: errText },
-        { status: 502 }
-      );
-    }
-
-    // Log the steering message in Convex
+    // 2. Post agent message
     await convex.mutation(api.agentMessages.send, {
       taskId: taskId as Id<"tasks">,
       fromAgent: "orchestrator",
@@ -101,19 +49,47 @@ export async function POST(
       messageType: "steering",
     });
 
-    // Log event
+    // 3. If worker has sessionKey, try to send to OpenClaw
+    let sentToWorker = false;
+    if (task.workerId) {
+      const workers = await convex.query(api.workers.getByTask, {
+        taskId: taskId as Id<"tasks">,
+      });
+      const activeWorker = workers.find(
+        (w) => w.status === "active" || w.status === "spawning"
+      );
+      if (activeWorker?.sessionKey) {
+        try {
+          const steerMessage = stepIndex !== undefined
+            ? `[ORCHESTRATOR STEERING — Step ${stepIndex + 1}]\n\n${message}`
+            : `[ORCHESTRATOR STEERING]\n\n${message}`;
+
+          await fetch(
+            `${OPENCLAW_HTTP_BASE}/api/sessions/${encodeURIComponent(activeWorker.sessionKey)}/send`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${OPENCLAW_BEARER_TOKEN}`,
+              },
+              body: JSON.stringify({ message: steerMessage }),
+            }
+          );
+          sentToWorker = true;
+        } catch (err) {
+          console.error("[Steer] Failed to send to OpenClaw:", err);
+        }
+      }
+    }
+
+    // 4. Log event
     await convex.mutation(api.events.create, {
       type: "task_steered",
       message: `Orchestrator steered "${task.title}": ${message.slice(0, 100)}`,
-      data: { taskId, sessionKey, stepIndex },
+      data: { taskId, stepIndex, sentToWorker },
     });
 
-    return NextResponse.json({
-      success: true,
-      taskId,
-      sessionKey,
-      message: "Steering message sent",
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Steer] Error:", error);
     return NextResponse.json(
