@@ -1,0 +1,107 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { X, Check } from "lucide-react";
+
+const blackBoxItems = [
+  "Pay $15K–$150K upfront, hope for the best",
+  "Wait 8–12 weeks with zero visibility",
+  "Hidden costs appear after signing",
+  "Vague updates: 'We'll get back to you'",
+  "Final invoice is always a surprise",
+];
+
+const glassBoxItems = [
+  "Fixed quotes starting at $2K. Know your cost upfront",
+  "Delivered in days, not months",
+  "Software, automations, integrations — whatever you need",
+  "Watch progress happen. No mystery, no waiting",
+  "Zero surprises. Ever.",
+];
+
+export function BlackBoxVsGlassBox() {
+  return (
+    <section className="py-28 px-4 sm:px-6 bg-bg">
+      <div className="max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text mb-4 font-bold tracking-tight">
+            Know what you're paying for
+          </h2>
+          <p className="text-xl text-text-secondary max-w-2xl mx-auto">
+            Most agencies hide costs and timelines. Bullpen shows you everything upfront.
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
+          {/* Black Box Card */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="bg-[#292524] rounded-lg p-8 border border-[#3d3d3d]"
+          >
+            <div className="mb-6">
+              <span className="inline-block px-3 py-1 bg-[#3d3d3d]/50 rounded text-xs font-mono text-[#A8A29E] uppercase tracking-wider">
+                Traditional Agency
+              </span>
+              <h3 className="font-display text-4xl text-white mt-4 font-bold tracking-tight">
+                Pay. Wait. Hope.
+              </h3>
+            </div>
+            <div className="space-y-4">
+              {blackBoxItems.map((item, i) => (
+                <div key={i} className="flex gap-3">
+                  <X className="w-5 h-5 text-[#6b6b6b] flex-shrink-0 mt-0.5" />
+                  <p className="text-[#A8A29E] leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Glass Box Card */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="bg-surface rounded-lg p-8 border-2 border-accent shadow-lg relative overflow-hidden"
+          >
+            {/* Subtle orange glow in corner */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-accent/10 rounded-full blur-3xl" />
+
+            <div className="mb-6 relative">
+              <span className="inline-block px-3 py-1 bg-accent/10 rounded text-xs font-mono text-accent uppercase tracking-wider">
+                Bullpen — The Glass Box
+              </span>
+              <h3 className="font-display text-4xl text-text mt-4 font-bold tracking-tight">
+                Watch. Know. Ship.
+              </h3>
+            </div>
+            <div className="space-y-4 relative">
+              {glassBoxItems.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + i * 0.05 }}
+                  className="flex gap-3"
+                >
+                  <Check className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                  <p className="text-text leading-relaxed">{item}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}

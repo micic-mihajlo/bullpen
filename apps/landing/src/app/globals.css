@@ -1,24 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
-/* Warm Brutalist Design System */
+/* Glass Box Design System */
 @theme {
-  /* Colors - high contrast */
-  --color-bg: #f4f1eb;
-  --color-bg-alt: #e8e4db;
-  --color-surface: #faf9f7;
-  --color-text: #0f0f0f;
-  --color-text-secondary: #3d3d3d;
-  --color-accent: #c2410c;
-  --color-accent-hover: #9a3412;
-  --color-muted: #6b6b6b;
-  --color-border: #c5c0b6;
-  --color-bull: #1a1a1a;
-  
-  /* Fonts */
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  /* Colors - Glass Box identity */
+  --color-bg: #FAF7F2;
+  --color-bg-alt: #F0EDE7;
+  --color-surface: #FFFCF9;
+  --color-text: #1C1917;
+  --color-text-secondary: #78716C;
+  --color-accent: #E85D26;
+  --color-accent-hover: #D84A1A;
+  --color-success: #2D8A4E;
+  --color-warning: #F59E0B;
+  --color-danger: #DC5F5F;
+  --color-border: rgba(28,25,23,0.08);
+  --color-muted: #A8A29E;
+
+  /* Fonts - Modern & Transparent */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-display: 'Bebas Neue', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Inter Tight', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
@@ -50,27 +52,6 @@ html {
   background-clip: text;
 }
 
-/* Grain texture overlay */
-.grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.06;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  z-index: 1000;
-  mix-blend-mode: multiply;
-}
-
-/* Dot grid background */
-.dot-grid {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.4;
-  background-image: radial-gradient(var(--color-border) 1px, transparent 1px);
-  background-size: 24px 24px;
-  z-index: -1;
-}
 
 /* Selection styling */
 ::selection {
@@ -123,85 +104,6 @@ html {
   background: var(--color-muted);
 }
 
-/* ===== Visual Designer additions ===== */
-
-/* CRT scanline overlay */
-.crt-scanlines {
-  position: relative;
-  overflow: hidden;
-}
-
-.crt-scanlines::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
-  );
-  pointer-events: none;
-  z-index: 2;
-  animation: scanline-shift 8s linear infinite;
-}
-
-.crt-scanlines::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 60%,
-    rgba(0, 0, 0, 0.08) 100%
-  );
-  pointer-events: none;
-  z-index: 2;
-}
-
-@keyframes scanline-shift {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(4px);
-  }
-}
-
-/* CRT glow effect for charge state */
-.crt-glow {
-  box-shadow:
-    0 0 15px rgba(194, 65, 12, 0.3),
-    0 0 30px rgba(194, 65, 12, 0.15),
-    inset 0 0 15px rgba(194, 65, 12, 0.05);
-}
-
-/* Terminal header bar */
-.terminal-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  background: #1a1a1a;
-  border-bottom: 2px solid #2a2a2a;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: #666;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.terminal-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1.5px solid #444;
-}
-
-.terminal-dot--red { border-color: #c2410c; background: rgba(194, 65, 12, 0.3); }
-.terminal-dot--yellow { border-color: #a16207; background: rgba(161, 98, 7, 0.3); }
-.terminal-dot--green { border-color: #15803d; background: rgba(21, 128, 61, 0.3); }
 
 /* Blinking cursor */
 @keyframes blink-cursor {
@@ -231,33 +133,6 @@ html {
   animation: pulse-glow 1s ease-in-out infinite;
 }
 
-/* Diagonal stripe pattern for CTA */
-.diagonal-stripes {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 20px,
-    rgba(194, 65, 12, 0.06) 20px,
-    rgba(194, 65, 12, 0.06) 22px
-  );
-}
-
-/* Hero section diagonal divider */
-.hero-divider {
-  position: relative;
-}
-
-.hero-divider::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: var(--color-bg);
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
-  z-index: 1;
-}
 
 /* Stats counter text shimmer */
 @keyframes text-shimmer {
@@ -283,4 +158,54 @@ html {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: text-shimmer 4s linear infinite;
+}
+
+/* Glass effect utilities */
+.glass-border {
+  position: relative;
+}
+
+.glass-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(232, 93, 38, 0.2), rgba(232, 93, 38, 0.05));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Subtle shine effect */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(30deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(30deg);
+  }
+}
+
+.glass-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shine::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shine 6s ease-in-out infinite;
+  pointer-events: none;
 }
