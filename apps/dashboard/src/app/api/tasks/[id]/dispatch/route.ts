@@ -111,6 +111,52 @@ export async function POST(
       },
     });
 
+    // 8. Spawn real work by messaging the orchestrator session
+    const OPENCLAW_BASE =
+      process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") ||
+      "http://localhost:18789";
+    const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
+
+    const stepList = (task.steps || [])
+      .map((s, i) => `${i + 1}. ${s.name}: ${s.description}`)
+      .join("\n");
+
+    const spawnMessage = `[SYSTEM: AUTO-DISPATCH]
+A task has been dispatched and needs execution. Spawn a sub-agent using sessions_spawn with these details:
+
+Task: "${task.title}"
+Task ID: ${taskId}
+Type: ${taskType}
+Worker Template: ${template.displayName}
+Model: ${template.model}
+
+Description: ${task.description || "No description provided"}
+
+Steps:
+${stepList}
+
+Instructions for the sub-agent:
+- Work through each step sequentially
+- After completing each step, report back by calling the webhook: POST http://localhost:3001/api/webhooks/step-progress with body: { "taskId": "${taskId}", "stepIndex": <n>, "status": "completed", "output": "<what you did>" }
+- Be thorough but efficient
+- Follow the worker template personality: ${template.name}
+
+After spawning, auto-review any completed steps.`;
+
+    try {
+      await fetch(`${OPENCLAW_BASE}/api/sessions/main/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENCLAW_TOKEN}`,
+        },
+        body: JSON.stringify({ message: spawnMessage }),
+      });
+    } catch (err) {
+      console.error("[Dispatch] Failed to notify orchestrator:", err);
+      // Don't fail the dispatch — worker record is created, orchestrator can pick it up
+    }
+
     return NextResponse.json({
       success: true,
       workerId,

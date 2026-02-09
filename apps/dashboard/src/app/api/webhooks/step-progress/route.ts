@@ -77,6 +77,27 @@ export async function POST(request: NextRequest) {
       data: { taskId, stepIndex, status },
     });
 
+    // 6. Notify orchestrator to auto-review this step
+    const OPENCLAW_BASE =
+      process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") ||
+      "http://localhost:18789";
+    const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
+
+    try {
+      await fetch(`${OPENCLAW_BASE}/api/sessions/main/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENCLAW_TOKEN}`,
+        },
+        body: JSON.stringify({
+          message: `[SYSTEM: STEP-COMPLETE] Task "${task.title}" (${taskId}) — Step ${stepIndex + 1} completed. Output: ${output?.slice(0, 500) || "No output"}. Review this step and call POST http://localhost:3001/api/tasks/${taskId}/auto-review with { "stepIndex": ${stepIndex}, "decision": "approved" } if acceptable, or "rejected" with a note if not.`,
+        }),
+      });
+    } catch (notifyErr) {
+      console.error("[StepProgress] Failed to notify orchestrator:", notifyErr);
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[StepProgress] Error:", err);

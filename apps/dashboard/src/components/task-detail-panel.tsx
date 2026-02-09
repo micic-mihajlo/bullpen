@@ -279,57 +279,23 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
                           </div>
                         )}
 
-                        {/* Review actions for steps in review status */}
+                        {/* Step status indicators */}
                         {step.status === "review" && (
-                          <div className="mt-2">
-                            {showRejectInput === i ? (
-                              <div className="flex gap-1.5">
-                                <input
-                                  type="text"
-                                  value={rejectNote}
-                                  onChange={(e) => setRejectNote(e.target.value)}
-                                  placeholder="Rejection reason..."
-                                  className="flex-1 text-[11px] border border-[#e8e5de] rounded px-2 py-1 focus:outline-none focus:border-[#c2410c]/40"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => handleReview(i, "rejected", rejectNote)}
-                                  disabled={reviewingStep === i}
-                                  className="text-[10px] px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
-                                >
-                                  Reject
-                                </button>
-                                <button
-                                  onClick={() => { setShowRejectInput(null); setRejectNote(""); }}
-                                  className="text-[10px] px-2 py-1 text-[#9c9590] hover:text-[#1a1a1a]"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleReview(i, "approved")}
-                                  disabled={reviewingStep === i}
-                                  className="flex items-center gap-1 text-[10px] px-2.5 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 font-medium"
-                                >
-                                  {reviewingStep === i ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <CheckCircle2 className="w-3 h-3" />
-                                  )}
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => setShowRejectInput(i)}
-                                  disabled={reviewingStep === i}
-                                  className="flex items-center gap-1 text-[10px] px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 disabled:opacity-50 font-medium"
-                                >
-                                  <XCircle className="w-3 h-3" />
-                                  Reject
-                                </button>
-                              </div>
-                            )}
+                          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-600">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span className="font-medium">Orchestrator reviewing...</span>
+                          </div>
+                        )}
+                        {step.status === "approved" && !step.reviewNote && (
+                          <div className="mt-1.5 flex items-center gap-1 text-[11px] text-green-600">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Auto-reviewed by orchestrator</span>
+                          </div>
+                        )}
+                        {step.status === "rejected" && !step.reviewNote && (
+                          <div className="mt-1.5 flex items-center gap-1 text-[11px] text-red-500">
+                            <XCircle className="w-3 h-3" />
+                            <span>Rejected — awaiting redo</span>
                           </div>
                         )}
                       </div>
@@ -337,6 +303,67 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Final deliverable review — human approval for completed tasks */}
+          {task.status === "completed" && task.steps && task.steps.length > 0 &&
+            task.steps.every((s) => s.status === "approved") && (
+            <div className="px-5 py-4 border-b border-[#f0ede6] bg-green-50/30">
+              <h3 className="text-[11px] font-semibold text-green-700 uppercase tracking-wider mb-2">
+                Deliverable Review
+              </h3>
+              <p className="text-[12px] text-[#6b6560] mb-3">
+                All steps completed and auto-reviewed. Ready for client approval.
+              </p>
+              {showRejectInput === -1 ? (
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={rejectNote}
+                    onChange={(e) => setRejectNote(e.target.value)}
+                    placeholder="What changes are needed..."
+                    className="flex-1 text-[11px] border border-[#e8e5de] rounded px-2 py-1 focus:outline-none focus:border-[#c2410c]/40"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => handleReview(task.steps!.length - 1, "rejected", rejectNote)}
+                    disabled={reviewingStep !== null}
+                    className="text-[10px] px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                  >
+                    Send
+                  </button>
+                  <button
+                    onClick={() => { setShowRejectInput(null); setRejectNote(""); }}
+                    className="text-[10px] px-2 py-1 text-[#9c9590] hover:text-[#1a1a1a]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleReview(task.steps!.length - 1, "approved", "Client approved")}
+                    disabled={reviewingStep !== null}
+                    className="flex items-center gap-1 text-[10px] px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 font-medium"
+                  >
+                    {reviewingStep !== null ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3 h-3" />
+                    )}
+                    Approve for Client
+                  </button>
+                  <button
+                    onClick={() => setShowRejectInput(-1)}
+                    disabled={reviewingStep !== null}
+                    className="flex items-center gap-1 text-[10px] px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 disabled:opacity-50 font-medium"
+                  >
+                    <XCircle className="w-3 h-3" />
+                    Request Changes
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
