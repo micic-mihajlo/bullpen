@@ -203,14 +203,16 @@ export async function POST(
     // 3. Get task definitions based on project type
     const taskDefs = getTasksForType(project.type);
 
-    // 4. Create each task in Convex
+    // 4. Create each task in Convex with sequential priority
     const taskIds: string[] = [];
-    for (const def of taskDefs) {
+    for (let i = 0; i < taskDefs.length; i++) {
+      const def = taskDefs[i];
       const taskId = await convex.mutation(api.tasks.create, {
         title: def.title,
         projectId: projectId as Id<"projects">,
         taskType: def.taskType,
         steps: def.steps,
+        priority: i + 1, // sequential order: 1, 2, 3...
       });
       taskIds.push(taskId);
     }

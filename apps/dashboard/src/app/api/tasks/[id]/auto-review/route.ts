@@ -113,7 +113,9 @@ export async function POST(
             const projectTasks = await convex.query(api.tasks.byProject, {
               projectId: task.projectId as Id<"projects">,
             });
-            const nextPending = projectTasks.find((t) => t.status === "pending");
+            const nextPending = projectTasks
+              .filter((t) => t.status === "pending")
+              .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))[0];
             if (nextPending) {
               // More tasks to do — dispatch the next one
               const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
