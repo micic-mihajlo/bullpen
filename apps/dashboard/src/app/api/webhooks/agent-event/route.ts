@@ -21,25 +21,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Filter out noisy events — only log meaningful ones
+    const key = `${type}:${action}`;
+    
+    // Skip bootstrap spam and other noise
+    const SKIP_EVENTS = new Set([
+      "agent:bootstrap",
+      "command:new",    // session starts are noise unless we need them
+      "command:reset",
+    ]);
+
+    if (SKIP_EVENTS.has(key)) {
+      return NextResponse.json({ success: true, skipped: true, reason: "filtered" });
+    }
+
     let eventType: string;
     let message: string;
 
-    switch (`${type}:${action}`) {
-      case "command:new":
-        eventType = "session_new";
-        message = "Started new session";
-        break;
-      case "command:reset":
-        eventType = "session_reset";
-        message = "Reset session context";
-        break;
+    switch (key) {
       case "command:stop":
         eventType = "session_stop";
-        message = "Stopped session";
-        break;
-      case "agent:bootstrap":
-        eventType = "agent_bootstrap";
-        message = "Agent bootstrapped";
+        message = `Session stopped${sessionKey ? ` (${sessionKey})` : ""}`;
         break;
       case "gateway:startup":
         eventType = "gateway_startup";
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
         break;
       default:
         eventType = `${type}_${action}`;
-        message = `${type}:${action}`;
+        message = `${type}:${action}${sessionKey ? ` (${sessionKey})` : ""}`;
     }
 
     await convex.mutation(api.events.create, {

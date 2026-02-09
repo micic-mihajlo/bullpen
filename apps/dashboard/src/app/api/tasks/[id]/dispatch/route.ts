@@ -1,73 +1,239 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOpenClawClient } from "@/lib/openclaw";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// POST /api/tasks/[id]/dispatch - Dispatch task via OpenClaw
+const OPENCLAW_HTTP_BASE =
+  process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") || "http://localhost:18789";
+const OPENCLAW_BEARER_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
+const DASHBOARD_URL = process.env.NEXT_PUBLIC_DASHBOARD_URL || "http://localhost:3001";
+
+/**
+ * POST /api/tasks/[id]/dispatch
+ *
+ * The orchestration endpoint. This:
+ * 1. Reads the task and its project context
+ * 2. Finds the right worker template based on taskType
+ * 3. Spawns a real OpenClaw sub-agent via sessions_spawn
+ * 4. Creates a worker record in Convex
+ * 5. Updates the task status to "running"
+ *
+ * The spawned agent receives:
+ * - Task description and steps
+ * - Worker SOUL (from template systemPrompt)
+ * - Instructions to report progress via webhooks
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const taskId = id as Id<"tasks">;
+    const { id: taskId } = await params;
 
-    const task = await convex.query(api.tasks.get, { id: taskId });
+    // 1. Get the task
+    const task = await convex.query(api.tasks.get, {
+      id: taskId as Id<"tasks">,
+    });
     if (!task) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
+    if (task.status !== "pending" && task.status !== "assigned") {
+      return NextResponse.json(
+        { error: `Task is already ${task.status}` },
+        { status: 400 }
+      );
+    }
 
-    // Connect to OpenClaw
-    const client = getOpenClawClient();
-    if (!client.isConnected()) {
-      try {
-        await client.connect();
-      } catch (error) {
-        console.error("[API] Failed to connect to OpenClaw:", error);
-        return NextResponse.json(
-          { error: "Failed to connect to OpenClaw Gateway" },
-          { status: 503 }
-        );
+    // 2. Get project context if available
+    let projectContext = "";
+    if (task.projectId) {
+      const project = await convex.query(api.projects.get, {
+        id: task.projectId,
+      });
+      if (project) {
+        projectContext = `Project: ${project.name}\nBrief: ${project.brief || "No brief provided"}\nType: ${project.type}`;
       }
     }
 
-    const webhookUrl = process.env.BULLPEN_WEBHOOK_URL || "http://localhost:3001/api/webhooks/task-result";
+    // 3. Find the right worker template
+    const templates = await convex.query(api.workerTemplates.list);
+    const taskType = task.taskType || "general";
 
-    const taskPrompt = `## Task: ${task.title}
-${task.description ? `\n${task.description}\n` : ""}
-Task ID: ${taskId}
+    let template = templates.find((t) =>
+      t.taskTypes.includes(taskType)
+    );
+    // Fallback to first active template if no match
+    if (!template && templates.length > 0) {
+      template = templates[0];
+    }
+    if (!template) {
+      return NextResponse.json(
+        { error: "No worker template found for this task type" },
+        { status: 400 }
+      );
+    }
 
-## Instructions
-1. Complete this task thoroughly
-2. When done, report your result via the webhook below
+    // 4. Build the task prompt for the spawned agent
+    const stepsText = task.steps
+      ? task.steps
+          .map(
+            (s: { name: string; description: string }, i: number) =>
+              `  Step ${i + 1}: ${s.name} — ${s.description}`
+          )
+          .join("\n")
+      : "  No steps defined — work through the task and report your approach.";
 
-## Reporting Results
+    const webhookUrl = `${DASHBOARD_URL}/api/webhooks/step-update`;
+    const resultUrl = `${DASHBOARD_URL}/api/webhooks/task-result`;
+
+    const agentPrompt = `${template.systemPrompt}
+
+---
+
+## Your Task
+
+**Task ID:** ${taskId}
+**Title:** ${task.title}
+**Type:** ${taskType}
+**Description:** ${task.description || "No description provided"}
+
+${projectContext ? `## Project Context\n${projectContext}\n` : ""}
+
+## Steps
+${stepsText}
+
+## Reporting
+
+After completing each step, report your progress by calling this webhook:
+
 \`\`\`bash
-curl -X POST ${webhookUrl} \\
+curl -X POST "${webhookUrl}" \\
   -H "Content-Type: application/json" \\
-  -d '{"taskId": "${taskId}", "status": "completed", "result": "YOUR_RESULT_HERE"}'
+  -d '{
+    "taskId": "${taskId}",
+    "stepIndex": <STEP_NUMBER_0_INDEXED>,
+    "status": "review",
+    "output": "<WHAT_YOU_DID_AND_PRODUCED>"
+  }'
 \`\`\`
 
-Begin working on this task now.`;
+When the entire task is complete:
 
-    // Update task status to running
-    await convex.mutation(api.tasks.start, { id: taskId });
+\`\`\`bash
+curl -X POST "${resultUrl}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "taskId": "${taskId}",
+    "status": "completed",
+    "result": "<FINAL_DELIVERABLE_SUMMARY>",
+    "agentName": "${template.displayName}"
+  }'
+\`\`\`
 
+If you encounter a blocking issue:
+
+\`\`\`bash
+curl -X POST "${webhookUrl}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "taskId": "${taskId}",
+    "stepIndex": <CURRENT_STEP>,
+    "status": "question",
+    "output": "<WHAT_YOU_NEED_HELP_WITH>"
+  }'
+\`\`\`
+
+## Rules
+- Work through steps in order
+- Report after EACH step — do not skip reporting
+- Wait for review before proceeding to the next step if instructed
+- If something is unclear, ask via the question webhook — don't guess
+- Be thorough but concise in your output reports
+`;
+
+    // 5. Spawn the sub-agent via OpenClaw gateway RPC
+    const spawnResponse = await fetch(`${OPENCLAW_HTTP_BASE}/api/rpc`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENCLAW_BEARER_TOKEN}`,
+      },
+      body: JSON.stringify({
+        method: "sessions.spawn",
+        params: {
+          task: agentPrompt,
+          label: `bullpen-worker-${taskId}`,
+          model: template.model === "claude-opus-4-6"
+            ? "anthropic/claude-opus-4-6"
+            : template.model === "claude-sonnet-4.5"
+            ? "anthropic/claude-sonnet-4-5-20250514"
+            : undefined,
+        },
+      }),
+    });
+
+    if (!spawnResponse.ok) {
+      const errText = await spawnResponse.text();
+      console.error("[Dispatch] Failed to spawn agent:", spawnResponse.status, errText);
+      return NextResponse.json(
+        { error: "Failed to spawn worker agent", details: errText },
+        { status: 502 }
+      );
+    }
+
+    const spawnResult = await spawnResponse.json();
+    const sessionKey = spawnResult?.result?.sessionKey || spawnResult?.sessionKey || `spawned-${Date.now()}`;
+
+    // 6. Create worker record in Convex
+    const workerId = await convex.mutation(api.workers.spawn, {
+      templateId: template._id,
+      taskId: taskId as Id<"tasks">,
+      sessionKey,
+      model: template.model,
+    });
+
+    // 7. Update task status
+    await convex.mutation(api.taskExecution.dispatchTask, {
+      taskId: taskId as Id<"tasks">,
+    });
+
+    // Link workerId to task
+    // (workers.spawn already does this via patch)
+
+    // 8. Log the dispatch event
     await convex.mutation(api.events.create, {
       type: "task_dispatched",
-      message: `Dispatched task "${task.title}"`,
-      data: { taskId },
+      message: `Dispatched "${task.title}" → ${template.displayName}`,
+      data: {
+        taskId,
+        templateName: template.name,
+        workerId,
+        sessionKey,
+        model: template.model,
+      },
+    });
+
+    // 9. Post initial agent message
+    await convex.mutation(api.agentMessages.send, {
+      taskId: taskId as Id<"tasks">,
+      fromAgent: "orchestrator",
+      toAgent: template.displayName,
+      message: `Task dispatched to ${template.displayName}. Worker spawned with model ${template.model}.`,
+      messageType: "handoff",
     });
 
     return NextResponse.json({
       success: true,
-      message: `Task dispatched`,
+      taskId,
+      workerId,
+      sessionKey,
+      template: template.name,
+      model: template.model,
     });
   } catch (error) {
-    console.error("[API] Failed to dispatch task:", error);
+    console.error("[Dispatch] Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
