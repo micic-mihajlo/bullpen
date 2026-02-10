@@ -49,10 +49,11 @@ const statusConfig: Record<ProjectStatus, { label: string; color: string; bg: st
 };
 
 const typeEmoji: Record<string, string> = {
-  research: "🔍",
   code: "💻",
-  content: "📝",
+  automation: "⚡",
+  research: "🔍",
   design: "🎨",
+  content: "📝",
 };
 
 export default function ProjectsPage() {
@@ -67,7 +68,7 @@ export default function ProjectsPage() {
   const [selectedId, setSelectedId] = useState<Id<"projects"> | null>(null);
 
   const [formName, setFormName] = useState("");
-  const [formType, setFormType] = useState("research");
+  const [formType, setFormType] = useState("code");
   const [formBrief, setFormBrief] = useState("");
   const [formClientId, setFormClientId] = useState("");
   const [formDeadline, setFormDeadline] = useState("");
@@ -105,7 +106,7 @@ export default function ProjectsPage() {
 
   const resetForm = () => {
     setFormName("");
-    setFormType("research");
+    setFormType("code");
     setFormBrief("");
     setFormClientId("");
     setFormDeadline("");
@@ -273,10 +274,11 @@ export default function ProjectsPage() {
                 onChange={(e) => setFormType(e.target.value)}
                 className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
               >
-                <option value="research">Research</option>
                 <option value="code">Code</option>
-                <option value="content">Content</option>
+                <option value="automation">Automation</option>
+                <option value="research">Research</option>
                 <option value="design">Design</option>
+                <option value="content">Content</option>
               </select>
             </div>
             <div>
