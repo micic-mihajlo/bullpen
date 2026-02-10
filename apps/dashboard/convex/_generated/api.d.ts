@@ -13,6 +13,7 @@ import type * as agents from "../agents.js";
 import type * as cleanup from "../cleanup.js";
 import type * as clients from "../clients.js";
 import type * as deliverables from "../deliverables.js";
+import type * as demoSeed from "../demoSeed.js";
 import type * as events from "../events.js";
 import type * as fixModels from "../fixModels.js";
 import type * as messages from "../messages.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   cleanup: typeof cleanup;
   clients: typeof clients;
   deliverables: typeof deliverables;
+  demoSeed: typeof demoSeed;
   events: typeof events;
   fixModels: typeof fixModels;
   messages: typeof messages;
