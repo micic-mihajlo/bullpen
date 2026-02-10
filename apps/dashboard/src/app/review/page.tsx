@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -11,6 +11,8 @@ import { EmptyState } from "@/components/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/toast";
+import { MarkdownViewer } from "@/components/markdown-viewer";
+import { WorkflowViewer } from "@/components/workflow-viewer";
 import {
   FileCheck2,
   CheckCircle2,
@@ -18,6 +20,7 @@ import {
   Eye,
   FileText,
   Code2,
+  Download,
   GitBranch,
   Workflow,
   ExternalLink,
@@ -56,6 +59,8 @@ export default function ReviewPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [filter, setFilter] = useState<"review" | "approved" | "all">("review");
+  const [fileContents, setFileContents] = useState<Record<string, { content: string; extension: string } | null>>({});
+  const [loadingFiles, setLoadingFiles] = useState<Record<string, boolean>>({});
 
   const filtered = allDeliverables?.filter((d) => {
     if (filter === "all") return true;
@@ -66,6 +71,36 @@ export default function ReviewPage() {
   const approvedCount = allDeliverables?.filter((d) => d.status === "approved").length ?? 0;
 
   const selectedDeliverable = allDeliverables?.find((d) => d._id === selectedId);
+
+  // Load file contents when a deliverable is selected
+  const loadFileContent = useCallback(async (filePath: string) => {
+    if (fileContents[filePath] || loadingFiles[filePath]) return;
+    setLoadingFiles((prev) => ({ ...prev, [filePath]: true }));
+    try {
+      const resp = await fetch(`/api/files/read?path=${encodeURIComponent(filePath)}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setFileContents((prev) => ({ ...prev, [filePath]: { content: data.content, extension: data.extension } }));
+      } else {
+        setFileContents((prev) => ({ ...prev, [filePath]: null }));
+      }
+    } catch {
+      setFileContents((prev) => ({ ...prev, [filePath]: null }));
+    } finally {
+      setLoadingFiles((prev) => ({ ...prev, [filePath]: false }));
+    }
+  }, [fileContents, loadingFiles]);
+
+  useEffect(() => {
+    if (!selectedDeliverable) return;
+    const files = selectedDeliverable.artifactFiles || [];
+    for (const f of files) {
+      const file = f as { path?: string };
+      if (file.path && file.path.startsWith("/home/mihbot/")) {
+        loadFileContent(file.path);
+      }
+    }
+  }, [selectedId, selectedDeliverable, loadFileContent]);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -265,6 +300,17 @@ export default function ReviewPage() {
                     Mark Delivered
                   </button>
                 )}
+                {/* Download button */}
+                {selectedDeliverable.artifactFiles && selectedDeliverable.artifactFiles.length > 0 && (
+                  <a
+                    href={`/api/files/download?deliverableId=${selectedDeliverable._id}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#1a1a1a] text-white rounded-lg hover:bg-[#333] transition-colors font-medium"
+                    download
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download
+                  </a>
+                )}
                 <button
                   onClick={() => setSelectedId(null)}
                   className="p-1.5 text-[#9c9590] hover:text-[#1a1a1a] hover:bg-[#f0ede6] rounded transition-colors text-lg"
@@ -314,7 +360,7 @@ export default function ReviewPage() {
                       </div>
                     )}
 
-                    {/* Files */}
+                    {/* Files list */}
                     {selectedDeliverable.artifactFiles && selectedDeliverable.artifactFiles.length > 0 && (
                       <div>
                         <span className="text-xs text-[#9c9590] block mb-1.5">Files</span>
@@ -337,6 +383,58 @@ export default function ReviewPage() {
                   </div>
                 </div>
               )}
+
+              {/* Inline file viewers */}
+              {selectedDeliverable.artifactFiles && selectedDeliverable.artifactFiles.map((f: { name: string; url?: string; path?: string; type: string }, i: number) => {
+                const filePath = f.path;
+                if (!filePath || !filePath.startsWith("/home/mihbot/")) return null;
+                
+                const fileData = fileContents[filePath];
+                const isLoading = loadingFiles[filePath];
+
+                if (isLoading) {
+                  return (
+                    <div key={i} className="border border-[#e8e5de] rounded-lg p-6">
+                      <div className="flex items-center gap-2 text-[#9c9590] text-sm">
+                        <div className="w-4 h-4 border-2 border-[#e8e5de] border-t-[#c2410c] rounded-full animate-spin" />
+                        Loading {f.name}...
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (!fileData) return null;
+
+                return (
+                  <div key={i} className="border border-[#e8e5de] rounded-lg overflow-hidden">
+                    <div className="px-4 py-2.5 bg-[#faf9f6] border-b border-[#e8e5de] flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-[#9c9590]" />
+                        <span className="text-xs font-semibold text-[#1a1a1a]">{f.name}</span>
+                        <span className="text-[10px] text-[#9c9590]">{f.type}</span>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(fileData.content, `file-${i}`)}
+                        className="text-[10px] text-[#9c9590] hover:text-[#1a1a1a] flex items-center gap-1 transition-colors"
+                      >
+                        {copiedField === `file-${i}` ? <ClipboardCheck className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        {copiedField === `file-${i}` ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    <div className="p-4 max-h-[600px] overflow-y-auto">
+                      {f.type === "json" ? (
+                        <WorkflowViewer content={fileData.content} />
+                      ) : f.type === "md" || fileData.extension === "md" ? (
+                        <MarkdownViewer content={fileData.content} />
+                      ) : (
+                        <pre className="text-sm text-[#3a3530] font-mono whitespace-pre-wrap break-words">
+                          {fileData.content}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
 
               {/* Setup Instructions */}
               {selectedDeliverable.setupInstructions && (
