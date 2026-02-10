@@ -224,6 +224,20 @@ export async function POST(
       data: { projectId, taskCount: taskIds.length },
     });
 
+    // 6. Auto-dispatch the first task
+    if (taskIds.length > 0) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+        await fetch(`${baseUrl}/api/tasks/${taskIds[0]}/dispatch`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (dispatchErr) {
+        console.error("[Decompose] Auto-dispatch failed:", dispatchErr);
+        // Non-fatal — tasks are created, dispatch can be retried
+      }
+    }
+
     return NextResponse.json({ success: true, taskIds });
   } catch (error) {
     console.error("[Decompose] Error:", error);
