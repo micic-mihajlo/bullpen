@@ -21,17 +21,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Filter out noisy events — only log meaningful ones
-    const key = `${type}:${action}`;
-    
-    // Skip bootstrap spam only — keep session_new, session_reset, gateway_startup
-    const SKIP_EVENTS = new Set([
-      "agent:bootstrap",
-    ]);
-
-    if (SKIP_EVENTS.has(key)) {
-      return NextResponse.json({ success: true, skipped: true, reason: "filtered" });
-    }
+    // Filter out ALL noisy agent lifecycle events during demo
+    // These cause convex real-time re-renders which refresh the page
+    return NextResponse.json({ success: true, skipped: true, reason: "agent events disabled for stability" });
 
     let eventType: string;
     let message: string;
