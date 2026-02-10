@@ -111,50 +111,70 @@ export async function POST(
       },
     });
 
-    // 8. Spawn real work by messaging the orchestrator session
+    // 8. Spawn a real sub-agent directly via OpenClaw gateway
+    //    This bypasses the orchestrator — no waiting for me to be available.
     const OPENCLAW_BASE =
       process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") ||
       "http://localhost:18789";
     const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
 
     const stepList = (task.steps || [])
-      .map((s, i) => `${i + 1}. ${s.name}: ${s.description}`)
+      .map((s, i) => `${i}. ${s.name}: ${s.description}`)
       .join("\n");
 
-    const spawnMessage = `[SYSTEM: AUTO-DISPATCH]
-A task has been dispatched and needs execution. Spawn a sub-agent using sessions_spawn with these details:
+    // Get project info for context
+    let projectBrief = "";
+    if (task.projectId) {
+      try {
+        const project = await convex.query(api.projects.get, {
+          id: task.projectId as Id<"projects">,
+        });
+        projectBrief = project?.brief || "";
+      } catch {
+        // non-fatal
+      }
+    }
 
-Task: "${task.title}"
-Task ID: ${taskId}
-Type: ${taskType}
-Worker Template: ${template.displayName}
-Model: ${template.model}
+    const agentTask = `You are a ${template.displayName} working on: "${task.title}"
 
-Description: ${task.description || "No description provided"}
+Project context: ${projectBrief || "No additional context"}
+
+Your job: Complete each step below sequentially. After completing EACH step, you MUST report progress by running:
+
+curl -s -X POST http://localhost:3001/api/webhooks/step-progress -H "Content-Type: application/json" -d '{"taskId":"${taskId}","stepIndex":STEP_INDEX,"status":"completed","output":"DESCRIPTION_OF_WHAT_YOU_DID","workerName":"${template.displayName}"}'
+
+Replace STEP_INDEX with the 0-based step number and DESCRIPTION_OF_WHAT_YOU_DID with a concise summary of your output.
 
 Steps:
 ${stepList}
 
-Instructions for the sub-agent:
-- Work through each step sequentially
-- After completing each step, report back by calling the webhook: POST http://localhost:3001/api/webhooks/step-progress with body: { "taskId": "${taskId}", "stepIndex": <n>, "status": "completed", "output": "<what you did>" }
+Guidelines:
 - Be thorough but efficient
-- Follow the worker template personality: ${template.name}
-
-After spawning, auto-review any completed steps.`;
+- Produce real, usable output (actual code, actual files, actual research)
+- Write deliverable artifacts to /home/mihbot/ (repos, reports, workflows)
+- Report each step completion via the webhook above — this is critical for tracking`;
 
     try {
-      await fetch(`${OPENCLAW_BASE}/api/sessions/main/send`, {
+      // Direct spawn via gateway RPC — no orchestrator middleman
+      const spawnResp = await fetch(`${OPENCLAW_BASE}/api/sessions/main/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENCLAW_TOKEN}`,
         },
-        body: JSON.stringify({ message: spawnMessage }),
+        body: JSON.stringify({
+          message: `[SYSTEM: SPAWN-AGENT-NOW] Immediately spawn a sub-agent for this task. Do not wait or ask — just call sessions_spawn right now.
+
+sessions_spawn task: ${JSON.stringify(agentTask)}
+sessions_spawn label: worker-${taskId.slice(-8)}`,
+        }),
       });
+
+      if (!spawnResp.ok) {
+        console.error("[Dispatch] Gateway spawn failed:", spawnResp.status);
+      }
     } catch (err) {
-      console.error("[Dispatch] Failed to notify orchestrator:", err);
-      // Don't fail the dispatch — worker record is created, orchestrator can pick it up
+      console.error("[Dispatch] Failed to spawn agent:", err);
     }
 
     return NextResponse.json({
