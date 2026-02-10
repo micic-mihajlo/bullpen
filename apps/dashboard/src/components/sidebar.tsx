@@ -10,6 +10,7 @@ import {
   Command,
   FolderKanban,
   Wrench,
+  FileCheck2,
   PanelLeftClose,
   PanelLeft,
 } from "lucide-react";
@@ -29,14 +30,17 @@ export function Sidebar() {
 
   const tasks = useStableData(useQuery(api.tasks.list));
   const templates = useStableData(useQuery(api.workerTemplates.list));
+  const deliverables = useStableData(useQuery(api.deliverables.list));
 
   const runningTasks = tasks?.filter((t) => t.status === "running").length ?? 0;
   const templateCount = templates?.length ?? 0;
+  const reviewCount = deliverables?.filter((d) => d.status === "review").length ?? 0;
 
   const navItems: NavItem[] = [
     { label: "Command Center", href: "/", icon: <Command className="w-4 h-4" />, badge: runningTasks || undefined, shortcut: "1" },
     { label: "Projects", href: "/projects", icon: <FolderKanban className="w-4 h-4" />, shortcut: "2" },
     { label: "Workers", href: "/agents", icon: <Wrench className="w-4 h-4" />, badge: templateCount || undefined, shortcut: "3" },
+    { label: "Deliverables", href: "/review", icon: <FileCheck2 className="w-4 h-4" />, badge: reviewCount || undefined, shortcut: "4" },
   ];
 
   const isActive = (href: string) => {
