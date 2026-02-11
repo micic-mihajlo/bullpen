@@ -5,10 +5,8 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "Process" },
+  { href: "#how-it-works", label: "How it works" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
 ];
 
 const overlayVariants = {
@@ -41,19 +39,18 @@ export function Navbar() {
           {/* Logo */}
           <a
             href="#"
-            className="flex min-h-[44px] items-center gap-2 transition-opacity duration-300 hover:opacity-80"
+            className="flex min-h-[44px] items-center transition-opacity duration-300 hover:opacity-80"
           >
-            <span className="text-xl">🐂</span>
-            <span className="font-display text-xl text-text uppercase tracking-tight">Bullpen</span>
+            <span className="font-display text-2xl text-text lowercase">bullpen</span>
           </a>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-9">
+          <div className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="relative py-2 font-mono text-xs text-text-secondary uppercase tracking-wider transition-colors duration-300 hover:text-accent after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-accent after:transition-[width] after:duration-300 hover:after:w-full"
+                className="py-2 font-sans text-sm text-text uppercase tracking-wide transition-colors duration-300 hover:text-accent"
               >
                 {link.label}
               </a>
@@ -64,7 +61,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center">
             <a
               href="#get-started"
-              className="inline-flex items-center min-h-[44px] px-5 py-2 bg-text text-bg font-mono text-xs uppercase tracking-wider transition-all duration-300 hover:bg-accent hover:-translate-y-0.5"
+              className="inline-flex items-center min-h-[44px] px-6 py-3 bg-text text-bg font-sans text-sm uppercase tracking-wide transition-all duration-300 hover:bg-accent"
             >
               Start Project
             </a>
@@ -125,9 +122,6 @@ export function Navbar() {
                 >
                   Start Project
                 </a>
-                <p className="font-mono text-[10px] text-muted uppercase tracking-[0.2em] text-center mt-6">
-                  Your AI Workforce
-                </p>
               </motion.div>
             </div>
           </motion.div>

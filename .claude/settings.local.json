@@ -5,11 +5,14 @@
       "WebFetch(domain:www.convex.dev)",
       "WebFetch(domain:stack.convex.dev)",
       "Bash(ls:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["convex"]
+  "enabledMcpjsonServers": [
+    "convex"
+  ]
 }

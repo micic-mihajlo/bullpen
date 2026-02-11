@@ -164,12 +164,12 @@ export function AsciiBull() {
           x: { duration: 0.15, repeat: phase === "rush" ? Infinity : 0 },
           opacity: { duration: 0.6 },
         }}
-        className={`font-mono text-sm sm:text-base md:text-lg leading-tight whitespace-pre transition-colors duration-100 ${
+        className={`font-mono text-base sm:text-lg md:text-xl lg:text-2xl leading-tight whitespace-pre transition-colors duration-100 ${
           phase === "rush"
             ? "text-accent"
             : phase === "windup"
               ? "text-accent/70"
-              : "text-bull"
+              : "text-text/60"
         }`}
       >
         {frames[currentFrame]}

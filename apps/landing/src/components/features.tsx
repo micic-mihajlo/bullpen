@@ -1,43 +1,43 @@
 "use client";
 
-import { Brain, Code, Search, Palette, Zap, Shield } from "lucide-react";
+import { Eye, DollarSign, Shield, Code, Activity, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
   {
-    icon: Brain,
-    title: "Specialized Agents",
-    description: "Each agent trained for specific tasks — research, coding, design. No generalists.",
+    icon: Eye,
+    title: "Live Task Tracking",
+    description: "Watch AI agents work in real-time. See exactly what's being built, by whom, and when.",
     number: "01",
   },
   {
-    icon: Code,
-    title: "Production Code",
-    description: "Working MVPs, not prototypes. Deployed, tested, documented.",
+    icon: DollarSign,
+    title: "Cost Transparency",
+    description: "Every dollar itemized. AI compute, human review, infrastructure — all visible as it happens.",
     number: "02",
   },
   {
-    icon: Search,
-    title: "Deep Research",
-    description: "Market analysis, competitor research, user interviews — synthesized.",
+    icon: Shield,
+    title: "Human Oversight",
+    description: "Expert review on every deliverable. AI speed with human judgment. Nothing ships without approval.",
     number: "03",
   },
   {
-    icon: Palette,
-    title: "Design Systems",
-    description: "Wireframes to polished UI. Consistent, scalable, production-ready.",
+    icon: Code,
+    title: "Full Source Access",
+    description: "All code, all prompts, all reasoning. You own everything we build. No black boxes.",
     number: "04",
   },
   {
-    icon: Zap,
-    title: "10x Speed",
-    description: "What takes weeks, delivered in days. Parallel execution.",
+    icon: Activity,
+    title: "Real-time Updates",
+    description: "Your dashboard updates live as agents complete tasks. No waiting for status reports.",
     number: "05",
   },
   {
-    icon: Shield,
-    title: "Human Review",
-    description: "Every deliverable reviewed by humans before it reaches you.",
+    icon: FileText,
+    title: "Complete Audit Logs",
+    description: "Every decision, every change, timestamped and searchable. Full accountability, always.",
     number: "06",
   },
 ];
@@ -79,16 +79,16 @@ export function Features() {
         >
           <div>
             <p className="font-mono text-xs tracking-[0.2em] text-accent uppercase mb-3">
-              Capabilities
+              How We Work
             </p>
             <h2 className="font-display text-5xl sm:text-6xl lg:text-7xl text-text uppercase tracking-tight">
-              Built For
+              Built With
               <br />
-              Builders
+              Transparency
             </h2>
           </div>
           <p className="text-text-secondary max-w-sm leading-relaxed">
-            Stop hiring. Stop waiting. Get an AI workforce that actually delivers.
+            No guessing. No surprises. Watch your software get built in real-time.
           </p>
         </motion.div>
 
