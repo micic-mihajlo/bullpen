@@ -135,9 +135,30 @@ export async function POST(
       }
     }
 
+    // Map task types to skills for deterministic invocation
+    const skillForTaskType: Record<string, string> = {
+      coding: "coding-agent",
+      automation: "n8n-workflow-patterns",
+      research: "", // no specific skill — uses web_search + web_fetch
+      review: "coding-agent",
+      design: "frontend-design",
+      general: "",
+    };
+    const skillDirective = skillForTaskType[taskType]
+      ? `\n\nIMPORTANT: Use the "${skillForTaskType[taskType]}" skill for this task. Load its SKILL.md and follow its procedures.`
+      : "";
+
+    // Standardized output path
+    const projectSlug = (projectBrief || task.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40);
+    const outputDir = `/home/mihbot/deliverables/${projectSlug}`;
+
     const agentTask = `You are a ${template.displayName} working on: "${task.title}"
 
-Project context: ${projectBrief || "No additional context"}
+Project context: ${projectBrief || "No additional context"}${skillDirective}
 
 Your job: Complete each step below sequentially. After completing EACH step, you MUST report progress by running:
 
@@ -151,7 +172,10 @@ ${stepList}
 Guidelines:
 - Be thorough but efficient
 - Produce real, usable output (actual code, actual files, actual research)
-- Write deliverable artifacts to /home/mihbot/ (repos, reports, workflows)
+- Write ALL deliverable artifacts to ${outputDir}/ — this is the standard output directory
+- For code projects: initialize repos inside ${outputDir}/
+- For research: write reports to ${outputDir}/
+- For automation: write workflow JSON and docs to ${outputDir}/
 - Report each step completion via the webhook above — this is critical for tracking`;
 
     try {
