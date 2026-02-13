@@ -112,7 +112,7 @@ export async function POST(
     });
 
     // 8. Spawn a real sub-agent directly via OpenClaw gateway
-    //    This bypasses the orchestrator — no waiting for me to be available.
+    //    Uses /tools/invoke to call sessions_spawn — no orchestrator middleman.
     const OPENCLAW_BASE =
       process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") ||
       "http://localhost:18789";
@@ -179,23 +179,37 @@ Guidelines:
 - Report each step completion via the webhook above — this is critical for tracking`;
 
     try {
-      // Direct spawn via gateway RPC — no orchestrator middleman
-      const spawnResp = await fetch(`${OPENCLAW_BASE}/api/sessions/main/send`, {
+      // Direct spawn via Gateway Tools Invoke API — no orchestrator middleman
+      // POST /tools/invoke calls sessions_spawn directly, returns childSessionKey
+      const spawnResp = await fetch(`${OPENCLAW_BASE}/tools/invoke`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENCLAW_TOKEN}`,
         },
         body: JSON.stringify({
-          message: `[SYSTEM: SPAWN-AGENT-NOW] Immediately spawn a sub-agent for this task. Do not wait or ask — just call sessions_spawn right now.
-
-sessions_spawn task: ${JSON.stringify(agentTask)}
-sessions_spawn label: worker-${taskId.slice(-8)}`,
+          tool: "sessions_spawn",
+          args: {
+            task: agentTask,
+            label: `worker-${taskId.slice(-8)}`,
+          },
         }),
       });
 
-      if (!spawnResp.ok) {
-        console.error("[Dispatch] Gateway spawn failed:", spawnResp.status);
+      if (spawnResp.ok) {
+        const spawnResult = await spawnResp.json();
+        const childKey = spawnResult?.result?.details?.childSessionKey;
+        if (childKey) {
+          // Store the child session key on the worker for tracking
+          await convex.mutation(api.workers.updateStatus, {
+            id: workerId,
+            status: "active",
+            sessionKey: childKey,
+          });
+          console.log(`[Dispatch] Agent spawned: ${childKey}`);
+        }
+      } else {
+        console.error("[Dispatch] Gateway spawn failed:", spawnResp.status, await spawnResp.text());
       }
     } catch (err) {
       console.error("[Dispatch] Failed to spawn agent:", err);

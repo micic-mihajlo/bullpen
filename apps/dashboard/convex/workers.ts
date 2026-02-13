@@ -72,12 +72,17 @@ export const updateStatus = mutation({
       v.literal("completed"),
       v.literal("failed")
     ),
+    sessionKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, {
+    const patch: Record<string, unknown> = {
       status: args.status,
       lastActivityAt: Date.now(),
-    });
+    };
+    if (args.sessionKey) {
+      patch.sessionKey = args.sessionKey;
+    }
+    await ctx.db.patch(args.id, patch);
   },
 });
 
