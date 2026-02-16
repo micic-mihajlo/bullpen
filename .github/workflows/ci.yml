@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [master, feat/dashboard-v2]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Build landing
+        run: pnpm --filter @bullpen/landing build
+
+      - name: Build dashboard
+        run: pnpm --filter @bullpen/dashboard build
+        env:
+          NEXT_PUBLIC_CONVEX_URL: ${{ vars.NEXT_PUBLIC_CONVEX_URL || 'https://placeholder.convex.cloud' }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY || '' }}
