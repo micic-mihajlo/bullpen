@@ -387,6 +387,19 @@ export const reviewStep = mutation({
   },
 });
 
+// Link a worker to a task
+export const linkWorker = mutation({
+  args: {
+    id: v.id("tasks"),
+    workerId: v.id("workers"),
+  },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.id);
+    if (!task) throw new Error("Task not found");
+    await ctx.db.patch(args.id, { workerId: args.workerId });
+  },
+});
+
 // Delete task
 export const remove = mutation({
   args: { id: v.id("tasks") },

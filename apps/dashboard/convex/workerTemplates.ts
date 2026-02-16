@@ -52,6 +52,17 @@ export const create = mutation({
   },
 });
 
+// Get template by name
+export const byName = query({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("workerTemplates")
+      .withIndex("by_name", (q) => q.eq("name", args.name))
+      .first();
+  },
+});
+
 // Update a worker template
 export const update = mutation({
   args: {
