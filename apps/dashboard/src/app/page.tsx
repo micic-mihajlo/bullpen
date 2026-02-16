@@ -97,7 +97,7 @@ export default function CommandCenterPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#faf9f6]">
       {/* Header */}
-      <header className="flex-shrink-0 bg-white px-6 py-3 border-b border-[#e8e5de]">
+      <header className="flex-shrink-0 bg-white px-6 py-3 border-b border-[#e8e5de] animate-header-enter">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -133,7 +133,7 @@ export default function CommandCenterPage() {
           <>
             {/* ═══ SECTION 1: Review Queue (primary action) ═══ */}
             {reviewQueue.length > 0 && (
-              <section>
+              <section className="animate-section-enter stagger-1">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-[#c2410c] animate-pulse" />
                   <h2 className="text-sm font-semibold text-[#1a1a1a]">Needs Your Review</h2>
@@ -164,7 +164,7 @@ export default function CommandCenterPage() {
             )}
 
             {/* ═══ SECTION 2: Active Workers — what's running right now ═══ */}
-            <section>
+            <section className="animate-section-enter stagger-2">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-[#1a1a1a]">
                   {activeTasks.length > 0 ? "Active Workers" : "Workers Standing By"}
@@ -220,9 +220,9 @@ export default function CommandCenterPage() {
                             <div className="space-y-1.5">
                               {/* Progress bar */}
                               <div className="flex items-center gap-2">
-                                <div className="flex-1 h-1 bg-[#f0ede6] rounded-full overflow-hidden">
+                                <div className="flex-1 h-1.5 bg-[#f0ede6] rounded-full overflow-hidden">
                                   <div
-                                    className="h-full bg-[#c2410c] rounded-full transition-all duration-500"
+                                    className="h-full bg-[#c2410c] rounded-full transition-all duration-700 ease-out"
                                     style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
                                   />
                                 </div>
@@ -299,7 +299,7 @@ export default function CommandCenterPage() {
 
             {/* ═══ SECTION 3: Pipeline — pending → active → done ═══ */}
             {(pendingTasks.length > 0 || completedToday > 0) && (
-              <section>
+              <section className="animate-section-enter stagger-3">
                 <h2 className="text-sm font-semibold text-[#1a1a1a] mb-3">Pipeline</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {/* Pending */}
@@ -388,7 +388,7 @@ export default function CommandCenterPage() {
 
             {/* ═══ SECTION 4: Projects ═══ */}
             {projects && projects.length > 0 && (
-              <section>
+              <section className="animate-section-enter stagger-4">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-[#1a1a1a]">Projects</h2>
                   <button onClick={() => router.push("/projects")} className="text-[11px] text-[#c2410c] font-medium hover:underline">
@@ -420,8 +420,8 @@ export default function CommandCenterPage() {
                         </div>
                         {total > 0 && (
                           <div className="flex items-center gap-2">
-                            <div className="w-20 h-1 bg-[#f0ede6] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#1a1a1a] rounded-full" style={{ width: `${(done / total) * 100}%` }} />
+                            <div className="w-24 h-1.5 bg-[#f0ede6] rounded-full overflow-hidden">
+                              <div className="h-full bg-[#1a1a1a] rounded-full transition-all duration-700 ease-out" style={{ width: `${(done / total) * 100}%` }} />
                             </div>
                             <span className="text-[10px] text-[#9c9590]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                               {done}/{total}
@@ -436,7 +436,7 @@ export default function CommandCenterPage() {
             )}
 
             {/* ═══ SECTION 5: Activity ═══ */}
-            <section>
+            <section className="animate-section-enter stagger-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-[#1a1a1a]">Activity</h2>
                 <div className="flex items-center gap-1.5">

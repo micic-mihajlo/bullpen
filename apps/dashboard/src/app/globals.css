@@ -221,6 +221,61 @@ button, a, input, select, textarea {
   animation: pulse-ring 2s ease-out infinite;
 }
 
+/* ── Staggered section entrance ── */
+@keyframes section-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-section-enter {
+  animation: section-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.19s; }
+.stagger-4 { animation-delay: 0.26s; }
+.stagger-5 { animation-delay: 0.33s; }
+
+/* ── Row entrance for list items ── */
+@keyframes row-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-row-enter {
+  animation: row-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Progress bar fill animation ── */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+.animate-progress-fill {
+  animation: progress-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+/* ── Subtle count-up flash ── */
+@keyframes count-flash {
+  0% { color: var(--mc-accent); transform: scale(1.15); }
+  100% { color: inherit; transform: scale(1); }
+}
+
+.animate-count-flash {
+  animation: count-flash 0.5s ease-out;
+}
+
+/* ── Header slide-down ── */
+@keyframes header-enter {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-header-enter {
+  animation: header-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ── Card elevation ── */
 .card-elevated {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);

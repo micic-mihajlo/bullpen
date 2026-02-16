@@ -74,7 +74,7 @@ export default function WorkersPage() {
       <div className="flex-1 overflow-y-auto p-8 space-y-8">
 
         {/* ─── TEMPLATE GALLERY ─── */}
-        <section>
+        <section className="animate-section-enter stagger-1">
           <div className="flex items-center gap-2 mb-4">
             <Layers className="w-4 h-4 text-[#9c9590]" />
             <h2 className="text-sm font-semibold text-[#1a1a1a]">Template Gallery</h2>
@@ -171,7 +171,7 @@ export default function WorkersPage() {
         </section>
 
         {/* ─── ACTIVE WORKERS ─── */}
-        <section>
+        <section className="animate-section-enter stagger-2">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4 text-[#9c9590]" />
             <h2 className="text-sm font-semibold text-[#1a1a1a]">Active Workers</h2>
