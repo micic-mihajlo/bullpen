@@ -55,6 +55,29 @@ export const byProject = query({
   },
 });
 
+// Get events for a specific task
+export const byTask = query({
+  args: {
+    taskId: v.id("tasks"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 30;
+    const allEvents = await ctx.db
+      .query("events")
+      .withIndex("by_timestamp")
+      .order("desc")
+      .take(200);
+
+    return allEvents
+      .filter((event) => {
+        const data = event.data as EventData | undefined;
+        return data?.taskId === args.taskId;
+      })
+      .slice(0, limit);
+  },
+});
+
 // Get events by type
 export const byType = query({
   args: {

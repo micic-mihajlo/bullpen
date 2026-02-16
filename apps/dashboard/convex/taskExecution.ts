@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 // Dispatch task for execution
 export const dispatchTask = mutation({
@@ -83,6 +83,60 @@ export const receiveResult = mutation({
         deliverableId,
       },
       timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+// Post a real-time execution log entry (called by agents during work)
+export const postLog = mutation({
+  args: {
+    taskId: v.id("tasks"),
+    message: v.string(),
+    type: v.optional(v.string()), // "info", "progress", "warning", "error"
+  },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.taskId);
+    if (!task) throw new Error("Task not found");
+
+    const eventType = args.type
+      ? `task_log_${args.type}`
+      : "task_log_info";
+
+    await ctx.db.insert("events", {
+      type: eventType,
+      message: args.message,
+      data: { taskId: args.taskId },
+      timestamp: Date.now(),
+    });
+
+    // Update worker lastActivityAt if worker exists
+    if (task.workerId) {
+      const worker = await ctx.db.get(task.workerId);
+      if (worker) {
+        await ctx.db.patch(task.workerId, {
+          lastActivityAt: Date.now(),
+        });
+      }
+    }
+
+    return { success: true };
+  },
+});
+
+// Update task liveContext (arbitrary JSON agents can push for real-time display)
+export const updateLiveContext = mutation({
+  args: {
+    taskId: v.id("tasks"),
+    liveContext: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.taskId);
+    if (!task) throw new Error("Task not found");
+
+    await ctx.db.patch(args.taskId, {
+      liveContext: args.liveContext,
     });
 
     return { success: true };

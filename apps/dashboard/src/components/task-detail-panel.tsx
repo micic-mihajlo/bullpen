@@ -76,6 +76,7 @@ interface TaskDetailPanelProps {
 export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
   const task = useQuery(api.tasks.get, { id: taskId });
   const messages = useStableData(useQuery(api.agentMessages.listByTask, { taskId }));
+  const taskEvents = useStableData(useQuery(api.events.byTask, { taskId }));
 
   const [msgText, setMsgText] = useState("");
   const [sending, setSending] = useState(false);
@@ -364,6 +365,73 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Live Context — structured real-time data from agent */}
+          {task.status === "running" && task.liveContext && (
+            <div className="px-5 py-3 border-b border-[#f0ede6] bg-[#faf9f6]">
+              <div className="flex items-center gap-2 mb-2">
+                <Loader2 className="w-3 h-3 text-[#c2410c] animate-spin" />
+                <h3 className="text-[11px] font-semibold text-[#9c9590] uppercase tracking-wider">
+                  Live Status
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(task.liveContext as Record<string, string | number>).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between bg-white rounded px-2.5 py-1.5 border border-[#e8e5de]">
+                    <span className="text-[10px] text-[#9c9590] capitalize">{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}</span>
+                    <span className="text-[11px] font-mono font-medium text-[#1a1a1a]">{String(value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Execution Log — live events for this task */}
+          {taskEvents && taskEvents.length > 0 && (
+            <div className="px-5 py-4 border-b border-[#f0ede6]">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[11px] font-semibold text-[#9c9590] uppercase tracking-wider">
+                  Execution Log
+                </h3>
+                {task.status === "running" && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[10px] text-[#9c9590]">live</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-0 max-h-[200px] overflow-y-auto rounded-lg border border-[#e8e5de] bg-[#1a1a1a]">
+                {[...taskEvents].reverse().map((event, i) => (
+                  <div
+                    key={event._id}
+                    className={cn(
+                      "px-3 py-1.5 font-mono text-[11px] leading-relaxed",
+                      i > 0 && "border-t border-[#2a2a2a]"
+                    )}
+                  >
+                    <span className="text-[#6b6560]">
+                      {new Date(event.timestamp).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false,
+                      })}
+                    </span>
+                    <span className="mx-2 text-[#4a4a4a]">│</span>
+                    <span className={cn(
+                      event.type.includes("completed") ? "text-green-400" :
+                      event.type.includes("failed") ? "text-red-400" :
+                      event.type.includes("dispatched") ? "text-blue-400" :
+                      event.type.includes("review") ? "text-amber-400" :
+                      "text-[#d4d0ca]"
+                    )}>
+                      {event.message}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
