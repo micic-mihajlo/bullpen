@@ -44,9 +44,7 @@ export const receiveResult = mutation({
     });
 
     let deliverableId;
-    if (args.status === "completed") {
-      if (!task.projectId) throw new Error("Task has no project; cannot create deliverable");
-
+    if (args.status === "completed" && task.projectId) {
       deliverableId = await ctx.db.insert("deliverables", {
         projectId: task.projectId,
         taskId: args.taskId,
