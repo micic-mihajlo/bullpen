@@ -1,6 +1,15 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
+function deriveStatusFromSteps(
+  steps: Array<{ status: "pending" | "in_progress" | "review" | "approved" | "rejected" }>
+): "pending" | "running" | "review" | "completed" {
+  if (steps.length > 0 && steps.every((s) => s.status === "approved")) return "completed";
+  if (steps.some((s) => s.status === "review" || s.status === "rejected")) return "review";
+  if (steps.some((s) => s.status === "in_progress")) return "running";
+  return "pending";
+}
+
 // Get all tasks (bounded)
 export const list = query({
   args: {},
@@ -324,10 +333,34 @@ export const updateSteps = mutation({
     const task = await ctx.db.get(args.id);
     if (!task) throw new Error("Task not found");
 
+    // Guardrail: terminal tasks should not be mutated by step updates
+    if (task.status === "failed") {
+      throw new Error("Cannot update steps on failed task");
+    }
+
+    const nextStatus = deriveStatusFromSteps(args.steps);
+
     await ctx.db.patch(args.id, {
       steps: args.steps,
       ...(args.currentStep !== undefined ? { currentStep: args.currentStep } : {}),
+      status: nextStatus,
+      ...(nextStatus === "completed"
+        ? {
+            completedAt: task.completedAt ?? Date.now(),
+            currentStep: args.steps.length,
+            result: task.result ?? "All steps approved",
+          }
+        : {}),
     });
+
+    if (nextStatus === "completed" && task.status !== "completed") {
+      await ctx.db.insert("events", {
+        type: "task_completed",
+        message: `Completed: "${task.title}" (all steps approved)`,
+        data: { taskId: args.id, via: "updateSteps" },
+        timestamp: Date.now(),
+      });
+    }
   },
 });
 
@@ -347,6 +380,11 @@ export const reviewStep = mutation({
       throw new Error("Invalid step index");
     }
 
+    const existing = task.steps[args.stepIndex];
+    if (existing.status !== "review" && existing.status !== "in_progress") {
+      throw new Error(`Step ${args.stepIndex + 1} is not reviewable (status: ${existing.status})`);
+    }
+
     const updatedSteps = [...task.steps];
     updatedSteps[args.stepIndex] = {
       ...updatedSteps[args.stepIndex],
@@ -361,10 +399,18 @@ export const reviewStep = mutation({
       newCurrentStep = args.stepIndex + 1;
     }
 
+    const nextStatus = deriveStatusFromSteps(updatedSteps);
+
     await ctx.db.patch(args.id, {
       steps: updatedSteps,
-      currentStep: newCurrentStep,
-      status: args.action === "approved" ? "running" : "review",
+      currentStep: nextStatus === "completed" ? updatedSteps.length : newCurrentStep,
+      status: nextStatus,
+      ...(nextStatus === "completed"
+        ? {
+            completedAt: task.completedAt ?? Date.now(),
+            result: task.result ?? "All steps approved",
+          }
+        : {}),
     });
 
     // Log as agent message
