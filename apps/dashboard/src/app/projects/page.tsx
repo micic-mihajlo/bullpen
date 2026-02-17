@@ -17,8 +17,6 @@ import {
   Plus,
   FolderKanban,
   Calendar,
-  ArrowRight,
-  X,
   ChevronDown,
   Code2,
   Cog,

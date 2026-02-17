@@ -15,7 +15,7 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { taskId, stepIndex, status, output, error, workerName } = body;
+    const { taskId, stepIndex, status, output, workerName } = body;
 
     if (!taskId || stepIndex === undefined || !status) {
       return NextResponse.json(

@@ -46,14 +46,6 @@ type Agent = {
   status: string;
 };
 
-type WorkerTemplate = {
-  _id: string;
-  name: string;
-  displayName: string;
-  role: string;
-  model: string;
-};
-
 type ColumnConfig = { status: Exclude<TaskStatus, "assigned">; label: string; icon: React.ReactNode; cls: string };
 
 const columns: ColumnConfig[] = [
@@ -373,7 +365,7 @@ export default function TasksPage() {
           <div>
             <h1 className="text-xl font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Tasks</h1>
             <p className="text-[12px] text-[#9c9590] mt-0.5">
-              /// {stats.total} total · {stats.running} running
+              {`///`} {stats.total} total · {stats.running} running
             </p>
           </div>
           <div className="flex items-center gap-3">

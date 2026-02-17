@@ -100,7 +100,8 @@ export function AsciiBull() {
   // Breathing pulse in idle
   useEffect(() => {
     if (isCharging) {
-      setBreathScale(1);
+      // Reset breath scale outside of effect body via rAF callback
+      requestAnimationFrame(() => setBreathScale(1));
       return;
     }
     let raf: number;

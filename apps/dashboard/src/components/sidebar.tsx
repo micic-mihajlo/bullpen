@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -36,12 +36,12 @@ export function Sidebar() {
   const templateCount = templates?.length ?? 0;
   const reviewCount = deliverables?.filter((d) => d.status === "review").length ?? 0;
 
-  const navItems: NavItem[] = [
+  const navItems: NavItem[] = useMemo(() => [
     { label: "Command Center", href: "/", icon: <Command className="w-4 h-4" />, badge: runningTasks || undefined, shortcut: "1" },
     { label: "Projects", href: "/projects", icon: <FolderKanban className="w-4 h-4" />, shortcut: "2" },
     { label: "Workers", href: "/agents", icon: <Wrench className="w-4 h-4" />, badge: templateCount || undefined, shortcut: "3" },
     { label: "Deliverables", href: "/review", icon: <FileCheck2 className="w-4 h-4" />, badge: reviewCount || undefined, shortcut: "4" },
-  ];
+  ], [runningTasks, templateCount, reviewCount]);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";

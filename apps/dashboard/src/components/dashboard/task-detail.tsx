@@ -57,15 +57,16 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
   const [resultText, setResultText] = useState(task?.result || "");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!task) return;
+    setEditingResult(false);
+    setResultText(task.result || "");
+  }, [task?._id, task?.result]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!task) return null;
 
   const status = statusLabel[task.status];
   const hasTaskError = Boolean(task.error) || task.status === "failed";
-
-  useEffect(() => {
-    setEditingResult(false);
-    setResultText(task.result || "");
-  }, [task._id, task.result]);
 
   const handleSaveResult = async () => {
     setSaving(true);

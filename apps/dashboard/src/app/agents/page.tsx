@@ -2,7 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useStableData } from "@/lib/hooks";
+import { useStableData, useNow } from "@/lib/hooks";
 import { SkeletonList } from "@/components/ui/skeleton";
 import {
   Cpu,
@@ -45,6 +45,7 @@ function formatElapsed(ms: number): string {
 }
 
 export default function WorkersPage() {
+  const now = useNow();
   const templates = useStableData(useQuery(api.workerTemplates.list));
   const workers = useStableData(useQuery(api.workers.list, {}));
   const tasks = useStableData(useQuery(api.tasks.list));
@@ -192,7 +193,7 @@ export default function WorkersPage() {
           ) : (
             <div className="space-y-2">
               {activeWorkers.map((worker) => {
-                const elapsed = Date.now() - worker.spawnedAt;
+                const elapsed = now - worker.spawnedAt;
                 const st = workerStatusStyles[worker.status] ?? workerStatusStyles.active;
                 return (
                   <div

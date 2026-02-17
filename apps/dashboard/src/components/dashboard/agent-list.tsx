@@ -5,7 +5,6 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { Id } from "../../../convex/_generated/dataModel";
 import { useStableData } from "@/lib/hooks";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/toast";
@@ -46,7 +45,7 @@ export function AgentList() {
   const [newAvatar, setNewAvatar] = useState("🤖");
   const [newModel, setNewModel] = useState("cerebras/zai-glm-4.7");
   const [isCreating, setIsCreating] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<WorkerTemplate | null>(null);
+  const [, setSelectedAgent] = useState<WorkerTemplate | null>(null);
   const { addToast } = useToast();
 
   const openModal = useCallback(() => setShowModal(true), []);
@@ -86,10 +85,6 @@ export function AgentList() {
     } finally {
       setIsCreating(false);
     }
-  };
-
-  const getRole = (template: WorkerTemplate) => {
-    return template.role;
   };
 
   const activeCount = agents?.filter((a) => a.status === "active").length ?? 0;

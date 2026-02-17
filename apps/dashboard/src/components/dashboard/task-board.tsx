@@ -75,7 +75,7 @@ export function TaskBoard() {
       setNewTitle("");
       setNewDesc("");
       setShowModal(false);
-    } catch (error) {
+    } catch {
       addToast("Failed to create task", "error");
     } finally {
       setIsCreating(false);
@@ -93,7 +93,7 @@ export function TaskBoard() {
       } else {
         addToast(data.error || "Failed to dispatch task", "error");
       }
-    } catch (error) {
+    } catch {
       addToast("Network error dispatching task", "error");
     } finally {
       setDispatchingId(null);

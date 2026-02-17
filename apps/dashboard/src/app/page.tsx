@@ -7,13 +7,12 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useShortcuts, useRegisterShortcut } from "@/components/shortcuts-provider";
 import { useToast } from "@/components/toast";
-import { useStableData } from "@/lib/hooks";
+import { useStableData, useNow } from "@/lib/hooks";
 import { TaskDetailPanel } from "@/components/task-detail-panel";
 import { formatTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
   Keyboard,
-  Clock,
   Code2,
   GitBranch,
   Search,
@@ -23,7 +22,6 @@ import {
   CheckCircle,
   Circle,
   AlertCircle,
-  ArrowRight,
   MessageSquare,
   ChevronRight,
   Eye,
@@ -48,6 +46,7 @@ const stepStatusIcon: Record<string, React.ReactNode> = {
 };
 
 export default function CommandCenterPage() {
+  const now = useNow();
   const router = useRouter();
   const templates = useStableData(useQuery(api.workerTemplates.list));
   const tasks = useStableData(useQuery(api.tasks.withAgent));
@@ -184,7 +183,7 @@ export default function CommandCenterPage() {
                     const currentStep = (task as Record<string, unknown>).currentStep as number | undefined;
                     const totalSteps = steps?.length ?? 0;
                     const completedSteps = steps?.filter(s => s.status === "approved").length ?? 0;
-                    const elapsed = task.startedAt ? Date.now() - task.startedAt : 0;
+                    const elapsed = task.startedAt ? now - task.startedAt : 0;
 
                     return (
                       <button

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/utils";
 import {
@@ -183,13 +181,12 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const { addToast } = useToast();
 
   // Live data — legacy, stubs for compat
-  const agentData = null;
   const activity = null as { _id: string; type: string; message: string; timestamp: number }[] | null;
   const taskHistory = null as { _id: string; title: string; status: string; createdAt: number; startedAt?: number; completedAt?: number }[] | null;
 
   // Mutations — legacy stubs
-  const updateAgent = async (_args: Record<string, unknown>) => {};
-  const removeAgent = async (_args: Record<string, unknown>) => {};
+  const updateAgent = async (_: Record<string, unknown>) => { void _; };
+  const removeAgent = async (_: Record<string, unknown>) => { void _; };
 
   // Session state
   const [messages, setMessages] = useState<Message[]>([]);
