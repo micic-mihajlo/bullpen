@@ -113,9 +113,29 @@ export async function POST(
             const projectTasks = await convex.query(api.tasks.byProject, {
               projectId: task.projectId as Id<"projects">,
             });
-            const nextPending = projectTasks
+            const pendingTasks = projectTasks
               .filter((t) => t.status === "pending")
-              .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))[0];
+              .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
+
+            // Dependency-aware scheduler: dispatch only tasks whose dependencies are completed
+            let nextPending: (typeof pendingTasks)[number] | undefined;
+            for (const candidate of pendingTasks) {
+              const deps = candidate.dependsOn ?? [];
+              if (deps.length === 0) {
+                nextPending = candidate;
+                break;
+              }
+
+              const depTasks = await Promise.all(
+                deps.map((depId) => convex.query(api.tasks.get, { id: depId }))
+              );
+              const depsSatisfied = depTasks.every((d) => d && d.status === "completed");
+              if (depsSatisfied) {
+                nextPending = candidate;
+                break;
+              }
+            }
+
             if (nextPending) {
               // More tasks to do — dispatch the next one
               const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";

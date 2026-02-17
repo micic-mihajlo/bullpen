@@ -87,6 +87,21 @@ export default function CommandCenterPage() {
 
   // Tasks grouped by status for the pipeline view
   const pendingTasks = allTasks.filter((t) => t.status === "pending");
+  const taskById = new Map(allTasks.map((t) => [t._id, t]));
+  const getBlockedBy = (task: (typeof allTasks)[0]) => {
+    const deps = (task.dependsOn ?? []) as Id<"tasks">[];
+    if (!deps.length) return [] as Array<{ id: Id<"tasks">; title: string }>;
+
+    const blocked: Array<{ id: Id<"tasks">; title: string }> = [];
+    for (const depId of deps) {
+      const dep = taskById.get(depId);
+      if (dep && dep.status !== "completed") {
+        blocked.push({ id: dep._id, title: dep.title });
+      }
+    }
+    return blocked;
+  };
+  const blockedPendingCount = pendingTasks.filter((t) => getBlockedBy(t).length > 0).length;
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const completedToday = completedTasks.filter(
@@ -303,24 +318,37 @@ export default function CommandCenterPage() {
                 <div className="grid grid-cols-3 gap-3">
                   {/* Pending */}
                   <div className="bg-white border border-[#e8e5de] rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1">
                       <span className="text-[11px] font-semibold text-[#9c9590] uppercase tracking-wider">Queue</span>
                       <span className="text-[11px] text-[#9c9590]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                         {pendingTasks.length}
                       </span>
                     </div>
+                    {blockedPendingCount > 0 && (
+                      <div className="mb-2 text-[10px] text-amber-700">{blockedPendingCount} blocked by dependencies</div>
+                    )}
                     {pendingTasks.length > 0 ? (
                       <div className="space-y-1.5">
-                        {pendingTasks.slice(0, 4).map((task) => (
-                          <button
-                            key={task._id}
-                            onClick={() => setSelectedTaskId(task._id)}
-                            className="w-full flex items-center gap-2 text-left hover:bg-[#faf9f6] rounded px-1.5 py-1 -mx-1.5 transition-colors"
-                          >
-                            <Circle className="w-2.5 h-2.5 text-[#d4d0ca] flex-shrink-0" />
-                            <span className="text-[12px] text-[#1a1a1a] truncate">{task.title}</span>
-                          </button>
-                        ))}
+                        {pendingTasks.slice(0, 4).map((task) => {
+                          const blockedBy = getBlockedBy(task);
+                          return (
+                            <button
+                              key={task._id}
+                              onClick={() => setSelectedTaskId(task._id)}
+                              className="w-full flex items-start gap-2 text-left hover:bg-[#faf9f6] rounded px-1.5 py-1 -mx-1.5 transition-colors"
+                            >
+                              <Circle className="w-2.5 h-2.5 text-[#d4d0ca] flex-shrink-0 mt-0.5" />
+                              <span className="min-w-0 flex-1">
+                                <span className="text-[12px] text-[#1a1a1a] truncate block">{task.title}</span>
+                                {blockedBy.length > 0 && (
+                                  <span className="text-[10px] text-amber-700 truncate block">
+                                    waiting on: {blockedBy.map((b) => b.title).join(", ")}
+                                  </span>
+                                )}
+                              </span>
+                            </button>
+                          );
+                        })}
                         {pendingTasks.length > 4 && (
                           <span className="text-[10px] text-[#9c9590] pl-5">+{pendingTasks.length - 4} more</span>
                         )}
