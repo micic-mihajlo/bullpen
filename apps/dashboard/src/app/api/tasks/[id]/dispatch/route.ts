@@ -82,11 +82,7 @@ export async function POST(
       });
     }
 
-    // 5. Update worker status to active
-    await convex.mutation(api.workers.updateStatus, {
-      id: workerId,
-      status: "active",
-    });
+    // 5. Keep worker in spawning until real sub-agent spawn succeeds
 
     // 6. Post agent message
     const stepName = task.steps?.[0]?.name ?? "first step";
@@ -196,30 +192,75 @@ Guidelines:
         }),
       });
 
-      if (spawnResp.ok) {
-        const spawnResult = await spawnResp.json();
-        const childKey = spawnResult?.result?.details?.childSessionKey;
-        if (childKey) {
-          // Store the child session key on the worker for tracking
-          await convex.mutation(api.workers.updateStatus, {
-            id: workerId,
-            status: "active",
-            sessionKey: childKey,
-          });
-          console.log(`[Dispatch] Agent spawned: ${childKey}`);
-        }
-      } else {
-        console.error("[Dispatch] Gateway spawn failed:", spawnResp.status, await spawnResp.text());
+      if (!spawnResp.ok) {
+        const body = await spawnResp.text();
+        await convex.mutation(api.workers.updateStatus, {
+          id: workerId,
+          status: "failed",
+        });
+        await convex.mutation(api.tasks.fail, {
+          id: taskId as Id<"tasks">,
+          error: `Worker spawn failed (${spawnResp.status}): ${body.slice(0, 300)}`,
+        });
+
+        return NextResponse.json(
+          {
+            error: "Failed to spawn worker session",
+            details: body,
+          },
+          { status: 503 }
+        );
       }
+
+      const spawnResult = await spawnResp.json();
+      const childKey = spawnResult?.result?.details?.childSessionKey;
+
+      if (!childKey) {
+        await convex.mutation(api.workers.updateStatus, {
+          id: workerId,
+          status: "failed",
+        });
+        await convex.mutation(api.tasks.fail, {
+          id: taskId as Id<"tasks">,
+          error: "Worker spawn failed: missing childSessionKey",
+        });
+
+        return NextResponse.json(
+          { error: "Failed to spawn worker session (no child session key)" },
+          { status: 503 }
+        );
+      }
+
+      // Store the child session key on the worker for tracking and mark active
+      await convex.mutation(api.workers.updateStatus, {
+        id: workerId,
+        status: "active",
+        sessionKey: childKey,
+      });
+      console.log(`[Dispatch] Agent spawned: ${childKey}`);
+
+      return NextResponse.json({
+        success: true,
+        workerId,
+        workerTemplate: template.displayName,
+        sessionKey: childKey,
+      });
     } catch (err) {
       console.error("[Dispatch] Failed to spawn agent:", err);
-    }
+      await convex.mutation(api.workers.updateStatus, {
+        id: workerId,
+        status: "failed",
+      });
+      await convex.mutation(api.tasks.fail, {
+        id: taskId as Id<"tasks">,
+        error: `Worker spawn exception: ${err instanceof Error ? err.message : "unknown"}`,
+      });
 
-    return NextResponse.json({
-      success: true,
-      workerId,
-      workerTemplate: template.displayName,
-    });
+      return NextResponse.json(
+        { error: "Worker spawn exception" },
+        { status: 503 }
+      );
+    }
   } catch (error) {
     console.error("[Dispatch] Error:", error);
     return NextResponse.json(
