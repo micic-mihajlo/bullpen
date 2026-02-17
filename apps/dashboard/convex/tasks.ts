@@ -446,6 +446,31 @@ export const linkWorker = mutation({
   },
 });
 
+// Set task dependencies (sequencing / DAG execution)
+export const setDependsOn = mutation({
+  args: {
+    id: v.id("tasks"),
+    dependsOn: v.array(v.id("tasks")),
+  },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.id);
+    if (!task) throw new Error("Task not found");
+
+    if (args.dependsOn.some((depId) => depId === args.id)) {
+      throw new Error("Task cannot depend on itself");
+    }
+
+    await ctx.db.patch(args.id, { dependsOn: args.dependsOn });
+
+    await ctx.db.insert("events", {
+      type: "task_dependencies_updated",
+      message: `Dependencies updated for "${task.title}"`,
+      data: { taskId: args.id, dependsOn: args.dependsOn },
+      timestamp: Date.now(),
+    });
+  },
+});
+
 // Delete task
 export const remove = mutation({
   args: { id: v.id("tasks") },

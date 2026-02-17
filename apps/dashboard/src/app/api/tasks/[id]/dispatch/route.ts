@@ -38,6 +38,31 @@ export async function POST(
       );
     }
 
+    // Dependency gate: do not dispatch tasks with unmet prerequisites
+    if (task.dependsOn && task.dependsOn.length > 0) {
+      const dependencyStates = await Promise.all(
+        task.dependsOn.map(async (depId) => {
+          const depTask = await convex.query(api.tasks.get, { id: depId });
+          return {
+            id: depId,
+            title: depTask?.title ?? "Unknown task",
+            status: depTask?.status ?? "missing",
+          };
+        })
+      );
+
+      const blockedBy = dependencyStates.filter((d) => d.status !== "completed");
+      if (blockedBy.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Task is blocked by dependencies",
+            blockedBy,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // 2. Find matching worker template
     const templates = await convex.query(api.workerTemplates.list);
     const taskType = task.taskType || "general";
