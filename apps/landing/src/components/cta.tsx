@@ -1,8 +1,40 @@
 "use client";
 
+import { FormEvent, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 export function CTA() {
+  const [email, setEmail] = useState("");
+  const [needs, setNeeds] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [error, setError] = useState("");
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setStatus("saving");
+    setError("");
+
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, needs }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error || "Could not submit");
+      }
+
+      setStatus("success");
+      setEmail("");
+      setNeeds("");
+    } catch (err) {
+      setStatus("error");
+      setError(err instanceof Error ? err.message : "Could not submit");
+    }
+  };
+
   return (
     <section id="get-started" className="relative py-28 px-4 sm:px-6 bg-text text-bg overflow-hidden">
       {/* Diagonal stripe background */}
@@ -46,13 +78,16 @@ export function CTA() {
           </div>
 
           {/* Right - Form */}
-          <div className="space-y-5">
+          <form className="space-y-5" onSubmit={onSubmit}>
             <div>
               <label className="font-mono text-[10px] text-bg/40 uppercase tracking-[0.2em] block mb-3">
                 Email
               </label>
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 placeholder="you@company.com"
                 className="w-full px-5 py-4 bg-transparent border-2 border-bg/20 text-bg placeholder:text-bg/25 font-mono text-sm focus:outline-none focus:border-accent transition-colors duration-300 ease-out"
               />
@@ -62,19 +97,29 @@ export function CTA() {
                 What do you need?
               </label>
               <textarea
+                value={needs}
+                onChange={(e) => setNeeds(e.target.value)}
                 placeholder="Landing page, MVP, research..."
                 rows={3}
                 className="w-full px-5 py-4 bg-transparent border-2 border-bg/20 text-bg placeholder:text-bg/25 font-mono text-sm focus:outline-none focus:border-accent transition-colors duration-300 ease-out resize-none"
               />
             </div>
-            <button className="group w-full flex items-center justify-center gap-3 px-6 py-4 bg-accent text-bg font-mono text-sm uppercase tracking-[0.15em] hover:bg-accent-hover transition-all duration-300 ease-out cursor-pointer">
-              Start Your Project
+            <button
+              type="submit"
+              disabled={status === "saving"}
+              className="group w-full flex items-center justify-center gap-3 px-6 py-4 bg-accent text-bg font-mono text-sm uppercase tracking-[0.15em] hover:bg-accent-hover transition-all duration-300 ease-out cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {status === "saving" ? "Submitting..." : "Join Waitlist"}
               <ArrowRight className="w-4 h-4 transition-transform duration-300 ease-out group-hover:translate-x-1" />
             </button>
             <p className="font-mono text-[10px] text-bg/30 text-center uppercase tracking-[0.2em]">
-              Response within 24 hours
+              {status === "success"
+                ? "You’re on the list. We’ll reach out shortly."
+                : status === "error"
+                  ? `Error: ${error}`
+                  : "Response within 24 hours"}
             </p>
-          </div>
+          </form>
         </div>
       </div>
 
