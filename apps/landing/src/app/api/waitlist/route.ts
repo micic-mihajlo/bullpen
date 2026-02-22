@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appendFile, mkdir } from "node:fs/promises";
-import path from "node:path";
+import { put } from "@vercel/blob";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,15 +41,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, via: "webhook" });
     }
 
-    // Fallback: persist locally if webhook isn't configured yet
-    const fallbackPath =
-      process.env.WAITLIST_FALLBACK_FILE ||
-      "/home/mihbot/deliverables/bullpen/waitlist.jsonl";
+    // Fallback: Vercel Blob (serverless-safe)
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (blobToken) {
+      const key = `waitlist/${new Date().toISOString().slice(0, 10)}/${Date.now()}-${email.replace(/[^a-zA-Z0-9@._-]/g, "_")}.json`;
+      await put(key, JSON.stringify(payload, null, 2), {
+        access: "private",
+        contentType: "application/json",
+        token: blobToken,
+        addRandomSuffix: false,
+      });
 
-    await mkdir(path.dirname(fallbackPath), { recursive: true });
-    await appendFile(fallbackPath, `${JSON.stringify(payload)}\n`, "utf8");
+      return NextResponse.json({ success: true, via: "blob" });
+    }
 
-    return NextResponse.json({ success: true, via: "file" });
+    return NextResponse.json(
+      { error: "Waitlist is temporarily unavailable" },
+      { status: 503 }
+    );
   } catch {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
