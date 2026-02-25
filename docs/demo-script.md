@@ -2,6 +2,8 @@
 
 _Target: Quick walkthrough showing the dashboard in action. Can be used for screen recording or live demo._
 
+See also: `docs/demo-recording-runbook.md` for local-machine setup + preflight checks.
+
 ## Setup (Before Recording)
 
 1. Ensure Convex backend is running with seed data (`pnpm dev:dashboard`)
@@ -49,4 +51,7 @@ _Target: Quick walkthrough showing the dashboard in action. Can be used for scre
 - Use OBS or Screen Studio at 60fps, 1280×800
 - Slow, deliberate mouse movements (not rushed)
 - Let animations complete before next action
+- One-command take helper: `./scripts/demo-take.sh --open-tabs --scripted-cues`
+- Manual cues with beat prompts: `./scripts/demo-cues.sh --duration 30 --scripted`
+- Manual timing-only cues: `./scripts/demo-cues.sh --duration 30`
 - Can loop: after Beat 5, refresh page to replay entrance animations

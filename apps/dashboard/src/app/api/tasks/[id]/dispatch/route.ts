@@ -177,15 +177,23 @@ export async function POST(
       .slice(0, 40);
     const outputDir = `/home/mihbot/deliverables/${projectSlug}`;
 
+    const contract = (task as any).executionContract;
+    const contractText = contract
+      ? `\n\nExecution contract (MANDATORY):\n${JSON.stringify(contract, null, 2)}\n\nWhen calling /api/webhooks/task-result with status=completed, include an evidence object with all requiredEvidence keys.`
+      : "";
+
     const agentTask = `You are a ${template.displayName} working on: "${task.title}"
 
-Project context: ${projectBrief || "No additional context"}${skillDirective}
+Project context: ${projectBrief || "No additional context"}${skillDirective}${contractText}
 
 Your job: Complete each step below sequentially. After completing EACH step, you MUST report progress by running:
 
 curl -s -X POST http://localhost:3001/api/webhooks/step-progress -H "Content-Type: application/json" -d '{"taskId":"${taskId}","stepIndex":STEP_INDEX,"status":"completed","output":"DESCRIPTION_OF_WHAT_YOU_DID","workerName":"${template.displayName}"}'
 
 Replace STEP_INDEX with the 0-based step number and DESCRIPTION_OF_WHAT_YOU_DID with a concise summary of your output.
+
+After all steps are approved, you MUST call /api/webhooks/task-result with status=completed.
+If executionContract.requiredEvidence exists, include evidence payload with required keys.
 
 Steps:
 ${stepList}
@@ -263,6 +271,39 @@ Guidelines:
         sessionKey: childKey,
       });
       console.log(`[Dispatch] Agent spawned: ${childKey}`);
+
+      // Kickoff steer: ensures the spawned run gets an explicit first user turn.
+      // Without this, some sessions can sit idle without emitting progress callbacks.
+      const kickoffMessage = `Start now. Execute the task steps and report progress using the required webhooks.
+
+For each completed step call /api/webhooks/step-progress.
+After all steps call /api/webhooks/task-result with status=completed.
+If blocked or failing, call /api/webhooks/task-result with status=failed and error details.
+
+If execution contract includes requiredEvidence, include evidence object with all required keys in task-result payload.
+
+Task ID: ${taskId}
+Worker: ${template.displayName}`;
+
+      try {
+        await fetch(`${OPENCLAW_BASE}/tools/invoke`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${OPENCLAW_TOKEN}`,
+          },
+          body: JSON.stringify({
+            tool: "subagents",
+            args: {
+              action: "steer",
+              target: `worker-${taskId.slice(-8)}`,
+              message: kickoffMessage,
+            },
+          }),
+        });
+      } catch (kickoffErr) {
+        console.warn("[Dispatch] Kickoff steer failed:", kickoffErr);
+      }
 
       return NextResponse.json({
         success: true,

@@ -156,6 +156,15 @@ export const create = mutation({
       v.literal("high"),
       v.literal("urgent")
     )),
+    executionContract: v.optional(v.object({
+      requiredEvidence: v.array(v.object({
+        key: v.string(),
+        type: v.union(v.literal("text"), v.literal("url"), v.literal("file"), v.literal("number")),
+        description: v.string(),
+      })),
+      minResultChars: v.optional(v.number()),
+      requireReviewedSteps: v.optional(v.boolean()),
+    })),
   },
   handler: async (ctx, args) => {
     if (args.projectId) {
@@ -175,6 +184,7 @@ export const create = mutation({
       currentStep: args.steps ? 0 : undefined,
       dependsOn: args.dependsOn,
       priorityLevel: args.priorityLevel,
+      executionContract: args.executionContract,
       createdAt: Date.now(),
     });
 
@@ -243,6 +253,16 @@ export const complete = mutation({
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.id);
     if (!task) throw new Error("Task not found");
+
+    // Hard guardrail: tasks with steps cannot be completed until all steps are approved.
+    if (task.steps && task.steps.length > 0) {
+      const unapproved = task.steps.filter((s) => s.status !== "approved");
+      if (unapproved.length > 0) {
+        throw new Error(
+          `Cannot complete task: ${unapproved.length} step(s) are not approved by orchestrator`
+        );
+      }
+    }
 
     await ctx.db.patch(args.id, {
       status: "completed",
@@ -381,7 +401,7 @@ export const reviewStep = mutation({
     }
 
     const existing = task.steps[args.stepIndex];
-    if (existing.status !== "review" && existing.status !== "in_progress") {
+    if (existing.status !== "review") {
       throw new Error(`Step ${args.stepIndex + 1} is not reviewable (status: ${existing.status})`);
     }
 

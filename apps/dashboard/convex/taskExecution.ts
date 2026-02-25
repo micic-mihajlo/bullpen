@@ -8,16 +8,40 @@ export const dispatchTask = mutation({
     const task = await ctx.db.get(args.taskId);
     if (!task) throw new Error("Task not found");
 
+    if (task.status !== "pending" && task.status !== "assigned") {
+      throw new Error(`Task cannot be dispatched from status: ${task.status}`);
+    }
+
+    // Dependency gate at mutation layer (prevents bypass via alternate dispatch paths).
+    const deps = task.dependsOn ?? [];
+    for (const depId of deps) {
+      const dep = await ctx.db.get(depId);
+      if (!dep || dep.status !== "completed") {
+        throw new Error(`Task blocked by dependency: ${depId}`);
+      }
+    }
+
+    const now = Date.now();
+    const steps = task.steps?.length
+      ? task.steps.map((s, i) =>
+          i === 0
+            ? { ...s, status: "in_progress" as const, startedAt: now }
+            : s
+        )
+      : task.steps;
+
     await ctx.db.patch(args.taskId, {
       status: "running",
-      startedAt: Date.now(),
+      startedAt: now,
+      steps,
+      currentStep: task.steps?.length ? 0 : task.currentStep,
     });
 
     await ctx.db.insert("events", {
       type: "task_dispatched",
       message: `Dispatched: "${task.title}"`,
       data: { taskId: args.taskId },
-      timestamp: Date.now(),
+      timestamp: now,
     });
 
     return { taskId: args.taskId };
@@ -35,6 +59,15 @@ export const receiveResult = mutation({
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId);
     if (!task) throw new Error("Task not found");
+
+    if (args.status === "completed" && task.steps && task.steps.length > 0) {
+      const unapproved = task.steps.filter((s) => s.status !== "approved");
+      if (unapproved.length > 0) {
+        throw new Error(
+          `Cannot complete task: ${unapproved.length} step(s) are not approved by orchestrator`
+        );
+      }
+    }
 
     await ctx.db.patch(args.taskId, {
       status: args.status,

@@ -9,6 +9,8 @@ TOKEN="${BULLPEN_API_TOKEN:-}"
 TASK_ID="${1:-}"
 TEMPLATE_ID="${2:-}"
 SESSION_KEY="${3:-openclaw-dispatch}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/http-with-retry.sh"
 
 if [ -z "$TOKEN" ] || [ -z "$TASK_ID" ]; then
   echo '{"error":"Usage: claim-task.sh <taskId> [workerTemplateId] [sessionKey]"}' >&2
@@ -20,9 +22,4 @@ BODY="{\"taskId\":\"$TASK_ID\""
 [ -n "$SESSION_KEY" ] && BODY="$BODY,\"sessionKey\":\"$SESSION_KEY\""
 BODY="$BODY}"
 
-curl -sf \
-  -X POST \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "$BODY" \
-  "${SITE_URL}/api/tasks/claim"
+http_request_with_retry "POST" "${SITE_URL}/api/tasks/claim" "$BODY"

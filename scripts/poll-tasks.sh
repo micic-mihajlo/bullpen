@@ -3,8 +3,12 @@
 # Usage: ./scripts/poll-tasks.sh
 # Requires: BULLPEN_API_TOKEN, CONVEX_SITE_URL
 
+set -euo pipefail
+
 SITE_URL="${CONVEX_SITE_URL:-https://ceaseless-hedgehog-380.convex.site}"
-TOKEN="${BULLPEN_API_TOKEN}"
+TOKEN="${BULLPEN_API_TOKEN:-}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/http-with-retry.sh"
 
 if [ -z "$TOKEN" ]; then
   echo "Error: BULLPEN_API_TOKEN not set" >&2
@@ -12,13 +16,9 @@ if [ -z "$TOKEN" ]; then
 fi
 
 # Poll for pending tasks
-RESPONSE=$(curl -s -f \
-  -H "Authorization: Bearer $TOKEN" \
-  "${SITE_URL}/api/tasks/pending")
-
-if [ $? -ne 0 ]; then
+RESPONSE=$(http_request_with_retry "GET" "${SITE_URL}/api/tasks/pending") || {
   echo "Error: Failed to reach Convex HTTP endpoint" >&2
   exit 1
-fi
+}
 
 echo "$RESPONSE"

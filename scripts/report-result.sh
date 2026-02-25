@@ -11,6 +11,8 @@ TASK_ID="${1:-}"
 STATUS="${2:-}"
 RESULT="${3:-}"
 ERROR="${4:-}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/http-with-retry.sh"
 
 if [ -z "$TOKEN" ] || [ -z "$TASK_ID" ] || [ -z "$STATUS" ]; then
   echo '{"error":"Usage: report-result.sh <taskId> <status> [result] [error]"}' >&2
@@ -22,9 +24,4 @@ BODY="{\"taskId\":\"$TASK_ID\",\"status\":\"$STATUS\""
 [ -n "$ERROR" ] && BODY="$BODY,\"error\":$(echo "$ERROR" | jq -Rs .)"
 BODY="$BODY}"
 
-curl -sf \
-  -X POST \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "$BODY" \
-  "${SITE_URL}/api/tasks/result"
+http_request_with_retry "POST" "${SITE_URL}/api/tasks/result" "$BODY"

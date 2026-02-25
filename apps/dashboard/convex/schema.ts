@@ -136,6 +136,15 @@ export default defineSchema({
       v.literal("high"),
       v.literal("urgent")
     )),
+    executionContract: v.optional(v.object({
+      requiredEvidence: v.array(v.object({
+        key: v.string(),
+        type: v.union(v.literal("text"), v.literal("url"), v.literal("file"), v.literal("number")),
+        description: v.string(),
+      })),
+      minResultChars: v.optional(v.number()),
+      requireReviewedSteps: v.optional(v.boolean()),
+    })),
 
     createdAt: v.number(),
     startedAt: v.optional(v.number()),

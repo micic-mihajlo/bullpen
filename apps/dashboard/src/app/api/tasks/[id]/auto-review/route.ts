@@ -185,41 +185,24 @@ export async function POST(
                 const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
 
                 try {
-                  await fetch(`${OPENCLAW_BASE}/api/sessions/main/send`, {
+                  const notifyResp = await fetch(`${OPENCLAW_BASE}/tools/invoke`, {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
                       Authorization: `Bearer ${OPENCLAW_TOKEN}`,
                     },
                     body: JSON.stringify({
-                      message: `[SYSTEM: PROJECT-COMPLETE]
-All tasks for "${projectName}" are done. Compile the final deliverable.
-
-Project type: ${projectType}
-Project brief: ${projectBrief}
-
-Work completed:
-${workSummary}
-
-IMPORTANT: The deliverable must be the ACTUAL OUTPUT, not a description of what was done.
-- For code projects: artifactType="repo", artifactUrl=github repo link, setupInstructions=how to clone/install/deploy
-- For automation projects: artifactType="workflow", artifactFiles=[{workflow JSON}], setupInstructions=how to import into n8n
-- For research projects: artifactType="document", content=the full report with sources
-- For design projects: artifactType="files", artifactFiles=[screenshots, specs]
-
-Create the deliverable via POST http://localhost:3001/api/projects/${task.projectId}/deliverable with:
-{
-  "title": "descriptive title",
-  "content": "summary of what was built for dashboard display",
-  "artifactType": "repo"|"workflow"|"document"|"files"|"preview",
-  "artifactUrl": "primary URL (github repo, preview link, etc.)",
-  "artifactFiles": [{"name": "filename", "url": "link", "type": "json|md|html"}],
-  "setupInstructions": "how to use/deploy this deliverable"
-}
-
-The deliverable will auto-submit for human review.`,
+                      tool: "sessions_send",
+                      args: {
+                        sessionKey: "agent:main:main",
+                        message: `[SYSTEM: PROJECT-COMPLETE]\nAll tasks for "${projectName}" are done. Compile the final deliverable.\n\nProject type: ${projectType}\nProject brief: ${projectBrief}\n\nWork completed:\n${workSummary}\n\nIMPORTANT: The deliverable must be the ACTUAL OUTPUT, not a description of what was done.\n- For code projects: artifactType="repo", artifactUrl=github repo link, setupInstructions=how to clone/install/deploy\n- For automation projects: artifactType="workflow", artifactFiles=[{workflow JSON}], setupInstructions=how to import into n8n\n- For research projects: artifactType="document", content=the full report with sources\n- For design projects: artifactType="files", artifactFiles=[screenshots, specs]\n\nCreate the deliverable via POST http://localhost:3001/api/projects/${task.projectId}/deliverable with:\n{\n  "title": "descriptive title",\n  "content": "summary of what was built for dashboard display",\n  "artifactType": "repo"|"workflow"|"document"|"files"|"preview",\n  "artifactUrl": "primary URL (github repo, preview link, etc.)",\n  "artifactFiles": [{"name": "filename", "url": "link", "type": "json|md|html"}],\n  "setupInstructions": "how to use/deploy this deliverable"\n}\n\nThe deliverable will auto-submit for human review.`,
+                      },
                     }),
                   });
+                  if (!notifyResp.ok) {
+                    const txt = await notifyResp.text();
+                    console.error("[AutoReview] Failed to notify orchestrator for deliverable:", notifyResp.status, txt);
+                  }
                 } catch (notifyErr) {
                   console.error("[AutoReview] Failed to notify orchestrator for deliverable:", notifyErr);
                 }

@@ -10,6 +10,8 @@ set -euo pipefail
 
 SITE_URL="${CONVEX_SITE_URL:-https://ceaseless-hedgehog-380.convex.site}"
 TOKEN="${BULLPEN_API_TOKEN:-}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/http-with-retry.sh"
 
 if [ -z "$TOKEN" ]; then
   echo '{"error":"BULLPEN_API_TOKEN not set"}' >&2
@@ -17,9 +19,7 @@ if [ -z "$TOKEN" ]; then
 fi
 
 # Poll for pending tasks
-RESPONSE=$(curl -sf \
-  -H "Authorization: Bearer $TOKEN" \
-  "${SITE_URL}/api/tasks/pending" 2>/dev/null) || {
+RESPONSE=$(http_request_with_retry "GET" "${SITE_URL}/api/tasks/pending") || {
   echo '{"error":"Failed to reach Convex API"}' >&2
   exit 1
 }

@@ -10,15 +10,12 @@ TOKEN="${BULLPEN_API_TOKEN:-}"
 TASK_ID="${1:-}"
 MESSAGE="${2:-}"
 TYPE="${3:-info}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/http-with-retry.sh"
 
 if [ -z "$TOKEN" ] || [ -z "$TASK_ID" ] || [ -z "$MESSAGE" ]; then
   echo '{"error":"Usage: post-log.sh <taskId> <message> [type]"}' >&2
   exit 1
 fi
 
-curl -sf \
-  -X POST \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"taskId\":\"$TASK_ID\",\"message\":$(echo "$MESSAGE" | jq -Rs .),\"type\":\"$TYPE\"}" \
-  "${SITE_URL}/api/tasks/log"
+http_request_with_retry "POST" "${SITE_URL}/api/tasks/log" "{\"taskId\":\"$TASK_ID\",\"message\":$(echo "$MESSAGE" | jq -Rs .),\"type\":\"$TYPE\"}"
