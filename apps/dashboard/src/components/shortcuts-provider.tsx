@@ -110,12 +110,9 @@ const shortcuts = [
   { label: "Show help", key: "?" },
   { label: "Close", key: "Esc" },
   { separator: true, label: "Navigation" },
-  { label: "Overview", key: "1" },
+  { label: "Command Center", key: "1" },
   { label: "Projects", key: "2" },
   { label: "Agents", key: "3" },
-  { label: "Tasks", key: "4" },
-  { label: "Review", key: "5" },
-  { label: "Clients", key: "6" },
 ];
 
 function ShortcutsHelp({ onClose }: { onClose: () => void }) {

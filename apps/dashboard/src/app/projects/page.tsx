@@ -12,14 +12,29 @@ import { EmptyState } from "@/components/empty-state";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { useToast } from "@/components/toast";
 import { useRegisterShortcut } from "@/components/shortcuts-provider";
+import { TaskDetailPanel } from "@/components/task-detail-panel";
 import {
   Plus,
   FolderKanban,
   Calendar,
-  ArrowRight,
-  X,
   ChevronDown,
+  Code2,
+  Cog,
+  Search,
+  Palette,
+  FileCheck2,
+  FileText,
+  Bot,
 } from "lucide-react";
+
+const taskTypeIcons: Record<string, React.ReactNode> = {
+  coding: <Code2 className="w-3 h-3" />,
+  automation: <Cog className="w-3 h-3" />,
+  research: <Search className="w-3 h-3" />,
+  design: <Palette className="w-3 h-3" />,
+  review: <FileCheck2 className="w-3 h-3" />,
+  general: <FileText className="w-3 h-3" />,
+};
 
 type ProjectStatus = "intake" | "active" | "review" | "delivered" | "archived";
 
@@ -32,10 +47,11 @@ const statusConfig: Record<ProjectStatus, { label: string; color: string; bg: st
 };
 
 const typeEmoji: Record<string, string> = {
-  research: "🔍",
   code: "💻",
-  content: "📝",
+  automation: "⚡",
+  research: "🔍",
   design: "🎨",
+  content: "📝",
 };
 
 export default function ProjectsPage() {
@@ -50,7 +66,7 @@ export default function ProjectsPage() {
   const [selectedId, setSelectedId] = useState<Id<"projects"> | null>(null);
 
   const [formName, setFormName] = useState("");
-  const [formType, setFormType] = useState("research");
+  const [formType, setFormType] = useState("code");
   const [formBrief, setFormBrief] = useState("");
   const [formClientId, setFormClientId] = useState("");
   const [formDeadline, setFormDeadline] = useState("");
@@ -88,7 +104,7 @@ export default function ProjectsPage() {
 
   const resetForm = () => {
     setFormName("");
-    setFormType("research");
+    setFormType("code");
     setFormBrief("");
     setFormClientId("");
     setFormDeadline("");
@@ -256,10 +272,11 @@ export default function ProjectsPage() {
                 onChange={(e) => setFormType(e.target.value)}
                 className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm text-mc-text focus:outline-none focus:border-mc-accent"
               >
-                <option value="research">Research</option>
                 <option value="code">Code</option>
-                <option value="content">Content</option>
+                <option value="automation">Automation</option>
+                <option value="research">Research</option>
                 <option value="design">Design</option>
+                <option value="content">Content</option>
               </select>
             </div>
             <div>
@@ -316,7 +333,27 @@ function ProjectDetail({
   onStatusChange: (id: Id<"projects">, status: ProjectStatus) => void;
 }) {
   const project = useQuery(api.projects.withDetails, { id: projectId });
+  const { addToast } = useToast();
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
+  const [decomposing, setDecomposing] = useState(false);
+
+  const handleDecompose = async () => {
+    setDecomposing(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/decompose`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        addToast(`Created ${data.taskIds.length} tasks`, "success");
+      } else {
+        addToast(data.error || "Failed to decompose", "error");
+      }
+    } catch {
+      addToast("Failed to decompose project", "error");
+    } finally {
+      setDecomposing(false);
+    }
+  };
 
   if (!project) {
     return (
@@ -407,17 +444,40 @@ function ProjectDetail({
             <span className="text-[13px] font-semibold text-[#1a1a1a]">
               Tasks ({project.tasks?.length ?? 0})
             </span>
+            {(!project.tasks || project.tasks.length === 0) && (
+              <button
+                onClick={handleDecompose}
+                disabled={decomposing}
+                className="flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded text-mc-accent hover:bg-mc-accent/10 disabled:opacity-50 transition-colors"
+              >
+                {decomposing ? (
+                  <Cog className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Bot className="w-3 h-3" />
+                )}
+                {decomposing ? "Decomposing..." : "Decompose"}
+              </button>
+            )}
           </div>
           <div className="divide-y divide-mc-border max-h-[400px] overflow-y-auto">
             {project.tasks?.length === 0 ? (
               <div className="p-4 text-xs text-mc-text-secondary text-center">No tasks yet</div>
             ) : (
               project.tasks?.map((task) => (
-                <div key={task._id} className="px-4 py-2 hover:bg-mc-bg-tertiary/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm truncate text-mc-text">{task.title}</span>
+                <button
+                  key={task._id}
+                  onClick={() => setSelectedTaskId(task._id)}
+                  className="w-full px-4 py-2 hover:bg-mc-bg-tertiary/50 transition-colors text-left"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-mc-text-secondary flex-shrink-0">
+                        {taskTypeIcons[task.taskType ?? "general"] ?? taskTypeIcons.general}
+                      </span>
+                      <span className="text-sm truncate text-mc-text">{task.title}</span>
+                    </div>
                     <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded capitalize font-mono-jb font-semibold",
+                      "text-[10px] px-1.5 py-0.5 rounded capitalize font-mono-jb font-semibold flex-shrink-0",
                       task.status === "completed" ? "bg-mc-accent-green/12 text-mc-accent-green" :
                       task.status === "running" ? "bg-mc-accent-yellow/12 text-mc-accent-yellow" :
                       task.status === "failed" ? "bg-mc-accent-red/12 text-mc-accent-red" :
@@ -426,7 +486,7 @@ function ProjectDetail({
                       {task.status}
                     </span>
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>
@@ -467,6 +527,14 @@ function ProjectDetail({
           </div>
         </div>
       </div>
+
+      {/* Task Detail Slide-over */}
+      {selectedTaskId && (
+        <TaskDetailPanel
+          taskId={selectedTaskId}
+          onClose={() => setSelectedTaskId(null)}
+        />
+      )}
     </div>
   );
 }

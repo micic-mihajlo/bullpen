@@ -55,9 +55,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, via: "blob" });
     }
 
-    // Last-resort fallback: capture in function logs so signups are not lost during demos.
-    console.info("WAITLIST_FALLBACK", JSON.stringify(payload));
-    return NextResponse.json({ success: true, via: "logs" });
+    return NextResponse.json(
+      { error: "Waitlist is temporarily unavailable" },
+      { status: 503 }
+    );
   } catch {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }

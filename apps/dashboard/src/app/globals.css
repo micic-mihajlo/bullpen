@@ -167,6 +167,11 @@ button, a, input, select, textarea {
   to { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
@@ -193,12 +198,91 @@ button, a, input, select, textarea {
   animation: slide-in-left 0.15s ease-out;
 }
 
+.animate-slide-in-right {
+  animation: slide-in-right 0.2s ease-out;
+}
+
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
 }
 
 .blink-cursor {
   animation: blink-cursor 1.2s step-end infinite;
+}
+
+/* ── Pulsing ring for active agents ── */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* ── Staggered section entrance ── */
+@keyframes section-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-section-enter {
+  animation: section-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.19s; }
+.stagger-4 { animation-delay: 0.26s; }
+.stagger-5 { animation-delay: 0.33s; }
+
+/* ── Row entrance for list items ── */
+@keyframes row-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-row-enter {
+  animation: row-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Progress bar fill animation ── */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+.animate-progress-fill {
+  animation: progress-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+/* ── Subtle count-up flash ── */
+@keyframes count-flash {
+  0% { color: var(--mc-accent); transform: scale(1.15); }
+  100% { color: inherit; transform: scale(1); }
+}
+
+.animate-count-flash {
+  animation: count-flash 0.5s ease-out;
+}
+
+/* ── Header slide-down ── */
+@keyframes header-enter {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-header-enter {
+  animation: header-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Card elevation ── */
+.card-elevated {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+}
+
+.card-elevated-md {
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.04);
 }
 
 /* ── Prose overrides for light theme ── */

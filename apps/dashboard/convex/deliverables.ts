@@ -71,6 +71,21 @@ export const create = mutation({
     content: v.string(),
     format: v.string(),
     taskId: v.optional(v.id("tasks")),
+    artifactType: v.optional(v.union(
+      v.literal("repo"),
+      v.literal("workflow"),
+      v.literal("document"),
+      v.literal("files"),
+      v.literal("preview")
+    )),
+    artifactUrl: v.optional(v.string()),
+    artifactFiles: v.optional(v.array(v.object({
+      name: v.string(),
+      path: v.optional(v.string()),
+      url: v.optional(v.string()),
+      type: v.string(),
+    }))),
+    setupInstructions: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const project = await ctx.db.get(args.projectId);
@@ -84,6 +99,23 @@ export const create = mutation({
       }
     }
 
+    // Policy: deliverables are only allowed after project work is finished.
+    const projectTasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+
+    if (projectTasks.length === 0) {
+      throw new Error("Cannot create deliverable: project has no tasks");
+    }
+
+    const unfinished = projectTasks.filter((t) => t.status !== "completed");
+    if (unfinished.length > 0) {
+      throw new Error(
+        `Cannot create deliverable: project is not finished (${unfinished.length} task(s) still not completed)`
+      );
+    }
+
     const deliverableId = await ctx.db.insert("deliverables", {
       projectId: args.projectId,
       taskId: args.taskId,
@@ -91,6 +123,10 @@ export const create = mutation({
       content: args.content,
       format: args.format,
       status: "draft",
+      artifactType: args.artifactType,
+      artifactUrl: args.artifactUrl,
+      artifactFiles: args.artifactFiles,
+      setupInstructions: args.setupInstructions,
       createdAt: Date.now(),
     });
 
@@ -232,6 +268,21 @@ export const update = mutation({
     ),
     reviewNotes: v.optional(v.string()),
     reviewedBy: v.optional(v.string()),
+    artifactType: v.optional(v.union(
+      v.literal("repo"),
+      v.literal("workflow"),
+      v.literal("document"),
+      v.literal("files"),
+      v.literal("preview")
+    )),
+    artifactUrl: v.optional(v.string()),
+    artifactFiles: v.optional(v.array(v.object({
+      name: v.string(),
+      path: v.optional(v.string()),
+      url: v.optional(v.string()),
+      type: v.string(),
+    }))),
+    setupInstructions: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;

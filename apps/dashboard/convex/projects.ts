@@ -210,15 +210,6 @@ export const remove = mutation({
     );
 
     for (const task of tasks) {
-      if (task.assignedAgentId) {
-        const agent = await ctx.db.get(task.assignedAgentId);
-        if (agent?.currentTaskId === task._id) {
-          await ctx.db.patch(agent._id, {
-            currentTaskId: undefined,
-            status: agent.status === "busy" ? "online" : agent.status,
-          });
-        }
-      }
       await ctx.db.delete(task._id);
     }
 

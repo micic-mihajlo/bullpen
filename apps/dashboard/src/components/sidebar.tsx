@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useStableData } from "@/lib/hooks";
 import {
-  LayoutDashboard,
+  Command,
   FolderKanban,
-  Bot,
-  CheckSquare,
+  Wrench,
   FileCheck2,
-  Users,
   PanelLeftClose,
   PanelLeft,
 } from "lucide-react";
@@ -31,19 +29,19 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const tasks = useStableData(useQuery(api.tasks.list));
-  const pendingReview = useStableData(useQuery(api.deliverables.pendingReview));
+  const templates = useStableData(useQuery(api.workerTemplates.list));
+  const deliverables = useStableData(useQuery(api.deliverables.list));
 
   const runningTasks = tasks?.filter((t) => t.status === "running").length ?? 0;
-  const reviewCount = pendingReview?.length ?? 0;
+  const templateCount = templates?.length ?? 0;
+  const reviewCount = deliverables?.filter((d) => d.status === "review").length ?? 0;
 
-  const navItems: NavItem[] = [
-    { label: "Overview", href: "/", icon: <LayoutDashboard className="w-4 h-4" />, shortcut: "1" },
+  const navItems: NavItem[] = useMemo(() => [
+    { label: "Command Center", href: "/", icon: <Command className="w-4 h-4" />, badge: runningTasks || undefined, shortcut: "1" },
     { label: "Projects", href: "/projects", icon: <FolderKanban className="w-4 h-4" />, shortcut: "2" },
-    { label: "Agents", href: "/agents", icon: <Bot className="w-4 h-4" />, shortcut: "3" },
-    { label: "Tasks", href: "/tasks", icon: <CheckSquare className="w-4 h-4" />, badge: runningTasks || undefined, shortcut: "4" },
-    { label: "Review", href: "/review", icon: <FileCheck2 className="w-4 h-4" />, badge: reviewCount || undefined, shortcut: "5" },
-    { label: "Clients", href: "/clients", icon: <Users className="w-4 h-4" />, shortcut: "6" },
-  ];
+    { label: "Workers", href: "/agents", icon: <Wrench className="w-4 h-4" />, badge: templateCount || undefined, shortcut: "3" },
+    { label: "Deliverables", href: "/review", icon: <FileCheck2 className="w-4 h-4" />, badge: reviewCount || undefined, shortcut: "4" },
+  ], [runningTasks, templateCount, reviewCount]);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";

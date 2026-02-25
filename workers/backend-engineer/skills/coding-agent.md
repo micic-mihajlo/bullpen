@@ -1,0 +1,1 @@
+/home/mihbot/openclaw/skills/coding-agent/SKILL.md

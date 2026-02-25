@@ -8,14 +8,22 @@
  * @module
  */
 
+import type * as agentMessages from "../agentMessages.js";
 import type * as agents from "../agents.js";
+import type * as cleanup from "../cleanup.js";
 import type * as clients from "../clients.js";
 import type * as deliverables from "../deliverables.js";
+import type * as demoSeed from "../demoSeed.js";
 import type * as events from "../events.js";
+import type * as fixModels from "../fixModels.js";
+import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as projects from "../projects.js";
+import type * as seed from "../seed.js";
 import type * as taskExecution from "../taskExecution.js";
 import type * as tasks from "../tasks.js";
+import type * as workerTemplates from "../workerTemplates.js";
+import type * as workers from "../workers.js";
 
 import type {
   ApiFromModules,
@@ -24,14 +32,22 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agentMessages: typeof agentMessages;
   agents: typeof agents;
+  cleanup: typeof cleanup;
   clients: typeof clients;
   deliverables: typeof deliverables;
+  demoSeed: typeof demoSeed;
   events: typeof events;
+  fixModels: typeof fixModels;
+  http: typeof http;
   messages: typeof messages;
   projects: typeof projects;
+  seed: typeof seed;
   taskExecution: typeof taskExecution;
   tasks: typeof tasks;
+  workerTemplates: typeof workerTemplates;
+  workers: typeof workers;
 }>;
 
 /**

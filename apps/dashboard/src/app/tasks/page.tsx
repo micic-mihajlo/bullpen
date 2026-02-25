@@ -25,22 +25,22 @@ type Task = {
   _id: Id<"tasks">;
   title: string;
   description?: string;
-  status: "pending" | "assigned" | "running" | "completed" | "failed";
+  status: "pending" | "assigned" | "running" | "review" | "completed" | "failed";
   priority?: number;
   projectId?: Id<"projects">;
-  assignedAgentId?: Id<"agents">;
+  assignedAgentId?: string;
   createdAt: number;
   startedAt?: number;
   completedAt?: number;
   result?: string;
   error?: string;
-  agent?: { _id: Id<"agents">; name: string; avatar?: string; status: string };
+  agent?: { _id: string; name: string; avatar?: string; status: string };
 };
 
 type TaskStatus = "pending" | "assigned" | "running" | "completed" | "failed";
 
 type Agent = {
-  _id: Id<"agents">;
+  _id: string;
   name: string;
   avatar?: string;
   status: string;
@@ -61,7 +61,7 @@ interface TaskCardProps {
   onlineAgents: Agent[];
   isDispatching: boolean;
   onOpenTask: (taskId: string) => void;
-  onAssign: (taskId: Id<"tasks">, agentId: Id<"agents">) => void;
+  onAssign: (taskId: Id<"tasks">, agentId: string) => void;
   onStart: (taskId: Id<"tasks">) => void;
   onDispatch: (taskId: Id<"tasks">) => void;
   onComplete: (taskId: Id<"tasks">) => void;
@@ -165,11 +165,11 @@ const TaskCard = memo(function TaskCard({
 interface TaskColumnProps {
   column: ColumnConfig;
   tasks: Task[] | undefined;
-  agentsById: Map<Id<"agents">, Agent>;
+  agentsById: Map<string, Agent>;
   onlineAgents: Agent[];
   dispatchingId: string | null;
   onOpenTask: (taskId: string) => void;
-  onAssign: (taskId: Id<"tasks">, agentId: Id<"agents">) => void;
+  onAssign: (taskId: Id<"tasks">, agentId: string) => void;
   onStart: (taskId: Id<"tasks">) => void;
   onDispatch: (taskId: Id<"tasks">) => void;
   onComplete: (taskId: Id<"tasks">) => void;
@@ -224,7 +224,7 @@ const TaskColumn = memo(function TaskColumn({
 
 export default function TasksPage() {
   const tasks = useStableData(useQuery(api.tasks.list));
-  const agents = useStableData(useQuery(api.agents.list));
+  const agents = useStableData(useQuery(api.workerTemplates.list));
   const projects = useStableData(useQuery(api.projects.list));
   const createTask = useMutation(api.tasks.create);
   const assignTask = useMutation(api.tasks.assign);
@@ -286,8 +286,8 @@ export default function TasksPage() {
     }
   }, [addToast]);
 
-  const handleAssign = useCallback((taskId: Id<"tasks">, agentId: Id<"agents">) => {
-    void assignTask({ taskId, agentId });
+  const handleAssign = useCallback((taskId: Id<"tasks">, agentId: string) => {
+    void assignTask({ taskId, agentId: agentId as string });
   }, [assignTask]);
 
   const handleStart = useCallback((taskId: Id<"tasks">) => {
@@ -303,15 +303,15 @@ export default function TasksPage() {
   }, []);
 
   const agentsById = useMemo(() => {
-    const map = new Map<Id<"agents">, Agent>();
-    for (const agent of agents ?? []) {
-      map.set(agent._id, agent);
+    const map = new Map<string, Agent>();
+    for (const tpl of agents ?? []) {
+      map.set(tpl._id, { _id: tpl._id, name: tpl.displayName, status: "online" });
     }
     return map;
   }, [agents]);
 
   const onlineAgents = useMemo(
-    () => (agents?.filter((agent) => agent.status === "online") ?? []) as Agent[],
+    () => (agents ?? []).map((tpl) => ({ _id: tpl._id, name: tpl.displayName, status: "online" })) as Agent[],
     [agents],
   );
 
@@ -365,7 +365,7 @@ export default function TasksPage() {
           <div>
             <h1 className="text-xl font-semibold text-[#1a1a1a]" style={{ fontFamily: 'Inter, sans-serif' }}>Tasks</h1>
             <p className="text-[12px] text-[#9c9590] mt-0.5">
-              /// {stats.total} total · {stats.running} running
+              {`///`} {stats.total} total · {stats.running} running
             </p>
           </div>
           <div className="flex items-center gap-3">

@@ -1,129 +1,334 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOpenClawClient } from "@/lib/openclaw";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// POST /api/tasks/[id]/dispatch - Dispatch task to agent via OpenClaw sessions_spawn
+/**
+ * POST /api/tasks/[id]/dispatch
+ *
+ * Dispatch a pending task to a worker:
+ * 1. Read task
+ * 2. Find matching worker template by taskType
+ * 3. Spawn worker
+ * 4. Update task status to running, set first step to in_progress
+ * 5. Update worker status to active
+ * 6. Post agent message
+ * 7. Log event
+ */
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const taskId = id as Id<"tasks">;
+    const { id: taskId } = await params;
 
-    // Get the task
-    const task = await convex.query(api.tasks.get, { id: taskId });
+    // 1. Read the task
+    const task = await convex.query(api.tasks.get, {
+      id: taskId as Id<"tasks">,
+    });
     if (!task) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
-
-    if (!task.assignedAgentId) {
+    if (task.status !== "pending" && task.status !== "assigned") {
       return NextResponse.json(
-        { error: "Task not assigned to an agent" },
+        { error: `Task is already ${task.status}` },
         { status: 400 }
       );
     }
 
-    // Get the agent
-    const agent = await convex.query(api.agents.get, { id: task.assignedAgentId });
-    if (!agent) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
-    }
+    // Dependency gate: do not dispatch tasks with unmet prerequisites
+    if (task.dependsOn && task.dependsOn.length > 0) {
+      const dependencyStates = await Promise.all(
+        task.dependsOn.map(async (depId) => {
+          const depTask = await convex.query(api.tasks.get, { id: depId });
+          return {
+            id: depId,
+            title: depTask?.title ?? "Unknown task",
+            status: depTask?.status ?? "missing",
+          };
+        })
+      );
 
-    // Connect to OpenClaw
-    const client = getOpenClawClient();
-    if (!client.isConnected()) {
-      try {
-        await client.connect();
-      } catch (error) {
-        console.error("[API] Failed to connect to OpenClaw:", error);
+      const blockedBy = dependencyStates.filter((d) => d.status !== "completed");
+      if (blockedBy.length > 0) {
         return NextResponse.json(
-          { error: "Failed to connect to OpenClaw Gateway" },
-          { status: 503 }
+          {
+            error: "Task is blocked by dependencies",
+            blockedBy,
+          },
+          { status: 409 }
         );
       }
     }
 
-    // Extract role from soul
-    const role = agent.soul?.match(/Role:\s*(.+)/)?.[1] || "Assistant";
-    
-    // Webhook URL for reporting results
-    const webhookUrl = process.env.BULLPEN_WEBHOOK_URL || "http://localhost:3001/api/webhooks/task-result";
-    
-    // Build the task prompt for the spawned agent
-    const taskPrompt = `You are ${agent.name}, a ${role}.
+    // 2. Find matching worker template
+    const templates = await convex.query(api.workerTemplates.list);
+    const taskType = task.taskType || "general";
 
-## Task: ${task.title}
-${task.description ? `\n${task.description}\n` : ""}
-Priority: ${task.priority || 3}/5
-Task ID: ${taskId}
-
-## Instructions
-1. Complete this task thoroughly
-2. When done, report your result via the webhook below
-3. Your result should be a clear, useful deliverable
-
-## Reporting Results
-When finished, call the webhook to report completion:
-
-\`\`\`bash
-curl -X POST ${webhookUrl} \\
-  -H "Content-Type: application/json" \\
-  -d '{"taskId": "${taskId}", "status": "completed", "result": "YOUR_RESULT_HERE", "agentName": "${agent.name}"}'
-\`\`\`
-
-If the task fails, report the error:
-\`\`\`bash
-curl -X POST ${webhookUrl} \\
-  -H "Content-Type: application/json" \\
-  -d '{"taskId": "${taskId}", "status": "failed", "error": "ERROR_DESCRIPTION", "agentName": "${agent.name}"}'
-\`\`\`
-
-Use exec to run the curl command. Replace YOUR_RESULT_HERE with your actual deliverable (escaped for JSON).
-
-Begin working on this task now.`;
-
-    // Agent must have a linked OpenClaw session to receive tasks
-    if (!agent.sessionKey) {
+    let template = templates.find((t) => t.taskTypes.includes(taskType));
+    if (!template && templates.length > 0) {
+      template = templates[0];
+    }
+    if (!template) {
       return NextResponse.json(
-        { error: `Agent "${agent.name}" has no linked OpenClaw session. Link a session first.` },
+        { error: "No worker template found for this task type" },
         { status: 400 }
       );
     }
 
-    // Send task to the agent's OpenClaw session
-    await client.sendMessage(agent.sessionKey, taskPrompt);
-    const sessionKey = agent.sessionKey;
-    const method = "send" as const;
+    // 3. Create worker via spawn
+    const sessionKey = `worker-${taskId}-${Date.now()}`;
+    const workerId = await convex.mutation(api.workers.spawn, {
+      templateId: template._id,
+      taskId: taskId as Id<"tasks">,
+      sessionKey,
+      model: template.model,
+    });
 
-    // Update task status to running
-    await convex.mutation(api.tasks.start, { id: taskId });
+    // 4. Update task: status → running, startedAt
+    await convex.mutation(api.taskExecution.dispatchTask, {
+      taskId: taskId as Id<"tasks">,
+    });
 
-    // Log the dispatch event
+    // Set first step to in_progress
+    if (task.steps && task.steps.length > 0) {
+      const updatedSteps = task.steps.map((s, i) => {
+        if (i === 0) {
+          return { ...s, status: "in_progress" as const, startedAt: Date.now() };
+        }
+        return s;
+      });
+      await convex.mutation(api.tasks.updateSteps, {
+        id: taskId as Id<"tasks">,
+        steps: updatedSteps,
+        currentStep: 0,
+      });
+    }
+
+    // 5. Keep worker in spawning until real sub-agent spawn succeeds
+
+    // 6. Post agent message
+    const stepName = task.steps?.[0]?.name ?? "first step";
+    await convex.mutation(api.agentMessages.send, {
+      taskId: taskId as Id<"tasks">,
+      fromAgent: template.displayName,
+      toAgent: "orchestrator",
+      message: `Worker spawned. Starting step 1: ${stepName}`,
+      messageType: "update",
+    });
+
+    // 7. Log event
     await convex.mutation(api.events.create, {
-      agentId: task.assignedAgentId,
       type: "task_dispatched",
-      message: `Sent task "${task.title}" to ${agent.name}`,
-      data: { 
-        taskId, 
+      message: `Dispatched "${task.title}" → ${template.displayName}`,
+      data: {
+        taskId,
+        templateName: template.name,
+        workerId,
         sessionKey,
-        method,
-        model: agent.model 
+        model: template.model,
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: `Task dispatched to ${agent.name} via ${method}`,
-      sessionKey,
-      model: agent.model,
-    });
+    // 8. Spawn a real sub-agent directly via OpenClaw gateway
+    //    Uses /tools/invoke to call sessions_spawn — no orchestrator middleman.
+    const OPENCLAW_BASE =
+      process.env.OPENCLAW_GATEWAY_URL?.replace(/^ws/, "http") ||
+      "http://localhost:18789";
+    const OPENCLAW_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || "";
+
+    const stepList = (task.steps || [])
+      .map((s, i) => `${i}. ${s.name}: ${s.description}`)
+      .join("\n");
+
+    // Get project info for context
+    let projectBrief = "";
+    if (task.projectId) {
+      try {
+        const project = await convex.query(api.projects.get, {
+          id: task.projectId as Id<"projects">,
+        });
+        projectBrief = project?.brief || "";
+      } catch {
+        // non-fatal
+      }
+    }
+
+    // Map task types to skills for deterministic invocation
+    const skillForTaskType: Record<string, string> = {
+      coding: "coding-agent",
+      automation: "n8n-workflow-patterns",
+      research: "", // no specific skill — uses web_search + web_fetch
+      review: "coding-agent",
+      design: "frontend-design",
+      general: "",
+    };
+    const skillDirective = skillForTaskType[taskType]
+      ? `\n\nIMPORTANT: Use the "${skillForTaskType[taskType]}" skill for this task. Load its SKILL.md and follow its procedures.`
+      : "";
+
+    // Standardized output path
+    const projectSlug = (projectBrief || task.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40);
+    const outputDir = `/home/mihbot/deliverables/${projectSlug}`;
+
+    const contract = (task as any).executionContract;
+    const contractText = contract
+      ? `\n\nExecution contract (MANDATORY):\n${JSON.stringify(contract, null, 2)}\n\nWhen calling /api/webhooks/task-result with status=completed, include an evidence object with all requiredEvidence keys.`
+      : "";
+
+    const agentTask = `You are a ${template.displayName} working on: "${task.title}"
+
+Project context: ${projectBrief || "No additional context"}${skillDirective}${contractText}
+
+Your job: Complete each step below sequentially. After completing EACH step, you MUST report progress by running:
+
+curl -s -X POST http://localhost:3001/api/webhooks/step-progress -H "Content-Type: application/json" -d '{"taskId":"${taskId}","stepIndex":STEP_INDEX,"status":"completed","output":"DESCRIPTION_OF_WHAT_YOU_DID","workerName":"${template.displayName}"}'
+
+Replace STEP_INDEX with the 0-based step number and DESCRIPTION_OF_WHAT_YOU_DID with a concise summary of your output.
+
+After all steps are approved, you MUST call /api/webhooks/task-result with status=completed.
+If executionContract.requiredEvidence exists, include evidence payload with required keys.
+
+Steps:
+${stepList}
+
+Guidelines:
+- Be thorough but efficient
+- Produce real, usable output (actual code, actual files, actual research)
+- Write ALL deliverable artifacts to ${outputDir}/ — this is the standard output directory
+- For code projects: initialize repos inside ${outputDir}/
+- For research: write reports to ${outputDir}/
+- For automation: write workflow JSON and docs to ${outputDir}/
+- Report each step completion via the webhook above — this is critical for tracking`;
+
+    try {
+      // Direct spawn via Gateway Tools Invoke API — no orchestrator middleman
+      // POST /tools/invoke calls sessions_spawn directly, returns childSessionKey
+      const spawnResp = await fetch(`${OPENCLAW_BASE}/tools/invoke`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENCLAW_TOKEN}`,
+        },
+        body: JSON.stringify({
+          tool: "sessions_spawn",
+          args: {
+            task: agentTask,
+            label: `worker-${taskId.slice(-8)}`,
+          },
+        }),
+      });
+
+      if (!spawnResp.ok) {
+        const body = await spawnResp.text();
+        await convex.mutation(api.workers.updateStatus, {
+          id: workerId,
+          status: "failed",
+        });
+        await convex.mutation(api.tasks.fail, {
+          id: taskId as Id<"tasks">,
+          error: `Worker spawn failed (${spawnResp.status}): ${body.slice(0, 300)}`,
+        });
+
+        return NextResponse.json(
+          {
+            error: "Failed to spawn worker session",
+            details: body,
+          },
+          { status: 503 }
+        );
+      }
+
+      const spawnResult = await spawnResp.json();
+      const childKey = spawnResult?.result?.details?.childSessionKey;
+
+      if (!childKey) {
+        await convex.mutation(api.workers.updateStatus, {
+          id: workerId,
+          status: "failed",
+        });
+        await convex.mutation(api.tasks.fail, {
+          id: taskId as Id<"tasks">,
+          error: "Worker spawn failed: missing childSessionKey",
+        });
+
+        return NextResponse.json(
+          { error: "Failed to spawn worker session (no child session key)" },
+          { status: 503 }
+        );
+      }
+
+      // Store the child session key on the worker for tracking and mark active
+      await convex.mutation(api.workers.updateStatus, {
+        id: workerId,
+        status: "active",
+        sessionKey: childKey,
+      });
+      console.log(`[Dispatch] Agent spawned: ${childKey}`);
+
+      // Kickoff steer: ensures the spawned run gets an explicit first user turn.
+      // Without this, some sessions can sit idle without emitting progress callbacks.
+      const kickoffMessage = `Start now. Execute the task steps and report progress using the required webhooks.
+
+For each completed step call /api/webhooks/step-progress.
+After all steps call /api/webhooks/task-result with status=completed.
+If blocked or failing, call /api/webhooks/task-result with status=failed and error details.
+
+If execution contract includes requiredEvidence, include evidence object with all required keys in task-result payload.
+
+Task ID: ${taskId}
+Worker: ${template.displayName}`;
+
+      try {
+        await fetch(`${OPENCLAW_BASE}/tools/invoke`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${OPENCLAW_TOKEN}`,
+          },
+          body: JSON.stringify({
+            tool: "subagents",
+            args: {
+              action: "steer",
+              target: `worker-${taskId.slice(-8)}`,
+              message: kickoffMessage,
+            },
+          }),
+        });
+      } catch (kickoffErr) {
+        console.warn("[Dispatch] Kickoff steer failed:", kickoffErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        workerId,
+        workerTemplate: template.displayName,
+        sessionKey: childKey,
+      });
+    } catch (err) {
+      console.error("[Dispatch] Failed to spawn agent:", err);
+      await convex.mutation(api.workers.updateStatus, {
+        id: workerId,
+        status: "failed",
+      });
+      await convex.mutation(api.tasks.fail, {
+        id: taskId as Id<"tasks">,
+        error: `Worker spawn exception: ${err instanceof Error ? err.message : "unknown"}`,
+      });
+
+      return NextResponse.json(
+        { error: "Worker spawn exception" },
+        { status: 503 }
+      );
+    }
   } catch (error) {
-    console.error("[API] Failed to dispatch task:", error);
+    console.error("[Dispatch] Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

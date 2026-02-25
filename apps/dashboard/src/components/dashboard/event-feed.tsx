@@ -104,10 +104,10 @@ export function EventFeed() {
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 text-[10px] text-mc-muted font-mono-jb">
                         <span>{timeAgo(event.timestamp)}</span>
-                        {event.agent && (
+                        {event.agentId && (
                           <>
                             <span>·</span>
-                            <span>{event.agent.name}</span>
+                            <span className="truncate max-w-[100px]">{event.agentId}</span>
                           </>
                         )}
                       </div>

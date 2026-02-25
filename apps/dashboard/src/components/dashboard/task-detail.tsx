@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 
 interface Agent {
-  _id: Id<"agents">;
+  _id: string;
   name: string;
   avatar?: string;
   status: string;
@@ -16,7 +16,7 @@ interface Task {
   _id: Id<"tasks">;
   title: string;
   description?: string;
-  status: "pending" | "assigned" | "running" | "completed" | "failed";
+  status: "pending" | "assigned" | "running" | "review" | "completed" | "failed";
   priority?: number;
   createdAt: number;
   startedAt?: number;
@@ -57,15 +57,16 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
   const [resultText, setResultText] = useState(task?.result || "");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!task) return;
+    setEditingResult(false);
+    setResultText(task.result || "");
+  }, [task?._id, task?.result]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!task) return null;
 
   const status = statusLabel[task.status];
   const hasTaskError = Boolean(task.error) || task.status === "failed";
-
-  useEffect(() => {
-    setEditingResult(false);
-    setResultText(task.result || "");
-  }, [task._id, task.result]);
 
   const handleSaveResult = async () => {
     setSaving(true);

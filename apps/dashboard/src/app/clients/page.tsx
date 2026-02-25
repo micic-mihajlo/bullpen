@@ -18,7 +18,6 @@ import {
   Building2,
   CreditCard,
   MessageSquare,
-  FolderKanban,
 } from "lucide-react";
 
 type ClientStatus = "active" | "inactive" | "churned";
